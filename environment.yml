@@ -1,0 +1,14 @@
+# Conda environment for the climateCCR project.
+# Usage:
+#   conda env create -f environment.yml
+#   conda activate climateCCR
+# The editable install (-e ".[dev]") below pulls runtime + dev dependencies
+# from pyproject.toml, keeping a single source of truth for versions.
+name: climateCCR
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - -e ".[dev]"

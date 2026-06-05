@@ -1,0 +1,10 @@
+# Default run configuration for climateCCR.
+# Loaded by climateCCR.infra.load_config() when no path is given.
+seed: 233423                 # inherited from PIMPA's random_state
+n_paths: 10000               # Monte Carlo paths
+settlement_currency: USD
+date_format: "%Y-%m-%d"
+
+# --- free-form settings (available via Config.extra) ---
+# market:
+#   universe: BMV_subset

@@ -1,0 +1,33 @@
+# Byte-compiled / packaging
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Environments
+.venv/
+venv/
+.env
+
+# Caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Data (large / generated) — keep folder structure via .gitkeep
+data/raw/*
+data/interim/*
+data/processed/*
+!data/**/.gitkeep
+
+# Results (generated): figures, logs, run manifests
+results/*
+!results/.gitkeep
+
+# OS
+.DS_Store
+
+# NOTE: notes/ is intentionally TRACKED (working notes, code review, plan).
