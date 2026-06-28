@@ -931,3 +931,8 @@ respectively, which prove (41).
 - <span id="page-10-1"></span>[Gono 20b] L. Gonon, L. Grigoryeva, and J.-P. Ortega. "Risk bounds for reservoir computing". *Journal of Machine Learning Research*, Vol. 21, No. 240, pp. 1–61, 2020.
 - <span id="page-10-0"></span>[Grig 19] L. Grigoryeva and J.-P. Ortega. "Differentiable reservoir computing". *Journal of Machine Learning Research*, Vol. 20, No. 179, pp. 1–62, 2019.
 - <span id="page-10-3"></span>[Hall 80] P. Hall and C. C. Heyde. Martingale Limit Theory and Its Application. Academic Press, 1980.
+
+## Related
+[[CCR_MOC]] · Home: [[_INDEX]]
+
+#arm/ccr #type/source

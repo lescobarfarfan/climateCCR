@@ -403,3 +403,8 @@ Para la construcción de la curva, se utiliza el **precio sucio** (que represent
 ---
 
 *Documento generado como referencia técnica para la construcción de la curva de rendimientos de valores gubernamentales mexicanos.*
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

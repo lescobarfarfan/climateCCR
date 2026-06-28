@@ -522,3 +522,8 @@ plt.show()
 - Basel Committee on Banking Supervision (2019). *Minimum capital requirements for market risk*. Bank for International Settlements.
 - CNBV. *Disposiciones de Carácter General en Materia de Administración de Riesgos* (Mexican regulations).
 - Banco de México. *Circular Única de Bancos*.
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

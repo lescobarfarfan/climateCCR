@@ -1386,3 +1386,8 @@ ICAP = Capital Neto / Activos Ponderados Sujetos a Riesgo Totales
 *Documento elaborado con información oficial de Banco de México, la Secretaría de Hacienda y Crédito Público, y la Comisión Nacional Bancaria y de Valores.*
 
 *Última actualización: Enero 2026*
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

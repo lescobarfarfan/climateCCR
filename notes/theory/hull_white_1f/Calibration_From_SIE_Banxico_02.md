@@ -584,3 +584,8 @@ The structural insight is: **the data gives you on-the-run prices at drifting ma
 ---
 
 *End of document.*
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

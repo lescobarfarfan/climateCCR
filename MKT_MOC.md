@@ -30,17 +30,25 @@ in on (`INT-12`).
 - `OQ-MKT-07` weather-deriv scope · `OQ-MKT-08` R1–R4 bands · `OQ-MKT-09` municipal hazard source.
 - `OQ-MKT-10` `industria`↔GICS/SCIAN · `OQ-MKT-11` credit overlay in scope?
 
-## Notes (import under `notes/`)
-- Theory (`notes/theory/`): [[Hull_White_Comprehensive]], [[HWModel_Theory]],
-  [[Calibration_From_SIE_Banxico_01]], [[Calibration_From_SIE_Banxico_02]], [[Vasicek_Calibracion_Mex]],
-  [[ChangeOfMeasureInFinance]], [[instrumentos_deuda_mexico]], [[mexican_yield_curve_methodology]],
-  [[how_to_use_NGFS_PolicyRate]], [[dashboard_riesgo_excel]], [[referencias_weather_derivatives]]
-  (+ the `monte_carlo_*`, `ngfs_*`, and `climate_*` notes).
+## Notes (under `notes/`)
+- Theory — Hull–White (`notes/theory/hull_white_1f/`): [[Hull_White_Comprehensive]], [[HWModel_Theory]],
+  [[Hull-White-1F-calibration]], [[Hull‑White_theta_Intuition]], [[market_calibration]],
+  [[Calibration_From_SIE_Banxico_01]], [[Calibration_From_SIE_Banxico_02]], [[all_info]].
+- Theory — rates / curve / measure (`notes/theory/`): [[Vasicek_Calibracion_Mex]], [[ChangeOfMeasureInFinance]],
+  [[instrumentos_deuda_mexico]], [[mexican_yield_curve_methodology]].
+- Theory — Monte Carlo (`notes/theory/`): [[monte_carlo_risk_management_framework]], [[monte_carlo_climate_risk_applications]].
+- Theory — scenarios / credit (`notes/theory/`): [[ngfs_short_term_scenarios_summary]], [[how_to_use_NGFS_PolicyRate]],
+  [[climate_exposed_countries]], [[climate_risk_data_requirements_bonds]], [[climate_risk_credit_methodology_references]],
+  [[referencias_weather_derivatives]].
+- Pipelines (`notes/pipelines/`): [[dashboard_riesgo_excel]].
 - Sources (`notes/sources/`): [[mexican_data_sources]].
 - Writeup (`literature/`): [[climate_integrated_investment_analysis]], [[refs]].
 
 ## Wires to the other arms
 - Supplies **diffusion calibration** (HW/GBM) to [[CCR_MOC]] via `DC-CCR-CAL-1`.
 - Its **FX series** can close the HAZ `MONEDA` gap (`DC-XWALK-5`); shares hazard-source questions with [[HAZ_MOC]].
+
+## Related
+Arms: [[CCR_MOC]] · [[HAZ_MOC]] · Canon: [[DECISIONS]] · [[DATA_CONTRACTS]] · [[OPEN_QUESTIONS]] · [[GLOSSARY]] · Home: [[_INDEX]]
 
 #arm/mkt #type/workflow

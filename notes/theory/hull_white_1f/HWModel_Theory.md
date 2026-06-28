@@ -390,3 +390,8 @@ Mexican market-specific risk analysis application.
 Example usage and demonstration.
 
 Each script is fully documented and includes error handling, type hints, and examples.
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

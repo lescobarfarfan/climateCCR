@@ -71,3 +71,8 @@ infra tests and the PIMPA regression test are green; a clean initial git history
 - Where the PIMPA prototype CSVs should live (test fixtures vs. `data/`).
 - Whether `processes`/`simulation` get promoted now or at the start of Phase 2 (recommended: Phase 2,
   to keep the Phase-0 move purely mechanical).
+
+## Related
+[[CCR_MOC]] · Home: [[_INDEX]]
+
+#arm/ccr #type/plan

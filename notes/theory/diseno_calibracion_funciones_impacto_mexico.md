@@ -422,3 +422,8 @@ Acompañado de:
 > (edición de Hazus; revista exacta de Wagenaar et al. 2018) y la cita de Sauer et al.
 > (2021) debe confirmarse contra el DOI antes de usarse en el manuscrito de tesis —
 > consistente con el estándar del proyecto de verificación estricta de fuentes.
+
+## Related
+[[HAZ_MOC]] · Home: [[_INDEX]]
+
+#arm/haz #type/theory

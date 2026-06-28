@@ -6,7 +6,7 @@ integration questions `OQ-INT-NN` come first because they gate the others.
 
 ## Table of contents
 - **Integration (decide first)** — `OQ-INT-01`–`OQ-INT-08`
-- **CCR arm** — `OQ-CCR-01`–`OQ-CCR-06`
+- **CCR arm** — `OQ-CCR-02`–`OQ-CCR-08`
 - **MKT arm** — `OQ-MKT-01`–`OQ-MKT-11`
 - **HAZ arm** — `OQ-HAZ-01`–`OQ-HAZ-14`
 
@@ -25,13 +25,13 @@ integration questions `OQ-INT-NN` come first because they gate the others.
 
 ## CCR arm
 
-- `OQ-CCR-01` **Public API name for the risk evaluator.** Keep PIMPA's `CCR_Valuation_Session` or modernise to `CCRValuationSession`? Pick before the migration commit hardens imports.
 - `OQ-CCR-02` **Tidy time-series schema, final form.** Ratify the `PROPOSED` columns in `DATA_CONTRACTS.md` `DC-CONV-9`/`DC-CCR-DATA-1`; decide whether a wide convenience view is needed and how curve tenors are encoded.
 - `OQ-CCR-03` **First climate-scenario connector** to ship end-to-end — NGFS, the IIASA database, IPCC-SSP, or Copernicus C3S. Only one is needed to clear the Phase-1 DoD. (Couples with `OQ-INT-03`.)
 - `OQ-CCR-04` **Where EPE / CVA live** — inside the existing evaluator, or a thin new `risk/ccr/xva.py`? (← `CCR-RISK-01`)
 - `OQ-CCR-05` **RQ1 design details:** climate-event labelling / narrative signal (event-window definition, scenario tags); the leakage-aware walk-forward CV split; and a **pre-registered go/no-go criterion** for Path A vs Path B (decide *before* seeing results to avoid hindsight bias). Most open-ended; gates RQ1.
-- `OQ-CCR-06` **Where the PIMPA prototype CSVs live** — `tests/` fixtures (favoured — ideal regression fixture) or under `data/`? Affects the regression test and `.gitignore`. Also: second code-review pass on the IRS pricer / `Curve`/`Surface`/`CorrelationMatrix` internals before relying on them.
+- `OQ-CCR-06` ✅ **Location resolved** — the PIMPA prototype CSVs live in `tests/fixtures/pimpa/` (the regression fixture; `CCR-MIG-05`, `DC-CCR-RISK-2`). **Still open:** a second code-review pass on the IRS pricer / `Curve` / `Surface` / `CorrelationMatrix` internals before relying on them — the migration preserved behaviour but did not audit their correctness (the `Surface` interpolator was just swapped off `interp2d`, `CCR-MIG-04`).
 - `OQ-CCR-07` **Where the randomized signatures fit, now that HAZ carries the empirical climate→price link (`INT-11`).** Options: (a) a **complementary detection/validation** method — use signatures to test whether a climate signal is present in price series independently of the hazard panels; (b) a **robustness probe** on the jump channel; (c) repositioned to future work. Decide before investing in fixing/extending the reservoir beyond the `CODE_REVIEW` repairs. Couples with `OQ-INT-02/08`.
+- `OQ-CCR-08` **Should PIMPA's PE floor at 0?** The engine computes PE as a **raw** quantile of portfolio value, so a net-liability (short) book yields a **negative PE99** with EE=0 (observed: fixture counterparty 26). Standard CCR PFE is `quantile(max(MtM, 0)) ≥ 0`. Confirm whether this is an intended PIMPA convention or a defect to fix; affects the headline CCR metric (couples with `OQ-INT-02`). Captured as-is in the golden baseline (`CCR-MIG-05`, `DC-CCR-RISK-2`).
 
 ## MKT arm
 
@@ -72,6 +72,7 @@ integration questions `OQ-INT-NN` come first because they gate the others.
 - ~~How the HAZ panels reach the financial engine~~ → the **climate jump channel** (`INT-10`, `DC-CCR-SIM-2`, `DC-XWALK-4`): `λ` + impact → jump-diffusion. Residual estimation detail is `OQ-INT-07`.
 - ~~Path A vs Path B framing~~ → subsumed by `INT-12`: HAZ→jump = concrete Path A; fixed parameter shift = Path B; both via one injection hook. Signatures' role → `OQ-CCR-07`.
 - ~~Package name should change~~ → **keep `climateCCR`** for the integrated project (`INT-02`); the broad rename to `climrisk` was rejected (name already taken by a UNAM package).
+- ~~CCR risk-evaluator API name~~ → keep `CCR_Valuation_Session` verbatim, behaviour-unchanged migration (`CCR-MIG-05`, resolves `OQ-CCR-01`).
 - ~~Meaning of `NU` (CNSF)~~ → unlocated → `No Disponible` (`HAZ-CLEAN-CNSF-01`).
 - ~~CENAPRED vs CLIMADA output structures differ~~ → they do; processor emits both A + B (`HAZ-CENAPRED-02`).
 - ~~Pressure-governed Holland-profile bug~~ → anchor to Vmax (`HAZ-IBTRACS-04`).

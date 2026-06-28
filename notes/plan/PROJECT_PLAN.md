@@ -126,3 +126,8 @@ well inside ~34 weeks, leaving comfortable slack for write-up and the defense.
 2. I scaffold Phase 0.1–0.2 (`pyproject.toml`, `infra`, repo skeleton) so you can `git init` and commit.
 3. Pick the **first market/universe** for the data layer (BMV subset, or a broader proxy) so calibration
    has a concrete target.
+
+## Related
+[[CCR_MOC]] · Home: [[_INDEX]]
+
+#arm/ccr #type/plan

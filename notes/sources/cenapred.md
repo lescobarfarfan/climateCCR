@@ -159,3 +159,8 @@ El `.xlsx` resultante es una **vista desechable**: no entra a git ni al pipeline
 - **CEPAL (2014).** *Handbook for Disaster Assessment* (metodología DaLA). — base metodológica declarada por CENAPRED. *[confirmar edición exacta citada por CENAPRED]*
 - **Eberenz, S., S. Lüthi & D. N. Bresch (2021).** Regional tropical cyclone impact functions for globally consistent risk assessments. *NHESS* 21, 393–415. — esquema de calibración por evento contra daños reportados que consume la estructura B (DOI 10.5194/nhess-21-393-2021).
 - **Aznar-Siguan, G. & D. N. Bresch (2019).** CLIMADA v1. *GMD* 12, 3085–3097. — plataforma destino de la estructura B.
+
+## Related
+[[HAZ_MOC]] · Home: [[_INDEX]]
+
+#arm/haz #type/source

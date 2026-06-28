@@ -185,3 +185,8 @@ Con eso puedo diseñar la extensión del pipeline para Automóviles:
 | `mdb-export base.mdb Tabla > Tabla.csv` | exportar tabla a CSV |
 | `mdb-export -I sqlite base.mdb Tabla` | exportar como INSERT (SQLite) |
 | `export MDB_JET3_CHARSET=cp1252` | arreglar acentos en archivos Access viejos |
+
+## Related
+[[HAZ_MOC]] · Home: [[_INDEX]]
+
+#arm/haz #type/pipeline

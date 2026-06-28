@@ -734,3 +734,8 @@ Phase 3: Advanced (Months 7-12)
 
 *Document prepared: January 2026*
 *Focus: Data requirements for climate risk assessment of debt instruments*
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

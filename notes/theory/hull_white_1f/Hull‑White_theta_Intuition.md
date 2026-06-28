@@ -169,3 +169,8 @@ This approach, detailed in Yasuoka (2018), allows you to combine historically re
 7. **Basel Committee on Banking Supervision (2019).** *Minimum capital requirements for market risk*. Bank for International Settlements.
 
 8. **Jorion, P. (2006).** *Value at Risk: The New Benchmark for Managing Financial Risk* (3rd ed.). McGraw‑Hill.
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

@@ -368,3 +368,5 @@ modelling, so `[eng]` either way.)
 ## Related
 Pairs with: `WORKFLOW.md` (the ritual these steps feed) · `00_README_CONTEXT.md` (§4 maintenance
 rules) · `RETURN_TO_CLAUDE_AI.md` (the rollback path). Canon home: `_INDEX`.
+
+#arm/int #type/workflow

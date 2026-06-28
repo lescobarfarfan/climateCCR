@@ -179,3 +179,8 @@ Verificadas en web salvo donde se indica *[clásico — confirmar DOI]*.
 - **Pielke, R. A. Jr. & C. W. Landsea (1998).** Normalized hurricane damages in the United States: 1925–95. *Weather and Forecasting* 13, 621–631. — daño normalizado por *landfall*. *[clásico — confirmar DOI]*
 - **Nordhaus, W. D. (2010).** The economics of hurricanes and implications of global warming. *Climate Change Economics* 1(1), 1–20. — el daño monetario escala con una potencia alta del viento. *[clásico — confirmar DOI]*
 - **Simpson, R. H. (1974).** The hurricane disaster-potential scale. *Weatherwise* 27, 169–186. — escala Saffir-Simpson. *[clásico — confirmar DOI]*
+
+## Related
+[[HAZ_MOC]] · Home: [[_INDEX]]
+
+#arm/haz #type/source
