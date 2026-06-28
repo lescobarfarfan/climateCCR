@@ -170,6 +170,12 @@ is:
 - **Model per task.** Run the main session on an Opus-tier model for integration/migration reasoning;
   delegate fast lookups to a Haiku-tier subagent (`.claude/agents/`). Switching the main model
   mid-session reprocesses the conversation, so prefer a fresh session over a switch in long chats.
+- **Effort per task.** Effort — the adaptive-reasoning / thinking-budget dial, a *separate* knob from
+  the model — is set with `/effort`. Default the project to `high` (or `xhigh`) via `effortLevel` in
+  `.claude/settings.json`; bump to `max` / `ultracode` per-session for hard reasoning (the `INT-10`
+  jump-diffusion wiring, the randomized-signature solver, `calibration` design); drop to `low` /
+  `medium` for mechanical migration edits. Thinking tokens bill like output tokens, so escalate where
+  being wrong is costly, not by default. (`GEN-20`)
 - **Commit discipline unchanged** (§5): small commits, behaviour separated from packaging/moves
   (`GEN-09`); `data/`/`results/` git-ignored, `context/`/`notes/`/`literature/*.md` tracked.
 
