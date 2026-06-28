@@ -30,7 +30,10 @@ J. Content-word retrieval index
 - **`src/` layout / editable install** — packaging pattern (`pip install -e .`) that makes imports work from any directory.
 - **ProjectPaths** — the `infra` resolver anchoring paths to the repo root (replaces CWD-relative paths).
 - **DoD** — Definition of Done.
-- **Mermaid** — text-based diagram language (fenced ` ```mermaid ` blocks); the canon's standard for architecture/flow diagrams (`GEN-14`), replacing fragile hand-aligned ASCII. Renders natively in Obsidian and on GitHub; in Neovim via `diagram.nvim` + `image.nvim` (renderer `mmdc`) or in the browser via `markdown-preview.nvim`. Directory trees stay as plain code blocks.
+- **Claude Code** — Anthropic's agentic CLI/IDE coding tool; the project's primary working interface (`GEN-15`). Scoped to the directory it launches in; the context canon serves as its memory.
+- **git worktree** — a second working-tree checkout of one repo on a separate branch; used for parallel Claude Code agents, created **outside** the Obsidian-indexed vault to avoid duplicate-note / wikilink clashes (`GEN-16`).
+- **`additionalDirectories`** — the Claude Code setting (also `--add-dir` / `/add-dir`) that grants read/write access to one extra path (e.g. an external data drive) without widening filesystem scope (`GEN-15`).
+- **`CLAUDE.md`** — the repo-root memory file Claude Code loads each session; points at the canon and restates load-bearing rules. (Distinct from `00_README_CONTEXT.md`, the human entry point.)
 
 ## C. Stochastic models & math
 - **BM / GBM** — Brownian motion / geometric Brownian motion (GBM supports constant **or** term-structure volatility here).
@@ -144,7 +147,6 @@ J. Content-word retrieval index
 | The CDMX discretization artifact | **CDMX wind-field panel 0.5 degree cell discretization** |
 | The CLIMADA calibration design | **subnational impact function v_thresh v_half LitPop PyMC partial pooling** |
 | The compound-Poisson/Cox plan | **compound Poisson Cox doubly stochastic aggregated tail CENAPRED** |
-| The diagram-rendering convention | **mermaid diagram convention ASCII box-drawing ambiguous width GEN-14** |
 
 
 ---

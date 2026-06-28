@@ -149,6 +149,30 @@ When opening a fresh working chat, paste or point Claude at the canon and state 
 This puts the decisions, contracts, and open items in front of the model up front, and sets the
 expectation of the end-of-chat digest so nothing is lost.
 
+## 9. Working in Claude Code (operating mode)
+
+Claude Code is the primary interface (`GEN-15`); claude.ai is the rollback path
+(`/handoff-to-claude-ai`). Setup steps live in `CLAUDE_CODE_ONBOARDING.md`; the **durable discipline**
+is:
+
+- **Launch at the repo root** so both `src/climateCCR/…` and `context/` are in scope. Keep a root
+  `CLAUDE.md` that points at the canon and restates the load-bearing rules (`GEN-01/07/09`,
+  `INT-01/07`); it is loaded automatically each session.
+- **The canon is the memory.** With project chat-search no longer the retrieval path, `context/`
+  *is* the retrieval mechanism — so the end-of-chat ritual (§2) matters more, not less. Open a working
+  session with the §8 warm-start (have Claude read the relevant canon), close it with the digest
+  folded back in.
+- **Single writer for the canon.** Edit `context/` from **one** Claude Code session at a time
+  (`GEN-16`). Parallel agents run in **git worktrees created outside the Obsidian-indexed folder**,
+  reserved for code-heavy arm work; never let two checkouts edit the same note.
+- **External data** goes to a drive exposed via `additionalDirectories`, with output roots resolved
+  through `infra.ProjectPaths`/`configs` (`GEN-08/10/15`); the repo stays on the primary disk.
+- **Model per task.** Run the main session on an Opus-tier model for integration/migration reasoning;
+  delegate fast lookups to a Haiku-tier subagent (`.claude/agents/`). Switching the main model
+  mid-session reprocesses the conversation, so prefer a fresh session over a switch in long chats.
+- **Commit discipline unchanged** (§5): small commits, behaviour separated from packaging/moves
+  (`GEN-09`); `data/`/`results/` git-ignored, `context/`/`notes/`/`literature/*.md` tracked.
+
 
 ---
 
