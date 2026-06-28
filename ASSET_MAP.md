@@ -144,7 +144,7 @@ changes** (`GEN-09`). Spanish filenames are kept **verbatim** (they are real art
 
 1. **Scaffold** ✅ DONE — CCR scaffold + `infra` carried over (name `climateCCR`); `infra` tests green.
 2. **Canon** ✅ DONE — `context/` + root hubs/vault in place; vault hygiene pass 2026-06-28 (broken links, orphans, footers/tags, literature renamed to `Author_Year_ShortTitle`, cruft dropped).
-3. **PIMPA** 🟡 NEXT — `MOVE+FIX` behaviour-unchanged, then decompose (see the PIMPA block in §1); lock the EE/PE regression fixture first. *(separate commits)*
+3. **PIMPA** 🟡 IN PROGRESS — Step 1 ✅ (wholesale move into `risk.ccr` + minimal fixes; golden EE/PE baseline locked — `CCR-MIG-04/05`, `DC-CCR-RISK-2`). Step 2 ⬜ decompose into `processes.diffusions` / `simulation` / `data.market` / `calibration.financial` + shared `climateCCR/utils/` (`calendar_utils`); then YAML config (`GEN-08`). *(separate commits)*
 4. **HAZ pipelines** 🟡 PARTIAL — scripts are on disk under `data/hazard_mx/`; remaining: wire as a package (`__init__.py`, editable import) and replace the CENAPRED `sys.path`/stub import of the shared entity cleaner.
 5. **Signatures** ⬜ PENDING — `MOVE+FIX` per `CODE_REVIEW`; seed the reservoir; fix the solver contract.
 6. **Calibration** ⬜ PENDING — `calibration/financial` (emit `'direct_input'`; `MarketDataBuilder` lands here) then `calibration/impact` (CLIMADA).
