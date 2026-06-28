@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pytest *)",
+      "Bash(python -m pytest *)",
+      "Bash(pre-commit run *)",
+      "Bash(ruff check *)",
+      "Bash(ruff format *)",
+      "Bash(black *)",
+      "Bash(pip install -e .*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Edit(src/**)",
+      "Edit(tests/**)",
+      "Edit(notes/**)",
+      "Edit(configs/**)"
+    ],
+    "ask": [
+      "Edit(context/**)",
+      "Bash(Rscript *)",
+      "Bash(* --forzar*)",
+      "Bash(git push *)"
+    ],
+    "deny": [
+      "Edit(data/**)",
+      "Edit(results/**)",
+      "Bash(git reset --hard *)"
+    ]
+  }
+}

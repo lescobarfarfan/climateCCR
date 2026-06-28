@@ -2,8 +2,10 @@
 
 A companion reference (like `RETURN_TO_CLAUDE_AI.md` and `mkdp-tweaks.md`), **not** part of the
 seven-file canon. Suggested home: repo root, or `notes/setup/`. Verified against the official Claude
-Code docs (links inline) on 2026-06-27; behaviour and version-gated features change, so re-check the
-docs map at <https://docs.claude.com/en/docs/claude-code/overview> when something looks off.
+Code docs (links inline) on 2026-06-27 — including the settings-precedence and permissions pages
+(<https://code.claude.com/docs/en/settings>, <https://code.claude.com/docs/en/permissions>);
+behaviour and version-gated features change, so re-check the docs map at
+<https://docs.claude.com/en/docs/claude-code/overview> when something looks off.
 
 ---
 
@@ -12,7 +14,7 @@ docs map at <https://docs.claude.com/en/docs/claude-code/overview> when somethin
 | # | Question | Short answer |
 |---|---|---|
 | 1 | System-wide file access? | **No.** Scoped to the directory you launch it in (cwd), plus `CLAUDE.md` files found walking up the parent chain. First launch per folder asks "do you trust the files here?". |
-| 2 | Write to an external HDD without opening up everything? | **Yes.** Add *exactly that one path* with `--add-dir` / `/add-dir` or `additionalDirectories` in settings. It grants access to that directory only, nothing else. |
+| 2 | Write to an external HDD without opening up everything? | **Yes.** Add *exactly that one path* with `--add-dir` / `/add-dir`, or pin it in `.claude/settings.local.json` via `additionalDirectories`. Grants that directory only — nothing else. (Use the **local** file, not the committed one — see §2.3.) |
 | 3 | Can it do the climateCCR rewiring from the context files? | **Yes**, and it's a good fit — point `CLAUDE.md` at the canon, work in Plan mode, and stage the migration the way `GEN-09` already prescribes. |
 | 4 | Pick a model per session? Different models per task in one session? | **Per session: yes** (`--model` at launch, `/model` to switch live). **Different models at once in one session: via subagents** — the main thread is one model at a time, but subagents can each run their own (e.g. Opus main + Haiku lookups). |
 | 5 | Multiple sessions in one folder? | **Possible but risky** if they edit concurrently. The supported answer is **git worktrees** (`claude -w`) — one isolated checkout per agent. With your Obsidian vault there's a wrinkle worth reading (§5). |
@@ -30,23 +32,96 @@ The first time you run `claude` in a given folder it records a trust decision in
 later launches in that same folder it won't re-prompt. (If you ever need to revoke trust, remove that
 folder's entry from `~/.claude.json`.)
 
-On top of the directory scope sits a **tiered permission system** you manage with `/permissions`:
-
-- **allow** rules — run the named tool with no prompt
-- **ask** rules — always prompt for confirmation
-- **deny** rules — block outright; deny wins over allow, and is evaluated even past hooks
-
-Rules live in `settings.json` and can be committed to the repo so the whole project shares them.
-There are also **permission modes** (e.g. a `bypassPermissions` mode that skips prompts) — useful
-only inside disposable containers/VMs, never on your real machine with an HDD mounted.
+On top of the directory scope sits a **tiered permission system** (allow / ask / deny) that lives in
+your `settings.json` files and that you can inspect with the `/permissions` command. The three
+settings files are:
 
 ```text
-~/.claude/settings.json        # your personal, global defaults
-<repo>/.claude/settings.json   # project rules (commit this)
+~/.claude/settings.json              # your personal, global defaults
+<repo>/.claude/settings.json         # project rules (commit this)
 <repo>/.claude/settings.local.json   # your machine-only overrides (git-ignore)
 ```
 
-## 2. Writing data outside the repo (e.g. an external HDD)
+What belongs in each, how they merge, and how the permission rules work is detailed in §2.
+
+## 2. Settings files, permissions, and data outside the repo
+
+### 2.1 The three settings files — what goes where
+
+Claude Code merges several `settings.json` layers. Precedence, highest to lowest:
+**managed** (IT-deployed `managed-settings.json`; not relevant to a solo thesis) >
+**command-line args** > **`.claude/settings.local.json`** (machine-local, git-ignored) >
+**`.claude/settings.json`** (project, committed) > **`~/.claude/settings.json`** (user/global).
+Arrays (`allow`/`ask`/`deny`/`additionalDirectories`) **concatenate** across layers; scalar keys are
+overridden by the higher-precedence layer; and a **deny at any layer beats an allow at any other**.
+Because arrays concatenate, you never repeat a rule across files — but it is safe to duplicate a
+critical `deny` for belt-and-suspenders.
+
+The rule of thumb for which file to write to:
+
+| File | Scope | Committed? | Put here |
+|---|---|---|---|
+| `~/.claude/settings.json` | every repo on this machine | n/a | personal defaults (model, subagent model) + your universal safety net: secret-file and destructive-command **deny** rules |
+| `<repo>/.claude/settings.json` | this repo, anywhere/anyone | **yes** | project allow/ask/deny rules that should travel with the repo (and across the `/handoff-to-claude-ai` bundle) |
+| `<repo>/.claude/settings.local.json` | this repo, this machine | no (git-ignored) | machine-specific paths and personal overrides — e.g. the HDD `additionalDirectories` (§2.3) |
+
+One footgun: `~/.claude/settings.json` (settings) is **not** `~/.claude.json` (a separate state file
+holding theme, OAuth, and user/local-scope MCP servers). Putting settings keys into `~/.claude.json`
+triggers a schema error and is silently ignored. Add `"$schema":
+"https://json.schemastore.org/claude-code-settings.json"` at the top of each settings file for
+editor autocomplete and inline validation.
+
+### 2.2 Permissions: `/permissions` is a command, not a folder
+
+There is no `/permissions` directory and no per-rule file. `/permissions` is an **interactive UI
+inside the Claude Code REPL** that lists every permission rule and shows which `settings.json` each
+one came from. The three rule kinds are just arrays inside one `permissions` object:
+
+```json
+{
+  "permissions": {
+    "allow": [],
+    "ask":   [],
+    "deny":  []
+  }
+}
+```
+
+- **allow** — run the named tool with no prompt
+- **ask** — always prompt for confirmation
+- **deny** — block outright
+
+Rules evaluate **deny → ask → allow**; the first match wins, and a broad deny (e.g. `Bash(git push
+*)`) cannot carry a narrower allow exception. Read-only commands (`ls`, `cat`, `grep`, `find`, `cd`
+inside the working dir, read-only `git` forms) already run without a prompt, so your allow lists only
+need the things that **write or execute**. You edit these arrays by hand, or let the `/permissions`
+UI (or a "Yes, don't ask again" prompt) write them back to whichever file you point it at.
+
+Rule syntax is `Tool` or `Tool(specifier)`: `Bash(...)` uses shell-glob `*` (the space in `Bash(ls
+*)` enforces a word boundary, so it matches `ls -la` but not `lsof`); `Read`/`Edit`/`Write(...)` use
+gitignore-style path patterns; `WebFetch(domain:...)`; `mcp__server__tool`; `Agent(Name)`. Note that
+`Read`/`Edit` deny rules cover Claude's file tools and recognized file commands (`cat`, `sed`, …) but
+**do not** stop a Python or R script from opening a path itself — for OS-level enforcement you'd need
+the sandbox.
+
+Two project-specific conventions are baked into the committed `settings.json`:
+
+- `Edit(context/**)` sits on **ask**, so every canon edit is a deliberate checkpoint — the "promote,
+  don't duplicate / one source of truth" rule (`WORKFLOW.md` §2, `00_README_CONTEXT.md` §4a). Because
+  `ask` beats `allow`, this holds even if a broader allow is added later.
+- `Edit(data/**)` and `Edit(results/**)` are **denied**, so Claude never hand-edits artifacts that
+  must come from deterministic reconstructor scripts (`GEN-04`). Pipeline scripts still produce them
+  through Bash (`python …`), which `Edit` deny rules don't touch — exactly the intended split.
+- `Bash(* --forzar*)` is on **ask**, turning the idempotency override (`GEN-05`) into a confirmation
+  point; `Bash(Rscript *)` (and any Stan-via-`Rscript` step) is gated the same way since it executes
+  arbitrary code.
+
+> Formatting hooks: a `PostToolUse` `ruff format` hook is *not* configured, deliberately — the
+> `pre-commit` gate (`GEN-11`) already formats at commit time, and a per-edit hook would be redundant
+> and could fight it. If you ever want one, it goes under a `hooks` key in the committed
+> `settings.json`.
+
+### 2.3 Writing data outside the repo (e.g. an external HDD)
 
 This is exactly what "additional directories" are for, and it does **not** open up your whole disk —
 you add precisely the path(s) you name.
@@ -56,14 +131,18 @@ Three ways, in increasing permanence:
 1. **One session, ad hoc:** start in the repo, then run
    `/add-dir /Volumes/ClimateHDD/climateCCR_data` (or run it at launch:
    `claude --add-dir /Volumes/ClimateHDD/climateCCR_data`).
-2. **Always-on for this project:** add it to `additionalDirectories` in the project's
-   `settings.json` so every launch includes it.
+2. **Always-on for this machine:** pin it in `additionalDirectories` in
+   **`.claude/settings.local.json`** (git-ignored) so every launch includes it. Use the **local**
+   file, not the committed `settings.json`: the mount path (`/Volumes/ClimateHDD/…`) is machine- and
+   OS-specific, so committing it would ship dead config to any other checkout and into the
+   `/handoff-to-claude-ai` bundle. *(This corrects an earlier draft of this doc, which placed it in
+   the committed `settings.json`.)*
 3. **Relocate the session entirely:** `/cd <path>` moves the *primary* working directory (loads that
    folder's `CLAUDE.md`, and `--resume` finds the session there). Requires Claude Code ≥ v2.1.169.
    This is heavier than you need for "also write data over there" — prefer `--add-dir` for the HDD.
 
 ```jsonc
-// <repo>/.claude/settings.json
+// <repo>/.claude/settings.local.json   (git-ignored: machine-specific path)
 {
   "permissions": {
     "additionalDirectories": ["/Volumes/ClimateHDD/climateCCR_data"]
@@ -130,7 +209,8 @@ happen — then your existing `/handoff-to-claude-ai` bundle carries them across
 
 **Per session:** pick at launch with `--model` (e.g. `claude --model opus`) or switch live with the
 `/model` picker — it takes effect immediately, no restart. `/status` shows the active model. The
-default depends on your plan. See
+default depends on your plan, and is also settable as the `model` key in
+`~/.claude/settings.json` (the global file sets `opus` here). See
 <https://support.claude.com/en/articles/11940350-claude-code-model-configuration> and
 <https://code.claude.com/docs/en/model-config>.
 
@@ -143,9 +223,10 @@ model at a time**, but you have two levers:
 - **Subagents, each on their own model** — this is the real answer to "Opus for hard stuff, Haiku for
   quick lookups in one session." A subagent's model is set in its definition frontmatter
   (`model: haiku`), via the Task tool's `model` parameter, or the `/agents` picker; you can also set
-  `CLAUDE_CODE_SUBAGENT_MODEL` as a global default. The built-in **Explore** agent already runs on a
-  Haiku-tier model for fast read-only searches, while your main thread stays on Opus. Each subagent
-  has its own context window, so noisy exploration doesn't burn your main context.
+  `CLAUDE_CODE_SUBAGENT_MODEL` as a global default (the global `settings.json` sets it to `haiku`).
+  The built-in **Explore** agent already runs on a Haiku-tier model for fast read-only searches,
+  while your main thread stays on Opus. Each subagent has its own context window, so noisy
+  exploration doesn't burn your main context.
 
 A sensible default for this project: **main session on an Opus-tier model** for the cross-arm
 integration reasoning (jump-diffusion wiring, `INT-10`/`OQ-INT-*`), with **Haiku-tier subagents** for
@@ -221,12 +302,15 @@ canon is in `context/`.
 3. **Add the `CLAUDE.md` brief** at the repo root (template in §3). Commit it.
 
 4. **Add the HDD data path** if you're using one — `/add-dir /Volumes/ClimateHDD/climateCCR_data`
-   for now, then promote it to `additionalDirectories` in `.claude/settings.json` (§2) once you're
-   happy.
+   for now, then promote it to `additionalDirectories` in **`.claude/settings.local.json`** (§2.3)
+   once you're happy.
 
-5. **Set up permissions you'll repeat often.** Run `/permissions` and allow the safe, high-frequency
-   tools (reads, ripgrep/grep, `git status`/`diff`); keep destructive bash and writes on **ask** at
-   first. Commit `.claude/settings.json`; git-ignore `.claude/settings.local.json`.
+5. **Drop in the three settings files.** Personal/global defaults + safety-net denies go in
+   `~/.claude/settings.json`; the committed project allow/ask/deny rules go in
+   `<repo>/.claude/settings.json`; machine-local overrides (the HDD path) go in
+   `<repo>/.claude/settings.local.json` (§2.1/§2.2). Commit the first two-relevant ones — i.e. commit
+   `.claude/settings.json`; git-ignore `.claude/settings.local.json` (Claude Code auto-adds it to
+   `.gitignore`). Then run `/permissions` to review what loaded and from where.
 
 6. **Point it at the canon explicitly** for the first task:
    > Read `context/00_README_CONTEXT.md`, `context/DECISIONS.md`, and `context/DATA_CONTRACTS.md`.
@@ -258,11 +342,22 @@ If you want these recorded per the ritual, here are draft lines — verify and d
 ```text
 Decided:
 - GEN-15 [2026-06-27] Bulk data writes target an external HDD path exposed to Claude Code via
-  `additionalDirectories`; repo stays on SSD, output roots set in configs via ProjectPaths
-  (GEN-08/GEN-10). — [eng]
+  `additionalDirectories` in git-ignored `.claude/settings.local.json` (machine-specific mount path,
+  not committed); repo stays on SSD, output roots set in configs via ProjectPaths (GEN-08/GEN-10).
+  — [eng]
 - GEN-16 [2026-06-27] Parallel Claude Code work uses git worktrees created OUTSIDE the Obsidian-
   indexed folder; canon (`context/`) edits are restricted to a single session on the main checkout
   to preserve one source of truth. — [eng]
+- GEN-17 [2026-06-27] Claude Code settings layering: model + subagent-model defaults and secret-file
+  / destructive-command `deny` rules in global `~/.claude/settings.json`; project allow/ask/deny in
+  committed `.claude/settings.json` — with `Edit(context/**)` on `ask` (canon checkpoint) and
+  `Edit(data/**)` / `Edit(results/**)` denied (artifacts come from reconstructors, GEN-04);
+  machine-specific `additionalDirectories` in git-ignored `.claude/settings.local.json`. Rule
+  evaluation is deny → ask → allow; arrays merge across layers; deny anywhere beats allow anywhere.
+  — [eng]
+Changed:
+- CLAUDE_CODE_ONBOARDING §2: `additionalDirectories` moves from committed `.claude/settings.json` to
+  `.claude/settings.local.json` (machine-specific path) — was: project settings.json.
 ```
 
 (Whether these rise to canon decisions or stay in this setup doc is your call — they're tooling, not

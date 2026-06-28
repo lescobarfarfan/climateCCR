@@ -31,3 +31,6 @@ results/*
 .DS_Store
 
 # NOTE: notes/ is intentionally TRACKED (working notes, code review, plan).
+
+# claude settings local
+.claude/settings.local.json
