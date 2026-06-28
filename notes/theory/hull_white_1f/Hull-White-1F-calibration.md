@@ -469,3 +469,8 @@ TIIE rates (28, 91, 182 days) are **term rates**, not instantaneous. To use them
 31. CNBV. *Disposiciones de Carácter General en Materia de Administración de Riesgos*.
 
 ---
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

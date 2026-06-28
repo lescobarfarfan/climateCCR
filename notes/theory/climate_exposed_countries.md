@@ -75,3 +75,8 @@
 ### Additional References
 - ASEAN Climate Risk Studies (various ADB/ASEAN reports): https://asean.org/book/asean-state-of-climate-change-report/
 - Barclays Research on G20 climate vulnerability (search via Barclays Investment Bank): https://www.ib.barclays/insights/
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

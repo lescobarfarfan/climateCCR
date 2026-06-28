@@ -106,3 +106,8 @@
 ---
 
 *Nota: Este documento consolida todas las referencias proporcionadas en las respuestas anteriores. Si se requiere profundizar en algún modelo o autor específico, se puede solicitar información adicional.*
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

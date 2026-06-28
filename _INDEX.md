@@ -31,11 +31,16 @@ is incorporated — applied to Mexico. The integrating mechanism is a **climate-
 - [[README]] — the project map (vision, pipeline diagram, status, roadmap).
 - [[REPO_STRUCTURE]] — recommended repository layout + module wiring.
 - [[ASSET_MAP]] — where every origin note/script lands in the new repo.
+- [[CONSOLIDATION_PLAN]] — uploaded-archive → repo destinations + migration order.
+- [[OBSIDIAN_SETUP]] — vault conventions + link maintenance.
+- [[CLAUDE_CODE_ONBOARDING]] — Claude Code setup steps (`GEN-15`).
 
 ## Literature
 
 - [[refs]] — `literature/refs.bib`, the 47-entry climate-finance bibliography (authoritative for DOIs).
 - [[Compagnoni_2023_RandomizedSignatures]] — the randomized-signature paper (CCR).
+- [[Cuchiero_2022_DiscreteTimeSignatures]] — discrete-time signatures & reservoir computing (CCR).
+- [[Mandel_2025_MappingFinancialRisks]] — mapping global financial risks under climate change (INT).
 
 ---
 

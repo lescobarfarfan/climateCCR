@@ -33,10 +33,13 @@ the intensity `λ` and the per-event **impact/jump-mark** that drive the climate
 ## Notes (import under `notes/`)
 - Theory (`notes/theory/`): [[referencias_riesgo_catastrofico]] (master), [[diseno_calibracion_funciones_impacto_mexico]] (CLIMADA design).
 - Sources (`notes/sources/`): [[cenapred]], [[ibtracs]].
-- Pipelines (`notes/pipelines/`): [[README_scraper_cnsf]], [[README_sequia]], [[DISENO_pipeline_autos_CNSF]], [[Guia_MDB_Automoviles_CNSF]].
+- Pipelines (`notes/pipelines/`): [[README_scraper_cnsf]], [[README_sequia]], [[DISENO_pipeline_autos_CNSF]], [[Guia_MDB_Automoviles_CNSF]], [[shared_entity_cleaner_clasificar_entidad]].
 
 ## Wires to the other arms
 - Sends **`λ` + impact** to [[CCR_MOC]]/`processes.jumps` (`DC-CCR-SIM-2`, `DC-XWALK-4`) — the climate shock.
 - Loss panels → `risk.loss`; shares `clave_mpio` hazard-source questions with [[MKT_MOC]] (`OQ-MKT-09`).
+
+## Related
+Arms: [[CCR_MOC]] · [[MKT_MOC]] · Canon: [[DECISIONS]] · [[DATA_CONTRACTS]] · [[OPEN_QUESTIONS]] · [[GLOSSARY]] · Home: [[_INDEX]]
 
 #arm/haz #type/workflow

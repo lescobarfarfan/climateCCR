@@ -675,3 +675,8 @@ Proposed a "Carbon Default Swap" instrument to disentangle exposure to carbon ri
 
 *Document prepared: January 2026*
 *Based on academic literature, central bank publications, and practitioner research*
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

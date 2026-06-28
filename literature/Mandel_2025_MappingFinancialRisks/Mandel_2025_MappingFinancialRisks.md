@@ -569,3 +569,8 @@ The authors declare no competing interests.
 **Peer review information** *Nature Climate Change* thanks Gregor Semieniuk and the other, anonymous, reviewer(s) for their contribution to the peer review of this work.
 
 **Reprints and permissions information** is available at [www.nature.com/reprints](http://www.nature.com/reprints).
+
+## Related
+Home: [[_INDEX]]
+
+#arm/int #type/source

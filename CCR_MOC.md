@@ -35,9 +35,13 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 
 ## Literature
 - [[Compagnoni_2023_RandomizedSignatures]] — randomized signatures as a reservoir (`CCR-SIG-01`).
+- [[Cuchiero_2022_DiscreteTimeSignatures]] — discrete-time signatures & randomness in reservoir computing (`CCR-SIG-*`).
 
 ## Wires to the other arms
 - Receives the **climate jump** from [[HAZ_MOC]] (`λ` + impact) via `DC-CCR-SIM-2` / `DC-XWALK-4`.
 - Receives **diffusion calibration** (HW/GBM) from [[MKT_MOC]] via `DC-CCR-CAL-1`.
+
+## Related
+Arms: [[MKT_MOC]] · [[HAZ_MOC]] · Canon: [[DECISIONS]] · [[DATA_CONTRACTS]] · [[OPEN_QUESTIONS]] · [[GLOSSARY]] · Home: [[_INDEX]]
 
 #arm/ccr #type/workflow

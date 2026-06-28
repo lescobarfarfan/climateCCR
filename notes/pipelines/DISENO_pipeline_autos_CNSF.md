@@ -187,3 +187,8 @@ a dos: `Marca_desc` (MARCA) y `Marca_tipo_desc` (TIPO).
 Con tus respuestas armo `procesar_autos_cnsf.py` y el enrutamiento en el
 `--modo sync` del scraper. La config de catálogos/uniones ya está lista en
 `catalogos_autos_cnsf.json` (reutilizable para flotillas).
+
+## Related
+[[HAZ_MOC]] · Home: [[_INDEX]]
+
+#arm/haz #type/pipeline

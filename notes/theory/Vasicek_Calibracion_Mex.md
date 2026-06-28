@@ -260,3 +260,8 @@ Plug into MLE optimisation. The optimiser might adjust to $\kappa=0.75$, $\theta
 2. Banco de México. (n.d.). *Sistema de Información Económica (SIE)*. Retrieved from https://www.banxico.org.mx
 
 3. Vasicek, O. (1977). An equilibrium characterization of the term structure. *Journal of Financial Economics*, 5(2), 177–188.
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

@@ -751,3 +751,8 @@ The same framework is consistent with the Basel Committee's *Minimum capital req
 ---
 
 *End of compendium.*
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

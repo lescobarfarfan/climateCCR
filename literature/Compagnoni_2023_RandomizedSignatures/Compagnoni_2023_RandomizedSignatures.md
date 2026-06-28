@@ -288,3 +288,8 @@ $^2$ For the rigorous definition, we refer the reader to, e.g., [28], [29], due 
 $^3$  Indeed, consider d=2:  $S_t^2$  is a  $2\times 2$  matrix with elements  $\int_0^t \left(\int_0^v dX_s^1\right) dX_v^1, \ \int_0^t \left(\int_0^v dX_s^1\right) dX_v^2, \ \int_0^t \left(\int_0^v dX_s^2\right) dX_v^1$  and  $\int_0^t \left(\int_0^v dX_s^2\right) dX_v^2$ . For M=3, the object to compute is instead a  $2\times 2\times 2$  tensor, containing all integrals of the type  $\int_0^t \left(\int_0^w \left(\int_0^v dX_s^{i_1}\right) dX_s^{i_2}\right) dX_w^{i_2}$  for all  $i_1,i_2,i_3\in\{1,2\}$ . Hence, the complexity — as well as the dimensionality of the features — scales exponentially in M.
 
 $^4$ The dynamics or Randomized Signature is intrinsically exponential. This initialization guarantees that the growth does not depend on the number of controls d nor on the number of features k.
+
+## Related
+[[CCR_MOC]] · Home: [[_INDEX]]
+
+#arm/ccr #type/source

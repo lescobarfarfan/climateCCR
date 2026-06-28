@@ -168,3 +168,8 @@ The following references are drawn from the academic literature and standard tex
 8.  **Björk, T. (2019).** *Arbitrage Theory in Continuous Time* (4th ed.). Oxford University Press.
 
 9.  **Karatzas, I., & Shreve, S. E. (1998).** *Methods of Mathematical Finance*. Springer.
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

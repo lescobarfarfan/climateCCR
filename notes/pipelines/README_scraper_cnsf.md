@@ -435,3 +435,8 @@ Notas finales:
   `cnsf.gob.mx`) y la unión multi-año con datos reales. Tras la primera descarga
   real, revisa `_reporte.json` por categoría y pásame cualquier encabezado que
   debió emparejar y no lo hizo.
+
+## Related
+[[HAZ_MOC]] · Home: [[_INDEX]]
+
+#arm/haz #type/pipeline

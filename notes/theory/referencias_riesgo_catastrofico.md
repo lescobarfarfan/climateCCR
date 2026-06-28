@@ -260,3 +260,8 @@ Con resolución anual, dos eventos mayores del mismo peril en un estado caen en 
 - **v0.1:** versión inicial.
 
 *Documento vivo. Pendientes: confirmar ediciones/DOIs de textos canónicos; tipo de cambio (Banxico) para normalizar `MONEDA`; localizar valor exacto que separa SIPAC en autos; cobertura del Global Flood Database. Registrar cambios en git.*
+
+## Related
+[[HAZ_MOC]] · Home: [[_INDEX]]
+
+#arm/haz #type/theory

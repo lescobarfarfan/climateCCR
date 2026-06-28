@@ -26,15 +26,24 @@ changes** (`GEN-09`). Spanish filenames are kept **verbatim** (they are real art
 
 ### PIMPA engine & randomized signature (migrate in)
 
+> **Decomposed, not dumped** (decided 2026-06-28): PIMPA's stochastic subsystem splits into the shared
+> `processes`/`simulation`/`data.market`/`calibration.financial` layers; only the CCR valuation engine
+> stays in `risk.ccr` (`REPO_STRUCTURE` §3, `INT-05/06/11`, `DC-CCR-SIM-1/2`). **Sequence:**
+> move-then-decompose — wholesale into `risk.ccr` first, lock the golden EE/PE baseline (`CCR-MIG-03`),
+> then split out, regression-green at every commit.
+
 | Origin | Destination | Status | Notes |
 |---|---|---|---|
-| PIMPA engine (`CCR_Valuation_Session`, EE/PE, netting, collateral; `calibration_method='direct_input'`) | `src/climateCCR/risk/ccr/` | MOVE+FIX | `iteritems()`→`.items()` (4 sites); drop `from calendar import calendar`; behaviour-unchanged first (`CCR-MIG-01/02`). Add EPE/Effective-EPE/CVA after (`OQ-CCR-04`). |
-| PIMPA `RiskFactor`/`MultiRiskFactorSimulation`/`RiskFactorEvolution` | `src/climateCCR/{processes,simulation}/` | MOVE+FIX | path-major arrays; define `simulate_random_increments` (`CODE_REVIEW` C4); add event-injection hook (`DC-CCR-SIM-1`). |
-| PIMPA `global_parameters.py` (mutable dict) | `configs/*.yaml` + `infra.Config` | PORT | config-over-hard-coding (`CCR-ARCH-04`). |
-| PIMPA prototype parameter CSVs | `tests/fixtures/` | MOVE | the EE/PE regression fixture (`CCR-MIG-03`, `OQ-CCR-06`). |
+| PIMPA engine — `evaluators` (`CCR_Valuation_Session`, EE/PE, netting, collateral), `trade_models`, `pricing_models` | `src/climateCCR/risk/ccr/` | MOVE+FIX | name kept `CCR_Valuation_Session` (`OQ-CCR-01`); `iteritems()`→`.items()` (4 sites); drop `from calendar import calendar`; behaviour-unchanged first (`CCR-MIG-01/02`). Add EPE/Effective-EPE/CVA after (`OQ-CCR-04`). |
+| PIMPA diffusions `RiskFactorEvolution`/BM/GBM/HW1F | `src/climateCCR/processes/diffusions/` | MOVE+FIX | the shared stochastic spine (`INT-05/11`); the GBM/HW1F the climate jump injects into (`DC-CCR-SIM-2`). |
+| PIMPA `MultiRiskFactorSimulation`/`ScenarioGenerator`/`RiskFactor`/`SimulatedData`/`CorrelationMatrix` | `src/climateCCR/simulation/` | MOVE+FIX | path-major; define `simulate_random_increments` seeded via `infra.get_rng` (`CODE_REVIEW` C4); event-injection hook (`DC-CCR-SIM-1`). |
+| PIMPA market primitives `Curve`/`Surface` | `src/climateCCR/data/market/` | MOVE+FIX | forced below `risk.ccr` by layering (`hw1f` needs `Curve`). |
+| PIMPA `MarketDataBuilder` (the `'direct_input'` loader) | `src/climateCCR/calibration/financial/` | MOVE+FIX | the load-bearing `DC-CCR-CAL-1` seam, placed in its final home (decided 2026-06-28). |
+| PIMPA `global_parameters.py` (mutable dict) | `configs/*.yaml` + `infra.Config` | PORT | config-over-hard-coding (`CCR-ARCH-04`); paths via `ProjectPaths`. |
+| PIMPA prototype parameter CSVs | `tests/fixtures/pimpa/` | MOVE | the EE/PE regression fixture (`CCR-MIG-03`, `OQ-CCR-06`). |
 | Randomized-signature prototype (Compagnoni 2023) | `src/climateCCR/{signatures,inference}/` | MOVE+FIX | seed the reservoir; fix solver `z0,A,b` fixed between fit/predict (`CODE_REVIEW` C1–C5; `CCR-SIG-02/03`). |
 
-### CCR notes & literature
+### CCR notes & literature (DONE)
 
 | Origin | Destination | Status | Notes |
 |---|---|---|---|
@@ -42,17 +51,17 @@ changes** (`GEN-09`). Spanish filenames are kept **verbatim** (they are real art
 | `PROJECT_PLAN.md`, `PHASE_0.md` | `notes/plan/` | REF | timeline + Phase-0 migration plan (`CCR-RES-02`). |
 | `CODE_REVIEW.md` (PIMPA + rand-sig findings) | `notes/reviews/CODE_REVIEW.md` | REF | C1–C5 bugs; the fix checklist for the signature port. |
 | `DECISIONS / DATA_CONTRACTS / GLOSSARY / OPEN_QUESTIONS` (CCR) | merged into `context/*` | REF | re-namespaced `CCR-*`. |
-| Compagnoni 2023 PDF + any `marker` output | `literature/Compagnoni_2023_RandomizedSignatures/` | REF | keep full folder; `.md` to project knowledge (`CCR-LIT-02`). |
+| Compagnoni 2023 PDF + any `marker` output (DONE) | `literature/Compagnoni_2023_RandomizedSignatures/` | REF | folder renamed to convention 2026-06-28 (`CCR-LIT-03`); `.md` to project knowledge (`CCR-LIT-02`). |
 
 ---
 
 ## 2. MKT arm — `financial_instruments` (feeds the spine)
 
-### Theory & methodology notes → `notes/theory/`
+### Theory & methodology notes → `notes/theory/` (DONE)
 
 | Origin file(s) | Destination | Status | Notes |
 |---|---|---|---|
-| `Hull_White_Comprehensive.md` (753) + 7 more HW notes (`HWModel_Theory.md`, `Calibration_From_SIE_Banxico_01/02.md`, …) | `notes/theory/hull_white/` | REF | the calibration design behind `calibration/financial`. |
+| `Hull_White_Comprehensive.md` (753) + 7 more HW notes (`HWModel_Theory.md`, `Calibration_From_SIE_Banxico_01/02.md`, …) | `notes/theory/hull_white_1f/` | REF | the calibration design behind `calibration/financial`. |
 | `Vasicek_Calibracion_Mex.md` | `notes/theory/` | REF | estimation device for `a, σ`. |
 | `ChangeOfMeasureInFinance.md` | `notes/theory/` | REF | Q↔P, λ (`MKT-MEAS-*`). |
 | `instrumentos_deuda_mexico.md` (1388) | `notes/theory/` | REF | Bonos M / Cetes / Udibonos conventions. |
@@ -71,10 +80,10 @@ changes** (`GEN-09`). Spanish filenames are kept **verbatim** (they are real art
 | HW/Vasicek/GBM calibration code; curve strip (Goal-Seek/linear-in-z) | `src/climateCCR/calibration/financial/` | NEW/PORT | must emit `'direct_input'` objects (`DC-CCR-CAL-1`); most is in notes, code to write. |
 | VaR/ES + stress shocks (parallel/non-parallel/vol/mean-reversion) | `src/climateCCR/risk/market/` | NEW | recalibrate θ on every curve shock (`MKT-STRESS-01`). |
 | NGFS Δr application + θ* recalibration | `src/climateCCR/scenarios/` | NEW | (`MKT-NGFS-02`). |
-| `src/Actualiza_FTIIE.R` (208) | `pipelines/` or `data/market/` | PORT | F-TIIE refresh; R utility — keep or reimplement in Python. |
+| `src/Actualiza_FTIIE.R` (208) (DONE — on disk under `data/market/`) | `pipelines/` or `data/market/` | PORT | F-TIIE refresh; R utility — keep or reimplement in Python. |
 | Excel physical-risk dashboard | `notebooks/` + `notes/pipelines/dashboard_riesgo_excel.md` | MOVE | Excel-native deliverable; not a sim engine (`MKT-PHYS-03`). |
-| `technical_analysis/climate_investment_analysis.tex` (1220), `climate_integrated_investment_analysis.md` | `literature/` (writeup) | REF | the thesis-writeup draft. |
-| `technical_analysis/climate_investment_refs.bib` (47 entries) | `literature/refs.bib` | MOVE | authoritative climate-finance BibTeX (`REFERENCES.md` §6/§9). |
+| `technical_analysis/climate_investment_analysis.tex` (1220), `climate_integrated_investment_analysis.md` (DONE) | `literature/` (writeup) | REF | the thesis-writeup draft. |
+| `technical_analysis/climate_investment_refs.bib` (47 entries) (DONE) | `literature/refs.bib` | MOVE | authoritative climate-finance BibTeX (`REFERENCES.md` §6/§9). |
 
 > **MKT caveat:** the Investing.com curve guide is **superseded** by the SIE/CF300 approach
 > (`MKT-SIE-01`); migrate the SIE methodology, not the Investing.com one.
@@ -83,7 +92,7 @@ changes** (`GEN-09`). Spanish filenames are kept **verbatim** (they are real art
 
 ## 3. HAZ arm — `Climate-Nature-Risks_Calibration` (feeds the spine)
 
-### Pipeline code → `src/climateCCR/data/hazard_mx/`
+### Pipeline code → `src/climateCCR/data/hazard_mx/` (DONE — scripts on disk; package wiring pending §5.4)
 
 | Origin script (lines) | Destination | Status | Notes |
 |---|---|---|---|
@@ -96,10 +105,10 @@ changes** (`GEN-09`). Spanish filenames are kept **verbatim** (they are real art
 | `aliases_cnsf.json`, `catalogos_autos_cnsf.json` | `data/hazard_mx/cnsf/config/` | MOVE | alias/catalog maps (`--aliases` must be passed — `HAZ-SCRAPER-CNSF-06`). |
 | `descarga_ibtracs.py` (97), `procesar_ibtracs.py` (223) | `data/hazard_mx/ibtracs/` | PORT | v04r01 EP+NA; covariate panel. |
 | `campo_viento.py` (267) | `data/hazard_mx/ibtracs/` | PORT | Holland (Vmax-anchored) + K&D decay + wind-field thresholds (`HAZ-IBTRACS-04/05`). |
-| `descarga_cenapred.py` (346), `procesar_cenapred.py` (467) | `data/hazard_mx/cenapred/` | PORT | A/B/A′ + catalog outputs (`DC-HAZ-CENAPRED-2`). |
+| `descarga_cenapred.py` (346), `procesar_cenapred.py` (467) | `data/hazard_mx/cenapred/` | PORT | A/B/A′ + catalog outputs (`DC-HAZ-CENAPRED-2`). A stray duplicate `descarga_cenapred.py` under `cnsf/` was removed 2026-06-28. |
 | `scraper_sequia.py` (644), `indices_sequia.py` (209), `agregacion_sequia.py` (119), `validacion_sequia.py` (99), `config_sequia.py` (115) | `data/hazard_mx/sequia/` | PORT | SPEI primary; idempotent CDS downloads (`HAZ-DROUGHT-*`). |
 
-### HAZ notes → `notes/`
+### HAZ notes → `notes/` (DONE)
 
 | Origin doc (lines) | Destination | Status | Notes |
 |---|---|---|---|
@@ -122,25 +131,25 @@ changes** (`GEN-09`). Spanish filenames are kept **verbatim** (they are real art
 
 | Origin | Destination | Status | Notes |
 |---|---|---|---|
-| Root `END_OF_CHAT_RITUAL.md` | folded into `context/WORKFLOW.md` | REF | the ritual + reproducibility/version-control standard. |
+| Root `END_OF_CHAT_RITUAL.md` (DONE) | folded into `context/WORKFLOW.md` | REF | the ritual + reproducibility/version-control standard. |
 | HAZ `_procedencia.json` convention | every `data/raw/**` artifact | MOVE | raw-data provenance (`GEN-02`, `INT-08`). |
 | CCR `RunManifest` | `results/manifests/<run_id>.json` | MOVE | run provenance (`GEN-06`, `INT-08`). |
-| `limpieza_cnsf.clasificar_entidad` (HAZ) | shared by CNSF **and** CENAPRED cleaners | PORT | one entity standard project-wide (`DC-CONV-5`). |
+| `limpieza_cnsf.clasificar_entidad` (HAZ) | shared by CNSF **and** CENAPRED cleaners | PORT | one entity standard project-wide (`DC-CONV-5`); documented in [[shared_entity_cleaner_clasificar_entidad]] (2026-06-28). CENAPRED currently imports it via a `sys.path` hack + **silent stub fallback** — replace with a package import (`from ..cnsf.limpieza_cnsf import …`) and fail loudly during §5.4. |
 | Banxico FX (MKT/SIE) ↔ CNSF `MONEDA` | wire `data.market` → `data.hazard_mx.cnsf` | NEW | closes `OQ-HAZ-03` (`DC-XWALK-5`). |
 | CENAPRED `nombre_evento` ↔ IBTrACS `SID` | crosswalk util feeding `calibration/impact` | NEW | the `v_half` calibration input (`DC-XWALK-1`). |
 
 ---
 
-## 5. Migration order (recommended)
+## 5. Migration order (recommended) — status as of 2026-06-28
 
-1. **Scaffold** — copy CCR scaffold + `infra` (keep the name `climateCCR`); green `infra` tests.
-2. **Canon** — drop `context/` in; commit. (Now every later decision has a home.)
-3. **PIMPA** — `MOVE+FIX` behaviour-unchanged; lock the EE/PE regression fixture. *(separate commits)*
-4. **HAZ pipelines** — `PORT` the mature scripts under `data/hazard_mx/` (they already run); wire the shared entity cleaner.
-5. **Signatures** — `MOVE+FIX` per `CODE_REVIEW`; seed the reservoir; fix the solver contract.
-6. **Calibration** — build `calibration/financial` (emit `'direct_input'`) then `calibration/impact` (CLIMADA).
-7. **Risk extensions** — EPE/CVA in `risk/ccr`; VaR/ES in `risk/market`; loss models in `risk/loss`.
-8. **Scenarios & cross-arm wire** — NGFS Δr→θ*; then specify the HAZ→financial-risk wire (`OQ-INT-07`).
+1. **Scaffold** ✅ DONE — CCR scaffold + `infra` carried over (name `climateCCR`); `infra` tests green.
+2. **Canon** ✅ DONE — `context/` + root hubs/vault in place; vault hygiene pass 2026-06-28 (broken links, orphans, footers/tags, literature renamed to `Author_Year_ShortTitle`, cruft dropped).
+3. **PIMPA** 🟡 NEXT — `MOVE+FIX` behaviour-unchanged, then decompose (see the PIMPA block in §1); lock the EE/PE regression fixture first. *(separate commits)*
+4. **HAZ pipelines** 🟡 PARTIAL — scripts are on disk under `data/hazard_mx/`; remaining: wire as a package (`__init__.py`, editable import) and replace the CENAPRED `sys.path`/stub import of the shared entity cleaner.
+5. **Signatures** ⬜ PENDING — `MOVE+FIX` per `CODE_REVIEW`; seed the reservoir; fix the solver contract.
+6. **Calibration** ⬜ PENDING — `calibration/financial` (emit `'direct_input'`; `MarketDataBuilder` lands here) then `calibration/impact` (CLIMADA).
+7. **Risk extensions** ⬜ PENDING — EPE/CVA in `risk/ccr`; VaR/ES in `risk/market`; loss models in `risk/loss`.
+8. **Scenarios & cross-arm wire** ⬜ PENDING — NGFS Δr→θ*; then specify the HAZ→financial-risk wire (`OQ-INT-07`).
 
 > Each step is a small, reviewable set of commits. Behaviour changes never share a commit with a
 > move/rename (`GEN-09`). After each working chat, run the end-of-chat ritual (`context/WORKFLOW.md`).

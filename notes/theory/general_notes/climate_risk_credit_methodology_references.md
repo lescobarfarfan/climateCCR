@@ -680,3 +680,8 @@ BIS Working Paper 1045 examines how carbon risk varies across bond maturities:
 
 *Document prepared: January 2026*
 *Compiled from academic literature, regulatory publications, and practitioner resources*
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

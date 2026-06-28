@@ -166,3 +166,8 @@ From this stressed zero curve, derive $f(0,t)$ and $\theta(t)$ as we discussed i
 | **Relationship** | Policy rate → influences market rates | Market rate reflects policy + liquidity + credit |
 
 In short: treat the NGFS policy rate as a **shock source** to apply to your current F-TIIE curve, not as a direct replacement for market rates. This is exactly how central banks and financial institutions use NGFS scenarios in practice.
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

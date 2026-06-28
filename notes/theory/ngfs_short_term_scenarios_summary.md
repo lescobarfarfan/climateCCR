@@ -492,3 +492,8 @@ For policy counterfactual studies (e.g., "What if a carbon tax were implemented?
 
 *Document prepared: January 2026*
 *Based on NGFS Short-Term Scenarios V1.0 (May 2025) and supporting documentation*
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

@@ -291,3 +291,8 @@ Si tus datos vienen de una fuente externa:
 - [ ] Aplicar formato condicional
 - [ ] Agregar filas/columnas de totales
 - [ ] Probar cambiando filtros
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/pipeline

@@ -380,3 +380,8 @@ como producto oficial). Una brecha grande motivaría revisar la elección de dis
 | 2026-06-14 | `descargar` idempotente: omite archivos existentes (salvo `--forzar`) | Evita re-bajar el crudo (~2 h en cola) y permite reanudar para llegar a los benchmarks pendientes |
 | 2026-06-14 | `verificar` compara sha256/bytes vs `_procedencia.json`; `descargar` salta solo lo íntegro y re-baja faltante/cambiado/parcial | Alinear con la convención de CENAPRED (verificar vs almacenado); detectar descargas parciales que el salto por-existencia no atrapaba |
 | 2026-06-14 | `recuperar --objetivo` (nombre canónico + procedencia completa) y nuevo modo `registrar` (adoptar archivo existente) | Recuperar con `--destino` libre dejaba nombres no canónicos que el pipeline no reconocía; renombrar a mano orfanaba la procedencia |
+
+## Related
+[[HAZ_MOC]] · Home: [[_INDEX]]
+
+#arm/haz #type/pipeline

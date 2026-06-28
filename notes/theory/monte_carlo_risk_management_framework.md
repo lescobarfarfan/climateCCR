@@ -803,3 +803,8 @@ Typical grids:
 
 *Document prepared: January 2026*
 *Based on academic literature and practitioner resources in quantitative finance*
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/theory

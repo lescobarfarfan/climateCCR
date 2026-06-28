@@ -121,3 +121,8 @@ These are the items to fix **before** any thesis result depends on this code.
 
 > Principle: **change behaviour and packaging in separate commits.** First make PIMPA importable with
 > identical numerical output (locked by a regression test on the prototype CSVs), *then* extend it.
+
+## Related
+[[CCR_MOC]] · Home: [[_INDEX]]
+
+#arm/ccr #type/review

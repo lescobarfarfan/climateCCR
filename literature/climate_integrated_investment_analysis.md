@@ -1498,3 +1498,8 @@ The mathematical rigor comes from peer-reviewed research, while data requirement
 **License:** Educational and research purposes
 
 *Note: This framework is for informational and educational purposes. Investment decisions should consider multiple factors and consult with qualified financial advisors. Climate science and methodologies continue to evolve; regular updates to this framework are recommended.*
+
+## Related
+[[MKT_MOC]] · Home: [[_INDEX]]
+
+#arm/mkt #type/source
