@@ -1,0 +1,4 @@
+name,rate_curve_V1,rate_curve_V2,rate_curve_V3,rate_curve_V4,rate_curve_V5,rate_curve_T1,rate_curve_T2,rate_curve_T3,rate_curve_T4,rate_curve_T5
+EUR_LIBOR_3M_CURVE,0.001,0.004,0.005,0.005,0.005,1M,1Y,5Y,10Y,30Y
+GBP_LIBOR_3M_CURVE,0.002,0.004,0.004,0.005,0.005,1M,1Y,5Y,10Y,30Y
+USD_LIBOR_3M_CURVE,0.002,0.003,0.006,0.006,0.006,1M,1Y,5Y,10Y,30Y

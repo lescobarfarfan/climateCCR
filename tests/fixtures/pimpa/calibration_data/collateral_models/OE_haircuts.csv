@@ -1,0 +1,7 @@
+"product","currency","OE_haircut_posted","OE_haircut_received"
+"CASH_USD","USD",1,1
+"CASH_GBP","GBP",1.05,0.95
+"CASH_EUR","EUR",1.03,0.97
+"GOV_BOND_USD","USD",1.02,0.98
+"GOV_BOND_GBP","GBP",1.02,0.98
+"GOV_BOND_EUR","EUR",1.01,0.99

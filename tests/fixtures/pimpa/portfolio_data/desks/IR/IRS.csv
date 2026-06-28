@@ -1,0 +1,5 @@
+"trade_id","notional","currency","floating_rate","K","payer/receiver","first_fixing_date","last_fixing_date","first_payment_date","last_payment_date","payments_frequency","maturity"
+1234,100,"USD","USD_LIBOR_3M_CURVE",0.02,"payer","2019-10-01","2029-10-01","2020-01-03","2030-01-03","quarterly","2030-01-03"
+1235,50,"USD","USD_LIBOR_3M_CURVE",0.03,"receiver","2020-10-01","2035-10-01","2021-01-03","2036-01-03","quarterly","2036-01-03"
+1236,200,"USD","USD_LIBOR_3M_CURVE",0.01,"receiver","2020-10-01","2035-10-01","2021-01-03","2036-01-03","quarterly","2036-01-03"
+1237,100,"USD","USD_LIBOR_3M_CURVE",0.02,"payer","2019-10-01","2029-10-01","2020-01-03","2030-01-03","quarterly","2030-01-03"

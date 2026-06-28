@@ -1,0 +1,5 @@
+trade_id,notional,currency,underlying,K,put/call,long/short,maturity
+2345,100,USD,CREDIT_SUISSE_SHARE,14,put,long,2020-01-03
+2346,100,USD,CREDIT_SUISSE_SHARE,12,call,long,2021-01-03
+2347,100,USD,CREDIT_SUISSE_SHARE,10,put,short,2022-01-03
+2348,100,USD,CREDIT_SUISSE_SHARE,7,call,short,2025-01-03

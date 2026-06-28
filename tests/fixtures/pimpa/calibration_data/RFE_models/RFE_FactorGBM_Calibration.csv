@@ -1,0 +1,2 @@
+RF_Name,RF_0,N_factors,factor_1,factor_2,factor_3,beta_factor_1,beta_factor_2,beta_factor_3,drift_epsilon,vola_epsilon
+JULIUS_BAER_SHARE,7,2,CREDIT_SUISSE_SHARE,UBS_SHARE,,0.3,0.4,,0.2,0.05

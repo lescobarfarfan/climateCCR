@@ -1,0 +1,4 @@
+name,rate_curve_V1,rate_curve_V2,rate_curve_V3,rate_curve_V4,rate_curve_V5,alpha,volatility,rate_curve_T1,rate_curve_T2,rate_curve_T3,rate_curve_T4,rate_curve_T5
+EUR_ZERO_YIELD_CURVE,0.003,0.0061,0.01,0.019,0.035,0.04,0.02,1M,1Y,5Y,10Y,30Y
+GBP_ZERO_YIELD_CURVE,0.0021,0.0053,0.0087,0.011,0.023,0.1,0.03,1M,1Y,5Y,10Y,30Y
+USD_ZERO_YIELD_CURVE,0.0028,0.0061,0.0097,0.016,0.028,0.05,0.01,1M,1Y,5Y,10Y,30Y
