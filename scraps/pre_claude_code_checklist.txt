@@ -1,0 +1,30 @@
+Check-list of what has already been moved according to the consolidation plan:
+Section 0: Target tree
+  - The Repo already has sort of the same structure. Still there are some revisions
+  needed to be made.
+Section 1: Integrated knowledge base.
+  - All files are already in their pointed folder.
+Section 2: ClimateCCR
+  - Scaffold and package table, all files/folders are already created.
+  - Notes reorg: All files in place
+  - Do not migrate: Some of them are recovered. Since a lot will be created again could
+  be deleted with no problem.
+Section 3: Financial instruments
+  - Theory notes: all files are already in place.
+  - Sources / pipelines / literature: all files in place already.
+  - Do not migrate: all sorted out.
+  - To build: all of this instructions are pending.
+Section 4: Climate nature risks calibration
+  - Pipeline code: all in place, just remains to implement the note about the "limpieza_cnsf.clasificar_entidad" being available for more than one scrapper.
+  - Notes: All in place.
+  - Tests & fixtures: All in place.
+  - Do not migrate: Since all will be generated again, if present, remove.
+  - To build: all of this remain pending to be implemented.
+Section 5: Gaps
+  - All of these files are already in place.
+Section 6: Cross-arm wiring to build
+  - All of these are pending.
+Section 7: Migration order
+  - Some of the seven points listed are done, though most of the work remains to be done. Since a lot of the wiring will change in order to integrate everything I delayed this tasks. ASSET_MAP.md will remain the source of progress for this. In the current version of the file in the repo some files/lines are already marked as "(DONE)", but the majority of the work is in to-do status.
+Section 8: Obsidian vault wiring
+  - Noting about this has been done, with the current state of the repo, the place where the notes live, etc, it would remain to be done the rewriting of the paths, updating the _index, and the MOC files for each arm of the project.

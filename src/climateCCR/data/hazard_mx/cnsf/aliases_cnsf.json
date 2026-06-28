@@ -1,0 +1,18 @@
+{
+  "agricola_y_animales/siniestros": {
+    "MONTO DEL SINIESTRO OCURRIDO": "MONTO DEL SINIESTRO OCOURRIDO",
+    "MONTO DEL SINIESTRO COURRIDO": "MONTO DEL SINIESTRO OCOURRIDO"
+  },
+  "incendio/siniestros": {
+    "GIRO DE LA UBICACIÓN": "GIRO LA UBICACIÓN"
+  },
+  "agricola_y_animales/emision": {
+    "PRIMA DEVENGADA EN EL EJERCICIO": "PRIMA DEVENGADA"
+  },
+  "riesgos_hidrometereologicos/emision": {
+    "PRIMA DEVENGADA": "PRIMA DEVENGADA DEL PERIODO"
+  },
+  "incendio/emision": {
+    "PRIMA DEVENGADA": "PRIMA DEVENGADA EN EL EJERCICIO"
+  }
+}

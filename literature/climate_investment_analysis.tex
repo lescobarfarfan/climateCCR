@@ -1,0 +1,1220 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{enumerate}
+\usepackage{float}
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+
+% Page geometry
+\geometry{
+    left=2.5cm,
+    right=2.5cm,
+    top=2.5cm,
+    bottom=2.5cm
+}
+
+% Header and footer
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\thepage}
+\lhead{\leftmark}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Hyperref setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    citecolor=blue,
+    pdftitle={Climate-Integrated Investment Analysis},
+    pdfauthor={},
+}
+
+% Section formatting
+\titleformat{\section}
+  {\normalfont\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+% Title information
+\title{\textbf{Climate-Integrated Investment and Trading Analysis}\\
+\large A Comprehensive Framework with Mathematical Formulations}
+\author{}
+\date{January 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document provides a comprehensive framework for integrating climate-related financial risks into traditional investment analysis. We present mathematical formulations for technical analysis, fundamental analysis, risk management, and climate risk metrics, all grounded in peer-reviewed academic research. The framework includes Climate Value-at-Risk (Climate VaR), carbon beta, stranded asset risk assessment, and climate stress testing methodologies. Each metric is accompanied by data requirements focusing on publicly available sources such as Yahoo Finance, FRED, and NGFS climate scenarios. This integration enables investors to systematically incorporate climate considerations into screening, timing, position sizing, and portfolio construction decisions.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+Climate change poses systemic risks to financial markets through two primary channels: physical risks from climate impacts and transition risks from the shift to a low-carbon economy \citep{NGFS2024, BaselCommittee2021}. Recent academic research demonstrates that climate risks materially affect asset prices \citep{Campiglio2023}, credit spreads \citep{Klusak2023}, and financial stability \citep{Battiston2017}. This document integrates climate risk metrics into traditional investment frameworks, providing practitioners with quantitative tools for climate-aware investment decisions.
+
+The framework presented here builds on established methodologies from central banks, financial regulators, and academic institutions. All climate metrics are derived from peer-reviewed research published in leading journals including \textit{Nature Climate Change}, \textit{Management Science}, \textit{Journal of Environmental Economics and Management}, and \textit{Journal of Economic Surveys}.
+
+\section{Traditional Technical Analysis}
+
+\subsection{Moving Averages}
+
+Moving averages smooth price data to identify trends and generate trading signals.
+
+\subsubsection{Simple Moving Average (SMA)}
+
+\begin{equation}
+\text{SMA}_n(t) = \frac{1}{n}\sum_{i=0}^{n-1} P_{t-i}
+\end{equation}
+
+where $P_t$ is the price at time $t$ and $n$ is the number of periods.
+
+\subsubsection{Exponential Moving Average (EMA)}
+
+\begin{equation}
+\text{EMA}_t = \alpha P_t + (1-\alpha)\text{EMA}_{t-1}
+\end{equation}
+
+where $\alpha = \frac{2}{n+1}$ is the smoothing factor.
+
+\textbf{Trading Signals:}
+\begin{itemize}
+    \item \textbf{Golden Cross:} $\text{SMA}_{50} > \text{SMA}_{200}$ (bullish signal)
+    \item \textbf{Death Cross:} $\text{SMA}_{50} < \text{SMA}_{200}$ (bearish signal)
+\end{itemize}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item Price above MA: Generally bullish momentum
+    \item Price below MA: Generally bearish momentum
+    \item Rising MA slope: Uptrend
+    \item Falling MA slope: Downtrend
+    \item MAs often act as dynamic support/resistance levels
+\end{itemize}
+
+\textbf{Data Required:} Historical closing prices from Yahoo Finance or Google Finance. Minimum 200 days for long-term analysis.
+
+\subsection{Relative Strength Index (RSI)}
+
+The RSI measures momentum on a 0-100 scale:
+
+\begin{equation}
+\text{RSI} = 100 - \frac{100}{1 + \text{RS}}
+\end{equation}
+
+where
+
+\begin{equation}
+\text{RS} = \frac{\text{Average Gain}}{\text{Average Loss}}
+\end{equation}
+
+Typically calculated over 14 periods. 
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item RSI $> 70$: Overbought condition, potential sell signal or pullback
+    \item RSI $< 30$: Oversold condition, potential buy signal or bounce
+    \item RSI between 30-70: Neutral zone
+    \item Divergence: Price makes new high while RSI doesn't (bearish divergence), or vice versa (bullish divergence)
+    \item Centerline (50): Above 50 suggests bullish momentum, below 50 suggests bearish
+\end{itemize}
+
+\textbf{Data Required:} Daily closing prices, minimum 14+ periods. Source: Yahoo Finance, Google Finance.
+
+\subsection{MACD (Moving Average Convergence Divergence)}
+
+\begin{align}
+\text{MACD Line} &= \text{EMA}_{12} - \text{EMA}_{26}\\
+\text{Signal Line} &= \text{EMA}_9(\text{MACD Line})\\
+\text{Histogram} &= \text{MACD Line} - \text{Signal Line}
+\end{align}
+
+\textbf{Trading Signals:}
+\begin{itemize}
+    \item MACD crosses above Signal Line: Bullish signal
+    \item MACD crosses below Signal Line: Bearish signal
+    \item MACD crosses above zero: Bullish momentum
+    \item MACD crosses below zero: Bearish momentum
+\end{itemize}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item Histogram expansion: Momentum increasing in current direction
+    \item Histogram contraction: Momentum weakening
+    \item Divergence with price: Potential trend reversal
+\end{itemize}
+
+\textbf{Data Required:} Daily closing prices, minimum 26+ days. Source: Yahoo Finance, Google Finance.
+
+\subsection{Bollinger Bands}
+
+\begin{align}
+\text{Middle Band} &= \text{SMA}_{20}\\
+\text{Upper Band} &= \text{SMA}_{20} + 2\sigma\\
+\text{Lower Band} &= \text{SMA}_{20} - 2\sigma
+\end{align}
+
+where
+
+\begin{equation}
+\sigma = \sqrt{\frac{1}{20}\sum_{i=0}^{19}(P_{t-i} - \text{SMA}_{20})^2}
+\end{equation}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item Price touching upper band: Potentially overbought, strong uptrend
+    \item Price touching lower band: Potentially oversold, strong downtrend
+    \item Band squeeze (low volatility): Often precedes significant price move
+    \item Band expansion (high volatility): Active market, significant price movement
+    \item Price walking the bands: Very strong trend in that direction
+    \item Bollinger Bounce: Price tends to return to middle band
+\end{itemize}
+
+\textbf{Data Required:} Daily closing prices, minimum 20 days. Source: Yahoo Finance, Google Finance.
+
+\subsection{Volume Analysis}
+
+\subsubsection{Volume-Weighted Average Price (VWAP)}
+
+\begin{equation}
+\text{VWAP} = \frac{\sum_{i=1}^{n} P_i \cdot V_i}{\sum_{i=1}^{n} V_i}
+\end{equation}
+
+where $V_i$ is the volume at time $i$.
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item Price above VWAP: Bullish, buyers in control
+    \item Price below VWAP: Bearish, sellers in control
+    \item Institutional traders often use VWAP as execution benchmark
+\end{itemize}
+
+\subsubsection{On-Balance Volume (OBV)}
+
+\begin{equation}
+\text{OBV}_t = \begin{cases}
+\text{OBV}_{t-1} + V_t & \text{if } P_t > P_{t-1}\\
+\text{OBV}_{t-1} - V_t & \text{if } P_t < P_{t-1}\\
+\text{OBV}_{t-1} & \text{if } P_t = P_{t-1}
+\end{cases}
+\end{equation}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item Rising price + rising OBV: Strong bullish confirmation
+    \item Rising price + falling OBV: Weak move, may reverse (bearish divergence)
+    \item Falling price + rising OBV: Accumulation, potential reversal up
+    \item High volume at support/resistance: Important level being tested
+    \item Volume spikes: Significant event or institutional activity
+\end{itemize}
+
+\textbf{Data Required:} Daily closing prices and volume from Yahoo Finance (`Close`, `Volume` fields).
+
+\section{Fundamental Analysis}
+
+\subsection{Valuation Metrics}
+
+\subsubsection{Price-to-Earnings Ratio}
+
+The P/E ratio measures valuation by comparing market price to earnings:
+
+\begin{equation}
+\text{P/E} = \frac{\text{Market Price per Share}}{\text{EPS}}
+\end{equation}
+
+where
+
+\begin{equation}
+\text{EPS} = \frac{\text{Net Income} - \text{Preferred Dividends}}{\text{Weighted Average Shares Outstanding}}
+\end{equation}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item High P/E ($>20$): Growth expectations or potential overvaluation
+    \item Low P/E ($<15$): Value opportunity or fundamental problems
+    \item Compare to sector average and historical P/E for context
+\end{itemize}
+
+\textbf{Data Sources:} Market price from Yahoo Finance; Net Income from SEC EDGAR (10-K, 10-Q filings).
+
+\subsubsection{Price-to-Book Ratio}
+
+The P/B ratio compares market value to book value:
+
+\begin{equation}
+\text{P/B} = \frac{\text{Market Price per Share}}{\text{Book Value per Share}}
+\end{equation}
+
+where
+
+\begin{equation}
+\text{Book Value per Share} = \frac{\text{Total Assets} - \text{Total Liabilities} - \text{Preferred Stock}}{\text{Shares Outstanding}}
+\end{equation}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item P/B $> 1$: Market values company above book value (typical for profitable companies)
+    \item P/B $< 1$: Potential value opportunity or distressed situation
+    \item Particularly useful for asset-heavy industries (banks, manufacturing)
+\end{itemize}
+
+\textbf{Data Sources:} Balance sheet data from SEC EDGAR or Yahoo Finance.
+
+\subsubsection{Free Cash Flow}
+
+\begin{equation}
+\text{FCF} = \text{Operating Cash Flow} - \text{Capital Expenditures}
+\end{equation}
+
+Free cash flow represents actual cash available to shareholders and is harder to manipulate than accounting earnings.
+
+\subsubsection{Return on Equity}
+
+ROE measures how efficiently a company uses shareholder capital:
+
+\begin{equation}
+\text{ROE} = \frac{\text{Net Income}}{\text{Shareholders' Equity}}
+\end{equation}
+
+DuPont decomposition:
+
+\begin{equation}
+\text{ROE} = \underbrace{\frac{\text{Net Income}}{\text{Sales}}}_{\text{Profit Margin}} \times \underbrace{\frac{\text{Sales}}{\text{Assets}}}_{\text{Asset Turnover}} \times \underbrace{\frac{\text{Assets}}{\text{Equity}}}_{\text{Equity Multiplier}}
+\end{equation}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item ROE $> 15\%$: Generally strong performance
+    \item ROE $< 10\%$: May indicate inefficiency or competitive disadvantage
+    \item DuPont decomposition helps identify whether ROE comes from margins, efficiency, or leverage
+    \item Compare to industry peers and historical trends
+\end{itemize}
+
+\textbf{Data Sources:} Income statement and balance sheet from SEC EDGAR.
+
+\subsection{Credit Analysis}
+
+\subsubsection{Debt-to-Equity Ratio}
+
+\begin{equation}
+\text{D/E} = \frac{\text{Total Debt}}{\text{Total Shareholders' Equity}}
+\end{equation}
+
+where Total Debt includes both short-term and long-term debt.
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item D/E $< 1$: Conservative capital structure, less financial risk
+    \item D/E $> 2$: High leverage, higher financial risk
+    \item Industry-specific: Capital-intensive industries typically have higher D/E
+    \item Rising D/E trend may signal deteriorating financial health
+\end{itemize}
+
+\textbf{Data Sources:} Balance sheet from SEC EDGAR.
+
+\subsubsection{Interest Coverage Ratio}
+
+\begin{equation}
+\text{Interest Coverage} = \frac{\text{EBIT}}{\text{Interest Expense}}
+\end{equation}
+
+Interpretation: Ratio $> 2.5$ generally indicates healthy debt servicing capacity; ratio $< 1.5$ suggests potential distress.
+
+\subsubsection{Credit Spread}
+
+\begin{equation}
+\text{Credit Spread} = Y_{\text{corporate}} - Y_{\text{risk-free}}
+\end{equation}
+
+where $Y$ represents bond yields. 
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item Wider spread: Higher perceived credit risk, higher compensation demanded by investors
+    \item Narrower spread: Lower perceived risk or risk-seeking behavior
+    \item Widening spreads: Market stress, deteriorating credit conditions
+    \item Compare to historical spreads and peer companies
+\end{itemize}
+
+\textbf{Data Sources:} Bloomberg or FRED for aggregate indices; corporate bond data from bond markets.
+
+\subsection{Macroeconomic Indicators}
+
+\subsubsection{GDP Growth Rate}
+
+\begin{equation}
+g_{\text{GDP}} = \left[\frac{\text{GDP}_t - \text{GDP}_{t-1}}{\text{GDP}_{t-1}}\right] \times 100
+\end{equation}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item Positive growth: Economic expansion, generally positive for equities
+    \item Negative growth (2+ consecutive quarters): Recession
+    \item High growth ($>4\%$ for developed economies): Strong expansion, potential overheating
+    \item Compare to long-term average and other economies
+\end{itemize}
+
+\textbf{Data Source:} FRED (variable: GDPC1 for US Real GDP), World Bank, IMF.
+
+\subsubsection{Inflation Rate}
+
+\begin{equation}
+\pi_t = \left[\frac{\text{CPI}_t - \text{CPI}_{t-1}}{\text{CPI}_{t-1}}\right] \times 100
+\end{equation}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item Target range (2-3\%): Healthy for most developed economies
+    \item High inflation ($>5\%$): Erodes purchasing power, typically leads to rate hikes
+    \item Deflation ($<0\%$): Economic weakness, can lead to deflationary spiral
+    \item Affects discount rates and real returns on investments
+\end{itemize}
+
+\textbf{Data Source:} FRED (variable: CPIAUCSL for US Consumer Price Index), Bureau of Labor Statistics.
+
+\section{Risk Management}
+
+\subsection{Value at Risk (VaR)}
+
+Value at Risk estimates the maximum potential loss over a specific time period at a given confidence level.
+
+\subsubsection{Historical VaR}
+
+\begin{equation}
+\text{VaR}_\alpha = -\text{Percentile}(R, \alpha)
+\end{equation}
+
+where $R$ is the distribution of historical returns and $\alpha$ is the confidence level (e.g., 0.05 for 95\% confidence).
+
+\textbf{Example:} If 95\% 1-day VaR = \$1 million, there is 95\% confidence that daily losses will not exceed \$1 million.
+
+\subsubsection{Parametric VaR}
+
+Under the assumption of normally distributed returns:
+
+\begin{equation}
+\text{VaR}_\alpha = -\mu \Delta t + z_\alpha \sigma \sqrt{\Delta t}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $\mu$ = expected return
+    \item $\sigma$ = standard deviation of returns
+    \item $z_\alpha$ = z-score for confidence level $\alpha$ (e.g., 1.65 for 95\%, 2.33 for 99\%)
+    \item $\Delta t$ = time horizon
+\end{itemize}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item Fast to calculate, requires only mean and standard deviation
+    \item Assumption of normality often violated in financial markets (fat tails)
+    \item Underestimates risk during market stress (when tail events occur)
+    \item Best for well-diversified portfolios with relatively stable returns
+    \item Consider using historical or Monte Carlo VaR for non-normal distributions
+\end{itemize}
+
+\textbf{Data Required:} Historical returns (minimum 250 trading days) from Yahoo Finance to calculate $\mu$ and $\sigma$.
+
+\subsection{Expected Shortfall (Conditional VaR)}
+
+Expected Shortfall measures the average loss beyond the VaR threshold:
+
+\begin{equation}
+\text{ES}_\alpha = \mathbb{E}[\text{Loss} \mid \text{Loss} > \text{VaR}_\alpha] = -\mathbb{E}[R \mid R < -\text{VaR}_\alpha]
+\end{equation}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item ES provides more information about tail risk than VaR alone
+    \item ES is always greater than or equal to VaR
+    \item ES $\gg$ VaR: Fat-tailed distribution, extreme events are particularly severe
+    \item Preferred by regulators (Basel III) as it's a coherent risk measure
+    \item More conservative than VaR for capital allocation decisions
+\end{itemize}
+
+\textbf{Data Required:} Same as VaR calculation - historical returns from Yahoo Finance.
+
+\subsection{Position Sizing}
+
+\subsubsection{Fixed Percentage Risk Method}
+
+\begin{equation}
+\text{Position Size} = \frac{\text{Account Equity} \times \text{Risk \%}}{P_{\text{entry}} - P_{\text{stop}}}
+\end{equation}
+
+where typical Risk\% = 1-2\% of total account.
+
+\textbf{Example:}
+\begin{align*}
+\text{Account} &= \$100,000\\
+\text{Risk per trade} &= 1\% = \$1,000\\
+P_{\text{entry}} &= \$50\\
+P_{\text{stop}} &= \$45\\
+\text{Position Size} &= \frac{\$1,000}{\$50 - \$45} = 200 \text{ shares} = \$10,000 \text{ position}
+\end{align*}
+
+\subsubsection{Kelly Criterion}
+
+\begin{equation}
+f^* = \frac{pb - q}{b}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $f^*$ = optimal fraction of capital to invest
+    \item $p$ = probability of winning
+    \item $q$ = probability of losing = $1-p$
+    \item $b$ = ratio of win to loss (average win / average loss)
+\end{itemize}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item Kelly suggests optimal position size to maximize long-term growth
+    \item Full Kelly can be aggressive and lead to large drawdowns
+    \item In practice, use fractional Kelly (e.g., $0.25 \times f^*$ or $0.5 \times f^*$) to reduce risk
+    \item Requires accurate estimates of $p$ and $b$ from backtesting
+\end{itemize}
+
+\textbf{Data Required:} Historical win rate and win/loss ratios from trading history or backtesting.
+
+\subsection{Portfolio Risk Metrics}
+
+\subsubsection{Portfolio Standard Deviation}
+
+For a portfolio of $n$ assets:
+
+\begin{equation}
+\sigma_p = \sqrt{\sum_{i=1}^{n}\sum_{j=1}^{n} w_i w_j \sigma_i \sigma_j \rho_{ij}}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $w_i, w_j$ = weights of assets $i$ and $j$
+    \item $\sigma_i, \sigma_j$ = standard deviations of assets $i$ and $j$
+    \item $\rho_{ij}$ = correlation coefficient between assets $i$ and $j$
+\end{itemize}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item Measures total portfolio volatility
+    \item Diversification benefit: $\sigma_p < \sum w_i \sigma_i$ when correlations $< 1$
+    \item Lower correlation between assets → greater diversification benefit
+    \item Annualized volatility: Multiply daily $\sigma$ by $\sqrt{252}$
+\end{itemize}
+
+\textbf{Data Required:} Historical returns for all portfolio assets. Source: Yahoo Finance, calculate correlation matrix.
+
+\subsubsection{Sharpe Ratio}
+
+\begin{equation}
+\text{Sharpe Ratio} = \frac{R_p - R_f}{\sigma_p}
+\end{equation}
+
+where $R_p$ is portfolio return, $R_f$ is the risk-free rate (e.g., 3-month T-bill), and $\sigma_p$ is portfolio standard deviation.
+
+\textbf{Interpretation:} Sharpe $> 1$ is good; Sharpe $> 2$ is excellent.
+
+\subsubsection{Maximum Drawdown}
+
+\begin{equation}
+\text{MDD} = \frac{\text{Trough Value} - \text{Peak Value}}{\text{Peak Value}}
+\end{equation}
+
+where Peak Value is the maximum cumulative portfolio value before decline.
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item Measures worst peak-to-trough decline
+    \item MDD $< 10\%$: Conservative strategy
+    \item MDD 10-20\%: Moderate risk
+    \item MDD $> 30\%$: High risk, challenging for most investors psychologically
+    \item Recovery time: How long to return to previous peak (often correlates with MDD)
+    \item Use for position sizing: Reduce positions if approaching historical MDD levels
+\end{itemize}
+
+\textbf{Data Required:} Daily portfolio values calculated from holdings.
+
+\subsection{Beta and Systematic Risk}
+
+Market beta measures systematic risk:
+
+\begin{equation}
+\beta_i = \frac{\text{Cov}(R_i, R_m)}{\text{Var}(R_m)}
+\end{equation}
+
+Equivalently, from regression:
+
+\begin{equation}
+R_i = \alpha + \beta_i R_m + \varepsilon
+\end{equation}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item $\beta = 1$: Moves with market
+    \item $\beta > 1$: More volatile than market
+    \item $\beta < 1$: Less volatile than market
+\end{itemize}
+
+\textbf{Data Required:} Stock returns and market returns (S\&P 500) from Yahoo Finance; minimum 3-5 years of data.
+
+\section{Climate Risk Integration}
+
+\subsection{Climate Risk Categories}
+
+Following \citet{Campiglio2023} and the \citet{BaselCommittee2021}, climate-related financial risks are categorized as:
+
+\textbf{Physical Risks:}
+\begin{itemize}
+    \item \textbf{Acute:} Event-driven (hurricanes, floods, wildfires)
+    \item \textbf{Chronic:} Longer-term shifts (temperature, sea level, precipitation)
+\end{itemize}
+
+\textbf{Transition Risks:}
+\begin{itemize}
+    \item Policy risk (carbon pricing, regulations)
+    \item Technology risk (disruptive clean technologies, stranded assets)
+    \item Market risk (changing consumer preferences)
+    \item Reputation risk (stakeholder concerns, divestment)
+\end{itemize}
+
+\subsection{Climate Value-at-Risk (Climate VaR)}
+
+Climate VaR quantifies the potential financial impact of climate change on asset values under different scenarios \citep{MSCI2024, UNEPFI2019}.
+
+\subsubsection{Mathematical Formulation}
+
+\begin{equation}
+\text{Climate VaR} = \frac{\text{PV(Climate Costs)}}{\text{Current Market Value}}
+\end{equation}
+
+For different stakeholders:
+
+\begin{align}
+\text{Climate VaR}_{\text{enterprise}} &= \frac{\text{PV(Climate Costs)}}{\text{Enterprise Value}}\\
+\text{Climate VaR}_{\text{equity}} &= \frac{\text{PV(Equity Climate Costs)}}{\text{Market Capitalization}}\\
+\text{Climate VaR}_{\text{debt}} &= \frac{\text{PV(Debt Climate Costs)}}{\text{Market Value of Debt}}
+\end{align}
+
+\subsubsection{Physical Risk Component}
+
+Following the hazard-exposure-vulnerability framework:
+
+\begin{equation}
+\text{Expected Cost} = \text{Hazard} \times \text{Exposure} \times \text{Vulnerability}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item Hazard = Probability and intensity of climate event
+    \item Exposure = Value of assets in affected location
+    \item Vulnerability = Damage function (\% loss given event)
+\end{itemize}
+
+\subsubsection{Transition Risk Component}
+
+\begin{equation}
+\text{Transition Cost} = \sum_{t=1}^{T} \frac{\text{Carbon Price}_t \times \text{Emissions}_t}{(1+r)^t}
+\end{equation}
+
+where $t$ ranges over the scenario timeline (e.g., 2025-2050) and $r$ is the discount rate.
+
+\subsubsection{Data Requirements}
+
+\textbf{Physical Risk Data:}
+\begin{itemize}
+    \item Asset locations (latitude/longitude): Company 10-K filings
+    \item Climate hazard data: NGFS Climate Scenarios Portal, IPCC, CLIMADA
+    \item Variables: Temperature, precipitation, sea level, flood maps
+    \item Asset values: Balance sheet (Property, Plant \& Equipment)
+    \item Damage functions: Academic literature, insurance industry
+\end{itemize}
+
+\textbf{Transition Risk Data:}
+\begin{itemize}
+    \item Scope 1, 2, 3 emissions: CDP, company sustainability reports, Bloomberg ESG
+    \item Carbon price scenarios: NGFS scenarios, IEA World Energy Outlook
+    \item Revenue by product/geography: 10-K filings
+    \item WACC: Calculate from financial data
+\end{itemize}
+
+\textbf{NGFS Climate Scenarios:}
+\begin{itemize}
+    \item Net Zero 2050: Ambitious action, 1.5°C warming
+    \item Delayed Transition: Late policy action, higher transition risk
+    \item Current Policies: $\sim$3°C warming, high physical risk
+    \item Divergent Net Zero: Uncoordinated transition
+\end{itemize}
+
+Source: \url{https://www.ngfs.net/ngfs-scenarios-portal/}
+
+\subsection{Carbon Beta}
+
+Carbon beta is a market-based measure of a stock's sensitivity to climate transition risk \citep{Huij2023, Robeco2024, Gorgen2024}.
+
+\subsubsection{Construction of Climate Risk Factor}
+
+\begin{equation}
+\text{CRF}_t = R_{\text{brown},t} - R_{\text{green},t}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $R_{\text{brown},t}$ = Return of high-emission portfolio at time $t$
+    \item $R_{\text{green},t}$ = Return of low-emission portfolio at time $t$
+\end{itemize}
+
+\subsubsection{Estimation of Climate Beta}
+
+Via regression:
+
+\begin{equation}
+R_{i,t} = \alpha_i + \beta_{\text{climate},i} \cdot \text{CRF}_t + \beta_{\text{market},i} \cdot R_{m,t} + \varepsilon_{i,t}
+\end{equation}
+
+where $\beta_{\text{climate},i}$ is the climate beta measuring sensitivity to the climate risk factor.
+
+\textbf{Alternative Multi-Factor Specification:}
+
+\begin{equation}
+R_{i,t} - R_{f,t} = \alpha + \beta_{\text{MKT}}(R_{m,t} - R_{f,t}) + \beta_{\text{SMB}} \cdot \text{SMB}_t + \beta_{\text{HML}} \cdot \text{HML}_t + \beta_{\text{climate}} \cdot \text{CRF}_t + \varepsilon_t
+\end{equation}
+
+\subsubsection{Interpretation}
+
+\begin{itemize}
+    \item $\beta_{\text{climate}} > 0$: Stock underperforms when climate concerns rise (climate laggard)
+    \item $\beta_{\text{climate}} < 0$: Stock outperforms when climate concerns rise (climate leader)
+    \item $\beta_{\text{climate}} \approx 0$: Stock neutral to climate risk
+\end{itemize}
+
+\subsubsection{Data Requirements}
+
+\textbf{To Construct Climate Risk Factor:}
+\begin{enumerate}
+    \item Emissions data: CDP, Bloomberg ESG, Refinitiv, S\&P Trucost
+    \item Variables: Scope 1, 2, 3 emissions; carbon intensity (tCO$_2$/revenue)
+    \item Stock returns: Yahoo Finance, CRSP
+    \item Portfolio construction:
+    \begin{itemize}
+        \item Rank stocks by carbon intensity
+        \item Brown portfolio = Top 30\% highest emitters
+        \item Green portfolio = Bottom 30\% lowest emitters
+    \end{itemize}
+\end{enumerate}
+
+\textbf{To Estimate Climate Beta:}
+\begin{itemize}
+    \item Stock returns: Yahoo Finance (minimum 3 years monthly or 1 year daily)
+    \item Climate Risk Factor returns: Calculated as above
+    \item Market returns: S\&P 500 or relevant index
+\end{itemize}
+
+\textbf{Academic Finding:} \citet{Huij2023} document a small but significant carbon risk premium, with high carbon beta stocks earning lower returns during climate risk realizations.
+
+\subsection{Stranded Asset Risk}
+
+Stranded assets are those that suffer premature write-downs or devaluations due to climate-related factors \citep{Semieniuk2022, Caldecott2017}.
+
+\subsubsection{Stranded Asset Valuation}
+
+\begin{equation}
+\text{Stranded Value} = \text{Book Value} - \text{Recoverable Value}
+\end{equation}
+
+where
+
+\begin{equation}
+\text{Recoverable Value} = \min(\text{Fair Value} - \text{Costs to Sell}, \text{Value in Use})
+\end{equation}
+
+and
+
+\begin{equation}
+\text{Value in Use} = \sum_{t=1}^{n} \frac{\text{CF}_t}{(1+r)^t}
+\end{equation}
+
+where $\text{CF}_t$ are expected cash flows (adjusted for climate policy) and $n$ is the remaining useful life (potentially shortened by climate policy).
+
+\subsubsection{Carbon Budget Constraint}
+
+\begin{equation}
+\text{If } \sum \text{Emissions from reserves} > \text{Carbon Budget} \implies \text{Unburnable Carbon} = \sum \text{Emissions} - \text{Carbon Budget}
+\end{equation}
+
+\begin{equation}
+\% \text{ Reserves Stranded} = \frac{\text{Unburnable Carbon}}{\text{Total Reserve Emissions}}
+\end{equation}
+
+\subsubsection{Data Requirements}
+
+\textbf{For Fossil Fuel Companies:}
+\begin{itemize}
+    \item Proven reserves: 10-K filings (barrels oil, cubic feet gas, tons coal)
+    \item Production costs: Company disclosures, IEA cost curves
+    \item Carbon content:
+    \begin{itemize}
+        \item Coal: $\sim$2.4 tCO$_2$/ton
+        \item Oil: $\sim$0.43 tCO$_2$/barrel
+        \item Natural gas: $\sim$0.05 tCO$_2$/m$^3$
+    \end{itemize}
+    \item Carbon budget scenarios: IPCC reports, NGFS scenarios
+    \item 2°C budget: $\sim$900 GtCO$_2$ remaining (IPCC AR6)
+\end{itemize}
+
+\textbf{For Other Sectors:}
+\begin{itemize}
+    \item Asset locations: Company disclosures, GIS data
+    \item Hazard maps: FEMA flood zones, NOAA storm surge, wildfire risk
+    \item Asset useful life: Depreciation schedules
+    \item Regulatory risk: Upcoming emission standards
+\end{itemize}
+
+\textbf{Academic Finding:} \citet{Semieniuk2022} estimate $>$\$1 trillion in potential stranded oil and gas assets globally under credible climate policy scenarios.
+
+\subsection{Climate Stress Testing (CRISK)}
+
+CRISK assesses the expected capital shortfall of financial institutions under climate stress scenarios \citep{Jung2021, Acharya2023}.
+
+\subsubsection{Mathematical Formulation}
+
+\begin{equation}
+\text{CRISK}_{i,t} = k \cdot \text{DEBT}_{i,t} - (1-k) \cdot \text{EQUITY}_{i,t} \cdot (1 - \text{LRMES}_{i,t})
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $k$ = Prudential capital ratio (e.g., 8\% under Basel III)
+    \item $\text{DEBT}_{i,t}$ = Book value of debt for institution $i$
+    \item $\text{EQUITY}_{i,t}$ = Market value of equity for institution $i$
+    \item $\text{LRMES}_{i,t}$ = Long-Run Marginal Expected Shortfall
+\end{itemize}
+
+\subsubsection{Long-Run Marginal Expected Shortfall}
+
+\begin{equation}
+\text{LRMES}_{i,t} = \mathbb{E}_t[-R_i \mid \text{Climate Crisis}]
+\end{equation}
+
+Estimated via:
+
+\begin{equation}
+\text{LRMES}_{i,t} = 1 - \exp(-18 \times \text{MES}_{i,t})
+\end{equation}
+
+where
+
+\begin{equation}
+\text{MES}_{i,t} = \mathbb{E}[-R_{i,t} \mid R_{\text{climate},t} < \text{5th percentile}]
+\end{equation}
+
+\subsubsection{Dynamic Climate Beta}
+
+\begin{equation}
+R_{i,t} = \beta_{\text{market},i,t} \cdot R_{\text{market},t} + \beta_{\text{climate},i,t} \cdot R_{\text{stranded},t} + \varepsilon_{i,t}
+\end{equation}
+
+where betas are time-varying via DCC-GARCH model.
+
+\subsubsection{Data Requirements}
+
+\textbf{For Financial Institutions:}
+\begin{itemize}
+    \item Market capitalization: Yahoo Finance
+    \item Book value of debt: Balance sheet (Total Liabilities - Equity)
+    \item Stock returns: Yahoo Finance (daily, 3+ years)
+\end{itemize}
+
+\textbf{Climate Risk Factor:}
+\begin{itemize}
+    \item Stranded asset portfolio returns: High-carbon stocks
+    \item Or existing indices: S\&P 500 Energy (XLE), MSCI Coal Index
+\end{itemize}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item CRISK $> 0$: Expected capital shortfall in climate crisis
+    \item CRISK $< 0$: Capital surplus
+    \item Aggregate CRISK = Systemic climate risk
+\end{itemize}
+
+\textbf{Academic Finding:} \citet{Jung2021} find that major banks' CRISK increased substantially during climate policy events and extreme weather.
+
+\subsection{Climate-Adjusted Credit Risk}
+
+Climate factors materially affect sovereign and corporate creditworthiness \citep{Klusak2023, Capasso2025}.
+
+\subsubsection{Climate-Adjusted Probability of Default}
+
+\begin{equation}
+\text{PD}_{\text{climate}} = \text{PD}_{\text{baseline}} \times (1 + \text{Climate Impact Factor})
+\end{equation}
+
+Empirical specification:
+
+\begin{equation}
+\ln\left(\frac{\text{PD}_{\text{climate}}}{\text{PD}_{\text{baseline}}}\right) = \gamma_1 \Delta T + \gamma_2 \cdot \text{Carbon Price} + \gamma_3 \cdot \text{Physical Loss} + \varepsilon
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $\Delta T$ = Temperature increase from baseline (°C)
+    \item Carbon Price = Carbon price level (\$/tCO$_2$)
+    \item Physical Loss = \% GDP loss from physical climate impacts
+\end{itemize}
+
+\subsubsection{Climate-Adjusted Credit Spread}
+
+\begin{equation}
+\text{Spread}_{\text{climate}} = \text{Spread}_{\text{baseline}} + \text{Climate Risk Premium}
+\end{equation}
+
+where
+
+\begin{equation}
+\text{Climate Risk Premium} = \beta_1 \cdot \text{Transition Risk} + \beta_2 \cdot \text{Physical Risk}
+\end{equation}
+
+and
+
+\begin{align}
+\text{Transition Risk} &= \text{Carbon Intensity} \times \text{Carbon Price} \times \text{Duration}\\
+\text{Physical Risk} &= \text{Asset Exposure} \times \text{Hazard Probability} \times \text{Damage Function}
+\end{align}
+
+\subsubsection{Data Requirements}
+
+\textbf{For Sovereigns:}
+\begin{itemize}
+    \item Baseline credit spreads: Bloomberg (CDS spreads), FRED
+    \item Variable: 5-year CDS spreads by country
+    \item Temperature projections: NGFS scenarios, IPCC data
+    \item GDP climate sensitivity: \citet{Kotz2024}, IMF estimates
+\end{itemize}
+
+\textbf{For Corporates:}
+\begin{itemize}
+    \item Company credit rating: S\&P, Moody's, Fitch
+    \item Bond yields: Bloomberg, FRED
+    \item Emissions intensity: CDP, Bloomberg ESG
+    \item Physical asset exposure: 10-K location data
+\end{itemize}
+
+\textbf{Academic Finding:} \citet{Klusak2023} find that under 2.5-3°C warming, 59 countries face climate-induced sovereign downgrades averaging 1.0-1.3 notches, increasing borrowing costs by \$22-33 billion annually.
+
+\subsection{ESG Integration Metrics}
+
+\subsubsection{Weighted Average Carbon Intensity}
+
+For portfolio carbon footprinting:
+
+\begin{equation}
+\text{WACI} = \sum_{i=1}^{n} w_i \times \frac{\text{Emissions}_i}{\text{Revenue}_i}
+\end{equation}
+
+where $w_i$ is the portfolio weight of company $i$. Units: tCO$_2$e per \$M revenue.
+
+\subsubsection{Portfolio Carbon Footprint}
+
+\begin{equation}
+\text{Carbon Footprint} = \frac{\sum_{i=1}^{n} w_i \times \text{Emissions}_i}{\text{Portfolio Value}}
+\end{equation}
+
+Units: tCO$_2$e per \$M invested.
+
+\subsubsection{Financed Emissions}
+
+For financial institutions:
+
+\begin{equation}
+\text{Financed Emissions} = \sum_{i=1}^{n} \frac{\text{Outstanding}_i}{\text{Total Equity + Debt}_i} \times \text{Emissions}_i
+\end{equation}
+
+\textbf{Data Sources:}
+\begin{itemize}
+    \item Portfolio holdings: Internal portfolio management
+    \item Company emissions: CDP, Bloomberg ESG, Refinitiv, S\&P Trucost
+    \item Company revenue: Financial statements, Yahoo Finance
+\end{itemize}
+
+\textbf{Note:} \citet{Berg2022} document low correlation (0.38-0.71) between ESG rating providers due to different methodologies.
+
+\section{Integrated Investment Framework}
+
+\subsection{Three-Pillar Decision Framework}
+
+\subsubsection{Pillar 1: Fundamental + Climate Screening}
+
+Climate-adjusted fundamental score:
+
+\begin{equation}
+\text{Score}_{\text{climate-adj}} = \text{Score}_{\text{fundamental}} \times (1 - \text{Climate VaR})
+\end{equation}
+
+or
+
+\begin{equation}
+\text{Score}_{\text{climate-adj}} = \text{Score}_{\text{fundamental}} - \text{Climate Penalty}
+\end{equation}
+
+where
+
+\begin{equation}
+\text{Climate Penalty} = \beta_{\text{climate}} \times \text{CRF} + \text{Physical Risk Score}
+\end{equation}
+
+\subsubsection{Pillar 2: Technical Analysis with Climate Events}
+
+\begin{equation}
+\text{Buy Signal Strength} = \text{Technical Signal} \times (1 - \text{Climate Event Risk})
+\end{equation}
+
+where
+
+\begin{equation}
+\text{Climate Event Risk} = P(\text{Extreme Weather in next 30 days}) \times \text{Asset Exposure}
+\end{equation}
+
+\subsubsection{Pillar 3: Climate-Integrated Position Sizing}
+
+\begin{equation}
+\text{Position}_{\text{climate-adj}} = \text{Position}_{\text{base}} \times (1 - \text{Climate Adjustment Factor})
+\end{equation}
+
+where
+
+\begin{equation}
+\text{Climate Adjustment Factor} = w_1 \frac{\text{Climate VaR}}{100} + w_2 |\beta_{\text{climate}}| + w_3 \cdot \text{Stranded Asset Risk}
+\end{equation}
+
+Typical weights: $w_1 = 0.4$, $w_2 = 0.3$, $w_3 = 0.3$.
+
+\subsection{Portfolio Optimization with Climate Constraints}
+
+\begin{align}
+\min_{\mathbf{w}} \quad & \sigma_p^2 = \mathbf{w}^T \boldsymbol{\Sigma} \mathbf{w}\\
+\text{subject to} \quad & \sum_{i=1}^{n} w_i = 1\\
+& w_i \geq 0 \quad \forall i\\
+& \mathbb{E}[R_p] \geq R_{\text{target}}\\
+& \text{WACI}_{\text{portfolio}} \leq \text{WACI}_{\text{benchmark}} \times (1 - \text{Reduction Target})\\
+& \text{Climate VaR}_{\text{portfolio}} \leq \text{Threshold}\\
+& \sum_{i=1}^{n} w_i \times \text{Stranded Risk}_i \leq \text{Max Stranded Risk}
+\end{align}
+
+where $\mathbf{w}$ is the vector of portfolio weights and $\boldsymbol{\Sigma}$ is the covariance matrix.
+
+\subsection{Climate Scenario Analysis}
+
+Following \citet{NGFS2024} guidance:
+
+\subsubsection{Portfolio Valuation Under Scenarios}
+
+\begin{equation}
+V_{\text{portfolio}}^{\text{scenario}} = \sum_{i=1}^{n} w_i \cdot V_i \cdot (1 + r_{i,\text{scenario}})^T
+\end{equation}
+
+where
+
+\begin{equation}
+r_{i,\text{scenario}} = r_{\text{baseline}} + \Delta r_{\text{transition}} + \Delta r_{\text{physical}}
+\end{equation}
+
+and
+
+\begin{align}
+\Delta r_{\text{transition}} &= -\beta_{\text{carbon}} \times \text{Carbon Price}_{\text{scenario}}\\
+\Delta r_{\text{physical}} &= -\text{Physical Damage}_{i,\text{scenario}}
+\end{align}
+
+\subsubsection{Scenario Climate VaR}
+
+\begin{equation}
+\text{Climate VaR}_{\text{scenario}} = \frac{V_{\text{baseline}} - V_{\text{scenario}}}{V_{\text{baseline}}}
+\end{equation}
+
+\subsubsection{Probability-Weighted Expected Impact}
+
+\begin{equation}
+\mathbb{E}[\text{Climate Impact}] = \sum_{s=1}^{S} P_s \times \text{Climate VaR}_s
+\end{equation}
+
+where $P_s$ is the subjective or market-implied probability of scenario $s$ and $\sum_{s=1}^{S} P_s = 1$.
+
+\subsection{Climate-Augmented CAPM}
+
+Following \citet{Dietz2018}:
+
+\textbf{Traditional CAPM:}
+
+\begin{equation}
+\mathbb{E}[R_i] = R_f + \beta_i (\mathbb{E}[R_m] - R_f)
+\end{equation}
+
+\textbf{Climate-Augmented CAPM:}
+
+\begin{equation}
+\mathbb{E}[R_i] = R_f + \beta_{\text{market},i} \cdot \text{MRP} + \beta_{\text{climate},i} \cdot \text{CRP}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item MRP = Market Risk Premium = $\mathbb{E}[R_m] - R_f$
+    \item CRP = Climate Risk Premium
+\end{itemize}
+
+\textbf{Climate Risk Premium Estimation:}
+
+Empirical approach:
+
+\begin{equation}
+\text{CRP} = \mathbb{E}[R_{\text{brown}}] - \mathbb{E}[R_{\text{green}}]
+\end{equation}
+
+Model-based approach:
+
+\begin{equation}
+\text{CRP} = \lambda_{\text{climate}} \times \sigma_{\text{climate}}
+\end{equation}
+
+where $\lambda_{\text{climate}}$ is the market price of climate risk.
+
+\textbf{Academic Finding:} \citet{Huij2023} estimate CRP at approximately 2-3\% annually.
+
+\section{Data Sources and Implementation}
+
+\subsection{Market Data Sources}
+
+\textbf{Yahoo Finance (Free):}
+\begin{itemize}
+    \item Stock prices (OHLC, Volume): Daily, weekly, monthly
+    \item API: \texttt{yfinance} Python library
+    \item Example tickers: \texttt{\^{}GSPC} (S\&P 500), \texttt{\^{}TNX} (10-year Treasury)
+\end{itemize}
+
+\textbf{FRED - Federal Reserve Economic Data (Free):}
+\begin{itemize}
+    \item Macroeconomic data: GDP, inflation, interest rates
+    \item Website: \url{https://fred.stlouisfed.org/}
+    \item API: \texttt{fredapi} Python library
+    \item Key variables: GDPC1 (Real GDP), CPIAUCSL (CPI), DGS10 (10-year Treasury)
+\end{itemize}
+
+\subsection{Fundamental Data Sources}
+
+\textbf{SEC EDGAR (Free for US companies):}
+\begin{itemize}
+    \item Website: \url{https://www.sec.gov/edgar}
+    \item Filings: 10-K (annual), 10-Q (quarterly)
+    \item API: \texttt{sec-edgar-downloader} Python library
+\end{itemize}
+
+\subsection{Climate and ESG Data Sources}
+
+\textbf{NGFS Climate Scenarios (Free):}
+\begin{itemize}
+    \item Website: \url{https://www.ngfs.net/ngfs-scenarios-portal/}
+    \item Data portal: \url{https://data.ece.iiasa.ac.at/ngfs/}
+    \item Variables: Carbon prices, temperature, GDP impacts, energy prices
+    \item Coverage: 180+ countries, multiple scenarios, 2020-2100
+\end{itemize}
+
+\textbf{CDP - Carbon Disclosure Project (Free, Public Data):}
+\begin{itemize}
+    \item Corporate emissions data (Scope 1, 2, 3)
+    \item Website: \url{https://www.cdp.net/}
+    \item Coverage: 18,700+ companies
+\end{itemize}
+
+\textbf{IPCC Data (Free):}
+\begin{itemize}
+    \item Climate models, temperature projections
+    \item Website: \url{https://www.ipcc.ch/data/}
+    \item CMIP6 models: \url{https://esgf-node.llnl.gov/projects/cmip6/}
+\end{itemize}
+
+\textbf{NOAA Climate Data (Free):}
+\begin{itemize}
+    \item Historical climate data, weather events
+    \item Website: \url{https://www.ncdc.noaa.gov/}
+    \item Billion-Dollar Disasters: \url{https://www.ncei.noaa.gov/access/billions/}
+\end{itemize}
+
+\textbf{World Bank Climate Data (Free):}
+\begin{itemize}
+    \item Climate projections by country
+    \item Website: \url{https://climateknowledgeportal.worldbank.org/}
+\end{itemize}
+
+\subsection{Python Implementation Example}
+
+\begin{verbatim}
+# Get stock data
+import yfinance as yf
+ticker = yf.Ticker("AAPL")
+hist = ticker.history(period="5y")
+info = ticker.info
+
+# Calculate returns
+import pandas as pd
+prices = hist['Close']
+returns = prices.pct_change().dropna()
+
+# Calculate VaR
+import numpy as np
+VaR_95 = np.percentile(returns, 5)
+print(f"95% Daily VaR: {VaR_95:.2%}")
+
+# Get macro data from FRED
+from fredapi import Fred
+fred = Fred(api_key='your_api_key')
+gdp = fred.get_series('GDPC1')
+cpi = fred.get_series('CPIAUCSL')
+\end{verbatim}
+
+\section{Conclusion}
+
+This framework provides a comprehensive methodology for integrating climate-related financial risks into traditional investment analysis. By combining Climate VaR, carbon beta, stranded asset assessment, and climate stress testing with conventional technical and fundamental analysis, investors can systematically incorporate climate considerations into:
+
+\begin{enumerate}
+    \item \textbf{Screening:} Identify climate-resilient companies using Climate VaR and carbon beta
+    \item \textbf{Timing:} Adjust entry/exit based on climate events and policy developments
+    \item \textbf{Sizing:} Reduce exposure to high-climate-risk positions
+    \item \textbf{Portfolio Management:} Implement climate constraints alongside traditional diversification
+    \item \textbf{Scenario Analysis:} Stress test under multiple climate futures
+\end{enumerate}
+
+All methodologies are grounded in peer-reviewed academic research and utilize publicly available data sources. As climate science and financial methodologies continue to evolve, regular updates to this framework are recommended.
+
+\textbf{Critical Success Factors:}
+\begin{itemize}
+    \item Combine climate metrics with traditional analysis (not replacement)
+    \item Use multiple climate scenarios (don't assume one future)
+    \item Engage with companies on climate strategy and data quality
+    \item Monitor regulatory developments (TCFD, ISSB, SEC)
+    \item Regular methodology updates as climate science evolves
+\end{itemize}
+
+\bibliographystyle{apalike}
+\bibliography{climate_investment_refs}
+
+\end{document}

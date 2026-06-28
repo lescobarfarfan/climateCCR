@@ -1,0 +1,68 @@
+{
+  "_descripcion": "Config del procesador de Automóviles CNSF (individual y flotillas). El procesador resuelve los códigos de los hechos contra los catálogos vía LEFT JOIN. Reutilizable para ambos subsectores; ajustar si flotillas difiere.",
+
+  "anio_canonico": 2024,
+  "anios_excluir": [2007],
+  "centinelas_faltante": ["ND", "N.D.", "N. D.", "NA", "N/A", "N.A.", "S/D", "SD", "NaN", "NULL", "-", "--"],
+  "etiqueta_faltante": "No disponible",
+
+  "tablas_hecho": ["Emision", "Siniestros", "Unidades Expuestas"],
+  "tablas_ignorar": ["Descripcion de variables", "Modelo"],
+
+  "subsectores": {
+    "individual": { "patron_archivo": "individual" },
+    "flotilla":   { "patron_archivo": "flotilla" }
+  },
+
+  "catalogos": {
+    "Tipo de poliza":     { "alias": ["Tipo de poliza"],        "llave": "Clave",  "desc": ["Descripcion"] },
+    "Entidad":            { "alias": ["Entidad"],               "llave": "Estado", "desc": ["Nombre"] },
+    "Cobertura":          { "alias": ["Cobertura"],             "llave": "Clave",  "desc": ["Descripcion"] },
+    "Forma de Venta":     { "alias": ["Forma de Venta"],        "llave": "Clave",  "desc": ["Descripcion"] },
+    "Tipo de vehiculo":   { "alias": ["Tipo de vehiculo"],      "llave": "Clave",  "desc": ["Tipo de vehiculo"] },
+    "Tipo de perdida":    { "alias": ["Tipo de perdida"],       "llave": "Clave",  "desc": ["Descripcion"] },
+    "Subtipo de Seguro":  { "alias": ["Subtipo de Seguro"],     "llave": "Clave",  "desc": ["Descripcion"], "llave_tipo": "entero" },
+    "Causa del Siniestro":{ "alias": ["Causa del Siniestro"],   "llave": "Clave",  "desc": ["Causa"] },
+    "Marca":              { "alias": ["Marca", "Marca_tipo"],   "llave": "CLAVE",  "desc": ["MARCA", "TIPO"] },
+    "Clave_amis":         { "alias": ["Clave_amis"],            "llave": "CVE_AMIS","desc": ["DESCRIPCION", "VEHICULO"] }
+  },
+
+  "uniones": {
+    "Emision": {
+      "Tipo de poliza":    "Tipo de poliza",
+      "Entidad":           "Entidad",
+      "Marca":             "Marca",
+      "Tipo de Vehiculo":  "Tipo de vehiculo",
+      "Forma de Venta":    "Forma de Venta",
+      "Cobertura":         "Cobertura",
+      "Subtipo de Seguro": "Subtipo de Seguro"
+    },
+    "Siniestros": {
+      "Tipo de poliza":     "Tipo de poliza",
+      "Tipo de Vehiculo":   "Tipo de vehiculo",
+      "Marca":              "Marca",
+      "Cobertura":          "Cobertura",
+      "Entidad":            "Entidad",
+      "Tipo de Perdida":    "Tipo de perdida",
+      "Subtipo de Seguro":  "Subtipo de Seguro",
+      "Causa del siniestro":"Causa del Siniestro"
+    },
+    "Unidades Expuestas": {
+      "Tipo de poliza":     "Tipo de poliza",
+      "Clave AMIS":         "Clave_amis",
+      "Subtipo de Seguro":  "Subtipo de Seguro"
+    }
+  },
+
+  "sin_catalogo": {
+    "Emision":    ["Deducible"],
+    "Siniestros": ["Deducible"],
+    "Unidades Expuestas": ["Modelo"]
+  },
+
+  "normalizacion_llaves": {
+    "_comentario": "Los códigos del hecho son texto; los catálogos a veces difieren en ancho o tipo. Antes de unir: recortar espacios; comparar como texto; para 'Subtipo de Seguro' el catálogo es entero, castear a texto. 'Tipo de Vehiculo' es Text(3) en el hecho y Text(2) en el catálogo: comparar sin ceros a la izquierda o con padding consistente.",
+    "trim": true,
+    "comparar_como_texto": true
+  }
+}

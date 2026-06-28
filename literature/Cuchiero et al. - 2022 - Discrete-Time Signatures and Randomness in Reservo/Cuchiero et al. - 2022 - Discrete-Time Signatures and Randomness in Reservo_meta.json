@@ -1,0 +1,718 @@
+{
+  "table_of_contents": [
+    {
+      "title": "Discrete-Time Signatures and Randomness in Reservoir Computing",
+      "heading_level": null,
+      "page_id": 0,
+      "polygon": [
+        [
+          93.75,
+          58.78125
+        ],
+        [
+          516.75,
+          58.78125
+        ],
+        [
+          516.75,
+          109.828125
+        ],
+        [
+          93.75,
+          109.828125
+        ]
+      ]
+    },
+    {
+      "title": "I. INTRODUCTION",
+      "heading_level": null,
+      "page_id": 0,
+      "polygon": [
+        [
+          133.5,
+          379.5
+        ],
+        [
+          213.75,
+          379.5
+        ],
+        [
+          213.75,
+          388.5
+        ],
+        [
+          133.5,
+          388.5
+        ]
+      ]
+    },
+    {
+      "title": "II. TRUNCATED VOLTERRA REPRESENTATIONS\nOF ANALYTIC FILTERS",
+      "heading_level": null,
+      "page_id": 1,
+      "polygon": [
+        [
+          336.0,
+          645.0
+        ],
+        [
+          539.25,
+          645.0
+        ],
+        [
+          539.25,
+          665.54296875
+        ],
+        [
+          336.0,
+          665.54296875
+        ]
+      ]
+    },
+    {
+      "title": "A. Signature State-Affine System",
+      "heading_level": null,
+      "page_id": 2,
+      "polygon": [
+        [
+          310.5,
+          573.75
+        ],
+        [
+          444.0,
+          573.75
+        ],
+        [
+          444.0,
+          582.78515625
+        ],
+        [
+          310.5,
+          582.78515625
+        ]
+      ]
+    },
+    {
+      "title": "B. SigSAS Approximation Theorem",
+      "heading_level": null,
+      "page_id": 4,
+      "polygon": [
+        [
+          47.25,
+          58.0078125
+        ],
+        [
+          192.0,
+          58.0078125
+        ],
+        [
+          192.0,
+          67.2890625
+        ],
+        [
+          47.25,
+          67.2890625
+        ]
+      ]
+    },
+    {
+      "title": "III. JL REDUCTION OF THE SIGSAS REPRESENTATION",
+      "heading_level": null,
+      "page_id": 4,
+      "polygon": [
+        [
+          56.25,
+          599.02734375
+        ],
+        [
+          292.25390625,
+          599.02734375
+        ],
+        [
+          292.25390625,
+          609.0
+        ],
+        [
+          56.25,
+          609.0
+        ]
+      ]
+    },
+    {
+      "title": "A. JL Lemma and Approximate Projections",
+      "heading_level": null,
+      "page_id": 4,
+      "polygon": [
+        [
+          309.5859375,
+          120.0
+        ],
+        [
+          489.75,
+          120.0
+        ],
+        [
+          489.75,
+          130.32421875
+        ],
+        [
+          309.5859375,
+          130.32421875
+        ]
+      ]
+    },
+    {
+      "title": "B. JL Projection of State-Space Dynamics",
+      "heading_level": null,
+      "page_id": 5,
+      "polygon": [
+        [
+          47.25,
+          253.6875
+        ],
+        [
+          222.0,
+          253.6875
+        ],
+        [
+          222.0,
+          264.0
+        ],
+        [
+          47.25,
+          264.0
+        ]
+      ]
+    },
+    {
+      "title": "C. JL-Reduced SigSAS System",
+      "heading_level": null,
+      "page_id": 5,
+      "polygon": [
+        [
+          310.482421875,
+          424.5
+        ],
+        [
+          436.5,
+          424.5
+        ],
+        [
+          436.5,
+          434.28515625
+        ],
+        [
+          310.482421875,
+          434.28515625
+        ]
+      ]
+    },
+    {
+      "title": "IV. NUMERICAL ILLUSTRATION",
+      "heading_level": null,
+      "page_id": 7,
+      "polygon": [
+        [
+          104.888671875,
+          403.5
+        ],
+        [
+          243.0,
+          403.5
+        ],
+        [
+          243.0,
+          412.62890625
+        ],
+        [
+          104.888671875,
+          412.62890625
+        ]
+      ]
+    },
+    {
+      "title": "V. CONCLUSION",
+      "heading_level": null,
+      "page_id": 7,
+      "polygon": [
+        [
+          401.25,
+          416.49609375
+        ],
+        [
+          474.0,
+          416.49609375
+        ],
+        [
+          474.0,
+          425.25
+        ],
+        [
+          401.25,
+          425.25
+        ]
+      ]
+    },
+    {
+      "title": "ACKNOWLEDGMENT",
+      "heading_level": null,
+      "page_id": 8,
+      "polygon": [
+        [
+          129.392578125,
+          214.33624267578125
+        ],
+        [
+          217.99098205566406,
+          214.33624267578125
+        ],
+        [
+          217.99098205566406,
+          224.298828125
+        ],
+        [
+          129.392578125,
+          224.298828125
+        ]
+      ]
+    },
+    {
+      "title": "REFERENCES",
+      "heading_level": null,
+      "page_id": 8,
+      "polygon": [
+        [
+          146.6396942138672,
+          295.09649658203125
+        ],
+        [
+          202.4341583251953,
+          295.09649658203125
+        ],
+        [
+          202.4341583251953,
+          305.0591125488281
+        ],
+        [
+          146.6396942138672,
+          305.0591125488281
+        ]
+      ]
+    }
+  ],
+  "page_stats": [
+    {
+      "page_id": 0,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Line",
+          140
+        ],
+        [
+          "Span",
+          63
+        ],
+        [
+          "Text",
+          18
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "SectionHeader",
+          2
+        ],
+        [
+          "ListItem",
+          2
+        ],
+        [
+          "PageFooter",
+          1
+        ],
+        [
+          "ListGroup",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 1,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Line",
+          137
+        ],
+        [
+          "Span",
+          93
+        ],
+        [
+          "Text",
+          11
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "SectionHeader",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 2,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Span",
+          247
+        ],
+        [
+          "Line",
+          112
+        ],
+        [
+          "Text",
+          13
+        ],
+        [
+          "Equation",
+          6
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "SectionHeader",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 3,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Span",
+          141
+        ],
+        [
+          "Line",
+          108
+        ],
+        [
+          "Text",
+          18
+        ],
+        [
+          "Equation",
+          13
+        ],
+        [
+          "PageHeader",
+          2
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 4,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Span",
+          171
+        ],
+        [
+          "Line",
+          135
+        ],
+        [
+          "Text",
+          18
+        ],
+        [
+          "Equation",
+          9
+        ],
+        [
+          "SectionHeader",
+          3
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "ListItem",
+          2
+        ],
+        [
+          "ListGroup",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 5,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Span",
+          213
+        ],
+        [
+          "Line",
+          93
+        ],
+        [
+          "Text",
+          22
+        ],
+        [
+          "Equation",
+          12
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "SectionHeader",
+          2
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 6,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Span",
+          150
+        ],
+        [
+          "Line",
+          111
+        ],
+        [
+          "Text",
+          16
+        ],
+        [
+          "Equation",
+          11
+        ],
+        [
+          "PageHeader",
+          2
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 7,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Line",
+          126
+        ],
+        [
+          "Span",
+          118
+        ],
+        [
+          "Text",
+          8
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "Figure",
+          2
+        ],
+        [
+          "Caption",
+          2
+        ],
+        [
+          "Equation",
+          2
+        ],
+        [
+          "SectionHeader",
+          2
+        ],
+        [
+          "ListItem",
+          2
+        ],
+        [
+          "FigureGroup",
+          2
+        ],
+        [
+          "ListGroup",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 8,
+      "text_extraction_method": "pdftext",
+      "block_counts": [
+        [
+          "Span",
+          421
+        ],
+        [
+          "Line",
+          144
+        ],
+        [
+          "ListItem",
+          43
+        ],
+        [
+          "Text",
+          3
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "SectionHeader",
+          2
+        ],
+        [
+          "ListGroup",
+          2
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 9,
+      "text_extraction_method": "pdftext",
+      "block_counts": [
+        [
+          "Span",
+          316
+        ],
+        [
+          "Line",
+          122
+        ],
+        [
+          "ListItem",
+          30
+        ],
+        [
+          "Text",
+          10
+        ],
+        [
+          "Picture",
+          5
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "ListGroup",
+          2
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    }
+  ],
+  "debug_data_path": "debug_data/Cuchiero et al. - 2022 - Discrete-Time Signatures and Randomness in Reservo"
+}

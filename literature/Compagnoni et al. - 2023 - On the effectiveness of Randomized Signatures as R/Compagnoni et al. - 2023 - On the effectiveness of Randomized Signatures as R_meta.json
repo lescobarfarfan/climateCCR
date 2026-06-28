@@ -1,0 +1,809 @@
+{
+  "table_of_contents": [
+    {
+      "title": "On the effectiveness of Randomized Signatures as\nReservoir for Learning Rough Dynamics",
+      "heading_level": null,
+      "page_id": 0,
+      "polygon": [
+        [
+          57.75,
+          53.25
+        ],
+        [
+          552.75,
+          53.25
+        ],
+        [
+          552.75,
+          104.02734375
+        ],
+        [
+          57.75,
+          104.02734375
+        ]
+      ]
+    },
+    {
+      "title": "I. Introduction",
+      "heading_level": null,
+      "page_id": 0,
+      "polygon": [
+        [
+          133.5,
+          438.15234375
+        ],
+        [
+          214.5,
+          438.15234375
+        ],
+        [
+          214.5,
+          446.66015625
+        ],
+        [
+          133.5,
+          446.66015625
+        ]
+      ]
+    },
+    {
+      "title": "II. BACKGROUND",
+      "heading_level": null,
+      "page_id": 1,
+      "polygon": [
+        [
+          396.75,
+          117.75
+        ],
+        [
+          476.25,
+          117.75
+        ],
+        [
+          476.25,
+          126.75
+        ],
+        [
+          396.75,
+          126.75
+        ]
+      ]
+    },
+    {
+      "title": "Algorithm 1 Generate Randomized Signature",
+      "heading_level": null,
+      "page_id": 2,
+      "polygon": [
+        [
+          47.21484375,
+          534.0
+        ],
+        [
+          237.75,
+          534.0
+        ],
+        [
+          237.75,
+          544.5
+        ],
+        [
+          47.21484375,
+          544.5
+        ]
+      ]
+    },
+    {
+      "title": "III. RANDOMIZED SIGNATURE AS RESERVOIR: THE PROCEDURE",
+      "heading_level": null,
+      "page_id": 2,
+      "polygon": [
+        [
+          326.25,
+          166.2890625
+        ],
+        [
+          547.5,
+          166.2890625
+        ],
+        [
+          547.5,
+          186.75
+        ],
+        [
+          326.25,
+          186.75
+        ]
+      ]
+    },
+    {
+      "title": "Algorithm 2 Simulate solution of (1)",
+      "heading_level": null,
+      "page_id": 2,
+      "polygon": [
+        [
+          311.25,
+          287.25
+        ],
+        [
+          468.0,
+          287.25
+        ],
+        [
+          468.0,
+          297.0
+        ],
+        [
+          311.25,
+          297.0
+        ]
+      ]
+    },
+    {
+      "title": "end for",
+      "heading_level": null,
+      "page_id": 2,
+      "polygon": [
+        [
+          321.0,
+          396.75
+        ],
+        [
+          354.75,
+          396.75
+        ],
+        [
+          354.75,
+          406.44140625
+        ],
+        [
+          321.0,
+          406.44140625
+        ]
+      ]
+    },
+    {
+      "title": "IV. THEORETICAL CONTRIBUTION",
+      "heading_level": null,
+      "page_id": 3,
+      "polygon": [
+        [
+          99.0,
+          106.5
+        ],
+        [
+          248.25,
+          106.5
+        ],
+        [
+          248.25,
+          114.75
+        ],
+        [
+          99.0,
+          114.75
+        ]
+      ]
+    },
+    {
+      "title": "V. NUMERICAL EXPERIMENTS",
+      "heading_level": null,
+      "page_id": 3,
+      "polygon": [
+        [
+          107.279296875,
+          573.0
+        ],
+        [
+          240.0,
+          573.0
+        ],
+        [
+          240.0,
+          582.78515625
+        ],
+        [
+          107.279296875,
+          582.78515625
+        ]
+      ]
+    },
+    {
+      "title": "A. Robustness over different random initializations",
+      "heading_level": null,
+      "page_id": 3,
+      "polygon": [
+        [
+          309.5859375,
+          201.75
+        ],
+        [
+          522.0,
+          201.75
+        ],
+        [
+          522.0,
+          211.921875
+        ],
+        [
+          309.5859375,
+          211.921875
+        ]
+      ]
+    },
+    {
+      "title": "B. Randomized Signature as compression of the Truncated one",
+      "heading_level": null,
+      "page_id": 4,
+      "polygon": [
+        [
+          47.8125,
+          51.046875
+        ],
+        [
+          300.0,
+          51.046875
+        ],
+        [
+          300.0,
+          60.75
+        ],
+        [
+          47.8125,
+          60.75
+        ]
+      ]
+    },
+    {
+      "title": "C. Effectiveness of Randomized versus Truncated Signatures",
+      "heading_level": null,
+      "page_id": 4,
+      "polygon": [
+        [
+          47.8125,
+          289.65234375
+        ],
+        [
+          297.75,
+          289.65234375
+        ],
+        [
+          297.75,
+          299.25
+        ],
+        [
+          47.8125,
+          299.25
+        ]
+      ]
+    },
+    {
+      "title": "D. Comparison with baseline methods",
+      "heading_level": null,
+      "page_id": 4,
+      "polygon": [
+        [
+          47.8125,
+          561.90234375
+        ],
+        [
+          207.75,
+          561.90234375
+        ],
+        [
+          207.75,
+          571.5
+        ],
+        [
+          47.8125,
+          571.5
+        ]
+      ]
+    },
+    {
+      "title": "E. Real-world experiment: electrochemical battery model with noisy observations",
+      "heading_level": null,
+      "page_id": 4,
+      "polygon": [
+        [
+          310.5,
+          441.6328125
+        ],
+        [
+          563.58984375,
+          441.6328125
+        ],
+        [
+          563.58984375,
+          462.75
+        ],
+        [
+          310.5,
+          462.75
+        ]
+      ]
+    },
+    {
+      "title": "F. Out-of-sample generalization on enzyme-substrate model",
+      "heading_level": null,
+      "page_id": 5,
+      "polygon": [
+        [
+          48.0,
+          631.5
+        ],
+        [
+          294.75,
+          631.5
+        ],
+        [
+          294.75,
+          641.56640625
+        ],
+        [
+          48.0,
+          641.56640625
+        ]
+      ]
+    },
+    {
+      "title": "G. Test on irregularly sampled grid",
+      "heading_level": null,
+      "page_id": 6,
+      "polygon": [
+        [
+          47.8125,
+          349.98046875
+        ],
+        [
+          197.25,
+          349.98046875
+        ],
+        [
+          197.25,
+          360.0
+        ],
+        [
+          47.8125,
+          360.0
+        ]
+      ]
+    },
+    {
+      "title": "VI. CONCLUSIONS",
+      "heading_level": null,
+      "page_id": 6,
+      "polygon": [
+        [
+          395.25,
+          224.25
+        ],
+        [
+          479.25,
+          224.25
+        ],
+        [
+          479.25,
+          233.25
+        ],
+        [
+          395.25,
+          233.25
+        ]
+      ]
+    },
+    {
+      "title": "REFERENCES",
+      "heading_level": null,
+      "page_id": 6,
+      "polygon": [
+        [
+          408.75,
+          425.25
+        ],
+        [
+          465.75,
+          425.25
+        ],
+        [
+          465.75,
+          434.28515625
+        ],
+        [
+          408.75,
+          434.28515625
+        ]
+      ]
+    }
+  ],
+  "page_stats": [
+    {
+      "page_id": 0,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Line",
+          105
+        ],
+        [
+          "Span",
+          63
+        ],
+        [
+          "Text",
+          11
+        ],
+        [
+          "SectionHeader",
+          2
+        ],
+        [
+          "PageHeader",
+          1
+        ],
+        [
+          "Footnote",
+          1
+        ],
+        [
+          "Equation",
+          1
+        ],
+        [
+          "PageFooter",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 1,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Span",
+          169
+        ],
+        [
+          "Line",
+          113
+        ],
+        [
+          "Text",
+          14
+        ],
+        [
+          "Equation",
+          2
+        ],
+        [
+          "SectionHeader",
+          1
+        ],
+        [
+          "PageFooter",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 2,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Span",
+          160
+        ],
+        [
+          "Line",
+          116
+        ],
+        [
+          "Text",
+          20
+        ],
+        [
+          "Equation",
+          5
+        ],
+        [
+          "SectionHeader",
+          4
+        ],
+        [
+          "PageFooter",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 3,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Span",
+          158
+        ],
+        [
+          "Line",
+          111
+        ],
+        [
+          "Text",
+          10
+        ],
+        [
+          "SectionHeader",
+          3
+        ],
+        [
+          "Equation",
+          1
+        ],
+        [
+          "Figure",
+          1
+        ],
+        [
+          "Caption",
+          1
+        ],
+        [
+          "PageFooter",
+          1
+        ],
+        [
+          "FigureGroup",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 4,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Span",
+          179
+        ],
+        [
+          "Line",
+          108
+        ],
+        [
+          "TableCell",
+          28
+        ],
+        [
+          "Text",
+          5
+        ],
+        [
+          "SectionHeader",
+          4
+        ],
+        [
+          "Table",
+          1
+        ],
+        [
+          "Caption",
+          1
+        ],
+        [
+          "PageFooter",
+          1
+        ],
+        [
+          "TableGroup",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 5,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Line",
+          139
+        ],
+        [
+          "Span",
+          75
+        ],
+        [
+          "TableCell",
+          12
+        ],
+        [
+          "Text",
+          4
+        ],
+        [
+          "Caption",
+          3
+        ],
+        [
+          "Figure",
+          2
+        ],
+        [
+          "FigureGroup",
+          2
+        ],
+        [
+          "Table",
+          1
+        ],
+        [
+          "SectionHeader",
+          1
+        ],
+        [
+          "Equation",
+          1
+        ],
+        [
+          "PageFooter",
+          1
+        ],
+        [
+          "TableGroup",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 6,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Line",
+          160
+        ],
+        [
+          "Span",
+          104
+        ],
+        [
+          "TableCell",
+          12
+        ],
+        [
+          "Text",
+          11
+        ],
+        [
+          "ListItem",
+          10
+        ],
+        [
+          "Caption",
+          3
+        ],
+        [
+          "SectionHeader",
+          3
+        ],
+        [
+          "Figure",
+          2
+        ],
+        [
+          "Equation",
+          1
+        ],
+        [
+          "Table",
+          1
+        ],
+        [
+          "PageFooter",
+          1
+        ],
+        [
+          "TableGroup",
+          1
+        ],
+        [
+          "FigureGroup",
+          1
+        ],
+        [
+          "ListGroup",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 7,
+      "text_extraction_method": "pdftext",
+      "block_counts": [
+        [
+          "Span",
+          347
+        ],
+        [
+          "Line",
+          95
+        ],
+        [
+          "ListItem",
+          35
+        ],
+        [
+          "ListGroup",
+          2
+        ],
+        [
+          "PageFooter",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    }
+  ],
+  "debug_data_path": "debug_data/Compagnoni et al. - 2023 - On the effectiveness of Randomized Signatures as R"
+}
