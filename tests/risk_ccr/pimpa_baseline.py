@@ -9,10 +9,9 @@ the locked baseline, and runnable as a script to regenerate that baseline:
 The baseline is locked at seed 233423 / n_paths 10000 (from the fixture
 global_parameters) and valuation date TODAY_DATE below (CCR-MIG-03).
 """
+
 from __future__ import annotations
 
-import importlib.util
-import os
 from pathlib import Path
 
 import pandas as pd
@@ -20,6 +19,7 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = REPO_ROOT / "tests" / "fixtures" / "pimpa"
 BASELINE_CSV = FIXTURE / "baselines" / "ee_pe_baseline.csv"
+CONFIG = REPO_ROOT / "configs" / "pimpa_fixture.yaml"
 
 # Valuation as-of date — the latest Historical_Fixings date in the fixture; not
 # recorded in the original PIMPA, fixed here for reproducibility (confirmed 2026-06-28).
@@ -27,13 +27,13 @@ TODAY_DATE = "2020-01-01"
 
 
 def _load_global_parameters() -> dict:
-    os.environ["PIMPA_DATA_ROOT"] = str(FIXTURE) + os.sep
-    spec = importlib.util.spec_from_file_location(
-        "pimpa_proto_gp", FIXTURE / "global_parameters.py"
-    )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module.global_parameters
+    # Parameters come from a YAML Config (GEN-08); data paths anchor to the fixture
+    # tree via ProjectPaths, not a CWD-relative GLOBAL_DATA_PATH (CCR-ARCH-04).
+    from climateCCR.infra import load_config
+    from climateCCR.risk.ccr.config import build_global_parameters
+
+    config = load_config(CONFIG)
+    return build_global_parameters(config, data_root=FIXTURE)
 
 
 def run_all() -> pd.DataFrame:

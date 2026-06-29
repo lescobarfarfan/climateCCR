@@ -1,0 +1,104 @@
+# PIMPA prototype-fixture configuration (CCR-MIG-05 Step 1b, GEN-08/CCR-ARCH-04).
+#
+# Replaces the fixture's hand-built `global_parameters.py` dict. The leaf values
+# below are assembled into the legacy `global_parameters` shape by
+# `climateCCR.risk.ccr.config.build_global_parameters`, which prefixes every data
+# path with a `data_root` resolved via `infra.ProjectPaths` (no CWD-relative
+# `GLOBAL_DATA_PATH`). Parameter VALUES are unchanged from the original PIMPA
+# prototype, so the EE/PE regression baseline (CCR-MIG-03) stays bit-for-bit green.
+
+# --- typed Config fields (infra.Config) ---
+seed: 233423                 # PIMPA's random_state
+n_paths: 10000               # Monte Carlo paths
+settlement_currency: USD
+date_format: "%Y-%m-%d"
+
+# --- everything below lands in Config.extra ---
+
+b3_grid: ['0D', '1D', '1W', '2W', '1M', '6M', '1Y', '2Y', '5Y', '10Y', '20Y', '50Y']
+ir_curves_tenors: ['0.08333333', '1', '5', '10', '30']
+
+# Data layout, relative to data_root (joined at build time). Mirrors PIMPA's
+# data_paths; the trailing slash is kept so joins reproduce the original strings.
+data_subdirs:
+  backtesting_data: backtesting_Data/
+  collateral_models: calibration_data/collateral_models/
+  counterparties: portfolio_data/counterparties/
+  market_data: market_data/
+  position_keeping_system: portfolio_data/positions_keeping_system/
+  pricing: calibration_data/pricing_models/
+  RFE: calibration_data/RFE_models/
+  RFs_attributes: RFs_attributes/
+
+trades_subdirs:
+  EQ: portfolio_data/desks/EQ/
+  FX: portfolio_data/desks/FX/
+  IR: portfolio_data/desks/IR/
+
+# File names per data service (prototype_data_files). Strings stay strings;
+# nested dicts stay dicts — reproduced verbatim.
+file_names:
+  backtesting_data:
+    sample_set: sample_set_NASDAQ
+  collateral_models:
+    OE_haircuts: OE_haircuts.csv
+  market_data:
+    historical_fixings: Historical_Fixings.csv
+    spread_to_discount_curve: Spread_to_Discount_Curve.csv
+    equity_implied_volatility_surface: Equity_Implied_Volatility_Surface.csv
+    equity_spot: Equity_Spot.csv
+  position_keeping_system: master_ledger.csv
+  counterparty_properties: counterparty_properties.csv
+  pricing:
+    pricing_BM_calibration: ''
+    pricing_GBM_calibration: Pricing_GBM_Calibration.csv
+    pricing_FactorGBM_calibration: Pricing_FactorGBM_Calibration.csv
+    pricing_HW1F_calibration: Pricing_HW1F_Calibration.csv
+    pricing_HW2F_calibration: Pricing_HW2F_Calibration.csv
+  RFE:
+    RFE_BM_calibration: ''
+    RFE_GBM_calibration: RFE_GBM_Calibration.csv
+    RFE_FactorGBM_calibration: RFE_FactorGBM_Calibration.csv
+    RFE_HW1F_calibration: RFE_HW1F_Calibration.csv
+    RFE_HW2F_calibration: RFE_HW2F_Calibration.csv
+    RFE_correlation_matrix: RFE_Correlation_Matrix.csv
+  RFs_attributes:
+    all_RFs_mapping: All_RFs_Mapping.csv
+  trades:
+    IR:
+      IRS: IRS.csv
+    EQ:
+      EQ_EUR_OPT: EQ_EUROPEAN_OPTIONS.csv
+
+# market_data_by_service derivation: service -> data_paths[dir] + file_names[group][file].
+market_data_services:
+  - {service: RFE_BM_calibration,                dir: RFE,         group: RFE,         file: RFE_BM_calibration}
+  - {service: RFE_GBM_calibration,               dir: RFE,         group: RFE,         file: RFE_GBM_calibration}
+  - {service: RFE_HW1F_calibration,              dir: RFE,         group: RFE,         file: RFE_HW1F_calibration}
+  - {service: Pricing_BM_calibration,            dir: pricing,     group: pricing,     file: pricing_BM_calibration}
+  - {service: Pricing_GBM_calibration,           dir: pricing,     group: pricing,     file: pricing_GBM_calibration}
+  - {service: Pricing_HW1F_calibration,          dir: pricing,     group: pricing,     file: pricing_HW1F_calibration}
+  - {service: historical_fixings,                dir: market_data, group: market_data, file: historical_fixings}
+  - {service: spread_to_discount_curve,          dir: market_data, group: market_data, file: spread_to_discount_curve}
+  - {service: equity_implied_volatility_surface, dir: market_data, group: market_data, file: equity_implied_volatility_surface}
+  - {service: equity_spot,                       dir: market_data, group: market_data, file: equity_spot}
+
+calibration_parameters:
+  Pricing_HW1F_calibration:
+    IRS_Pricer:
+      calibration_method: direct_input
+    EQ_EUR_OPT_Pricer:
+      calibration_method: direct_input
+  RFE_HW1F_calibration:
+    USD_ZERO_YIELD_CURVE:
+      calibration_method: direct_input
+  RFE_GBM_calibration:
+    EUR_USD_FX_RATE:
+      calibration_method: direct_input
+    GBP_USD_FX_RATE:
+      calibration_method: direct_input
+    CREDIT_SUISSE_SHARE: {}
+
+pricer_mapping:
+  IRS: InterestRateSwapPricer
+  EQ_EUR_OPT: EquityEuropeanOptionPricer
