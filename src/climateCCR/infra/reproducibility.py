@@ -31,5 +31,18 @@ def set_seed(seed: int = DEFAULT_SEED) -> np.random.Generator:
 
 
 def get_rng(seed: int | None = None) -> np.random.Generator:
-    """Return an independent generator without touching global state."""
+    """Return an independent modern generator without touching global state."""
     return np.random.default_rng(seed)
+
+
+def get_legacy_rng(seed: int | None = None) -> np.random.RandomState:
+    """Return an independent legacy ``RandomState`` without touching global state.
+
+    The single seeding entry point for code that must feed SciPy's int-style
+    ``random_state`` (e.g. ``scipy.stats.multivariate_normal``): SciPy builds a
+    ``RandomState`` from an integer seed, so passing ``RandomState(seed)``
+    reproduces the integer-seed stream bit-for-bit while keeping the seed under
+    ``infra`` control (``GEN-07``). Prefer :func:`get_rng` in new code; this exists
+    for legacy MT19937 consumers that cannot use a modern ``Generator``.
+    """
+    return np.random.RandomState(seed)

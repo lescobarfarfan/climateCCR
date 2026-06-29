@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.stats import multivariate_normal
 
+from climateCCR.infra import get_legacy_rng
+
 from .scenario_generator import ScenarioGenerator
 
 
@@ -17,10 +19,14 @@ class MultiRiskFactorSimulation(ScenarioGenerator):
         for rf in self.simulated_risk_factors:
             nr_risk_drivers += rf.model.number_of_risk_drivers
 
+        # Seed the correlated Gaussian draw through infra's single entry point
+        # (GEN-07). A legacy RandomState reproduces SciPy's int-seed stream exactly,
+        # so the locked EE/PE baseline is unchanged (OQ-CCR-09 resolved, CCR-MIG-03).
+        rng = get_legacy_rng(simulation_parameters["random_state"])
         random_increments = multivariate_normal(
             mean=[0] * nr_risk_drivers,
             cov=self.correlation_matrix,
-            seed=simulation_parameters["random_state"],
+            seed=rng,
         ).rvs(size=(simulation_parameters["n_paths"], len(valuation_dates) - 1))
 
         if nr_risk_drivers == 1:
