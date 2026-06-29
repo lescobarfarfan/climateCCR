@@ -140,7 +140,14 @@ changes** (`GEN-09`). Spanish filenames are kept **verbatim** (they are real art
 
 ---
 
-## 5. Migration order (recommended) — status as of 2026-06-28
+## 5. Migration order (recommended) — status as of 2026-06-29
+
+> **▶ Next session — start here:** build the **climate event-injection hook** (`DC-CCR-SIM-2`, item 8
+> below) — its ▶ build plan is in `DATA_CONTRACTS.md`; it is gated by the knob decision `OQ-INT-03`
+> (warmstart will surface it). The simulation engine underneath is now decomposed and infra-seeded
+> (`CCR-MIG-05/08`), so the hook is unblocked. Smaller parallel wins also available: `OQ-HAZ-15` (fix
+> the CNSF test-harness import — full suite then collects) and the `OQ-CCR-06` residual (code-review
+> the IRS pricer / `Curve` / `Surface` / `CorrelationMatrix` internals).
 
 1. **Scaffold** ✅ DONE — CCR scaffold + `infra` carried over (name `climateCCR`); `infra` tests green.
 2. **Canon** ✅ DONE — `context/` + root hubs/vault in place; vault hygiene pass 2026-06-28 (broken links, orphans, footers/tags, literature renamed to `Author_Year_ShortTitle`, cruft dropped).
@@ -149,7 +156,7 @@ changes** (`GEN-09`). Spanish filenames are kept **verbatim** (they are real art
 5. **Signatures** ⬜ PENDING — `MOVE+FIX` per `CODE_REVIEW`; seed the reservoir; fix the solver contract.
 6. **Calibration** ⬜ PENDING — `calibration/financial` (emit `'direct_input'`; `MarketDataBuilder` lands here) then `calibration/impact` (CLIMADA).
 7. **Risk extensions** ⬜ PENDING — EPE/CVA in `risk/ccr`; VaR/ES in `risk/market`; loss models in `risk/loss`.
-8. **Scenarios & cross-arm wire** ⬜ PENDING — NGFS Δr→θ*; then specify the HAZ→financial-risk wire (`OQ-INT-07`).
+8. **Scenarios & cross-arm wire** 🟡 NEXT — **build the `DC-CCR-SIM-2` climate event-injection hook scaffold first** (`processes/jumps/`, infra-seeded, synthetic λ/mark, jump regression fixture — see its ▶ build plan; gated by `OQ-INT-03`). Then the empirical wire: HAZ `calibration.impact` → λ + jump-mark (`OQ-INT-07`, `DC-XWALK-4`) and NGFS Δr→θ\* (Path B, `INT-12`). Steps 5–7 (signatures, calibration, risk extensions) remain available in parallel.
 
 > Each step is a small, reviewable set of commits. Behaviour changes never share a commit with a
 > move/rename (`GEN-09`). After each working chat, run the end-of-chat ritual (`context/WORKFLOW.md`).
