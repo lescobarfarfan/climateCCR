@@ -34,12 +34,12 @@ changes** (`GEN-09`). Spanish filenames are kept **verbatim** (they are real art
 
 | Origin | Destination | Status | Notes |
 |---|---|---|---|
-| PIMPA engine — `evaluators` (`CCR_Valuation_Session`, EE/PE, netting, collateral), `trade_models`, `pricing_models` | `src/climateCCR/risk/ccr/` | MOVE+FIX | name kept `CCR_Valuation_Session` (`OQ-CCR-01`); `iteritems()`→`.items()` (4 sites); drop `from calendar import calendar`; behaviour-unchanged first (`CCR-MIG-01/02`). Add EPE/Effective-EPE/CVA after (`OQ-CCR-04`). |
-| PIMPA diffusions `RiskFactorEvolution`/BM/GBM/HW1F | `src/climateCCR/processes/diffusions/` | MOVE+FIX | the shared stochastic spine (`INT-05/11`); the GBM/HW1F the climate jump injects into (`DC-CCR-SIM-2`). |
-| PIMPA `MultiRiskFactorSimulation`/`ScenarioGenerator`/`RiskFactor`/`SimulatedData`/`CorrelationMatrix` | `src/climateCCR/simulation/` | MOVE+FIX | path-major; define `simulate_random_increments` seeded via `infra.get_rng` (`CODE_REVIEW` C4); event-injection hook (`DC-CCR-SIM-1`). |
-| PIMPA market primitives `Curve`/`Surface` | `src/climateCCR/data/market/` | MOVE+FIX | forced below `risk.ccr` by layering (`hw1f` needs `Curve`). |
-| PIMPA `MarketDataBuilder` (the `'direct_input'` loader) | `src/climateCCR/calibration/financial/` | MOVE+FIX | the load-bearing `DC-CCR-CAL-1` seam, placed in its final home (decided 2026-06-28). |
-| PIMPA `global_parameters.py` (mutable dict) | `configs/*.yaml` + `infra.Config` | PORT | config-over-hard-coding (`CCR-ARCH-04`); paths via `ProjectPaths`. |
+| PIMPA engine — `evaluators` (`CCR_Valuation_Session`, EE/PE, netting, collateral), `trade_models`, `pricing_models` | `src/climateCCR/risk/ccr/` | DONE | name kept `CCR_Valuation_Session` (`OQ-CCR-01`); `iteritems()`→`.items()`; dead imports dropped; behaviour-unchanged (`CCR-MIG-01/02/04`). Engine stays in `risk.ccr` after decomposition (`CCR-MIG-05`). Add EPE/Effective-EPE/CVA after (`OQ-CCR-04`); inherited ruff/black debt → `CCR-MIG-07`. |
+| PIMPA diffusions `RiskFactorEvolution`/BM/GBM/HW1F | `src/climateCCR/processes/diffusions/` | DONE | the shared stochastic spine (`INT-05/11`); the GBM/HW1F the climate jump injects into (`DC-CCR-SIM-2`). Moved 2026-06-29 (`CCR-MIG-05`, `3a9818a`). |
+| PIMPA `MultiRiskFactorSimulation`/`ScenarioGenerator`/`RiskFactor`/`SimulatedData`/`CorrelationMatrix` | `src/climateCCR/simulation/` | DONE | path-major; moved 2026-06-29 (`CCR-MIG-05`). Routing `simulate_random_increments` through `infra.get_rng` (`CODE_REVIEW` C4) **still pending** → `OQ-CCR-09`; event-injection hook (`DC-CCR-SIM-1`). |
+| PIMPA market primitives `Curve`/`Surface` | `src/climateCCR/data/market/` | DONE | forced below `risk.ccr` by layering (`hw1f` needs `Curve`). Moved 2026-06-29 (`CCR-MIG-05`). |
+| PIMPA `MarketDataBuilder` (the `'direct_input'` loader) | `src/climateCCR/calibration/financial/` | DONE | the load-bearing `DC-CCR-CAL-1` seam, in its final home. Moved 2026-06-29 (`CCR-MIG-05`). |
+| PIMPA `global_parameters.py` (mutable dict) | `configs/pimpa_fixture.yaml` + `infra.Config` + `risk/ccr/config.py` | DONE | config-over-hard-coding (`CCR-ARCH-04`); paths via `ProjectPaths`; `build_global_parameters` deep-equal to legacy; legacy file deleted (`CCR-MIG-06`, `a4189cf`). |
 | PIMPA prototype parameter CSVs | `tests/fixtures/pimpa/` | MOVE | the EE/PE regression fixture (`CCR-MIG-03`, `OQ-CCR-06`). |
 | Randomized-signature prototype (Compagnoni 2023) | `src/climateCCR/{signatures,inference}/` | MOVE+FIX | seed the reservoir; fix solver `z0,A,b` fixed between fit/predict (`CODE_REVIEW` C1–C5; `CCR-SIG-02/03`). |
 
@@ -144,7 +144,7 @@ changes** (`GEN-09`). Spanish filenames are kept **verbatim** (they are real art
 
 1. **Scaffold** ✅ DONE — CCR scaffold + `infra` carried over (name `climateCCR`); `infra` tests green.
 2. **Canon** ✅ DONE — `context/` + root hubs/vault in place; vault hygiene pass 2026-06-28 (broken links, orphans, footers/tags, literature renamed to `Author_Year_ShortTitle`, cruft dropped).
-3. **PIMPA** 🟡 IN PROGRESS — Step 1 ✅ (wholesale move into `risk.ccr` + minimal fixes; golden EE/PE baseline locked — `CCR-MIG-04/05`, `DC-CCR-RISK-2`). Step 2 ⬜ decompose into `processes.diffusions` / `simulation` / `data.market` / `calibration.financial` + shared `climateCCR/utils/` (`calendar_utils`); then YAML config (`GEN-08`). *(separate commits)*
+3. **PIMPA** ✅ DONE — Step 1 (wholesale move into `risk.ccr` + minimal fixes; golden EE/PE baseline locked — `CCR-MIG-04/05`, `DC-CCR-RISK-2`); Step 2 (decomposed into `processes.diffusions` / `simulation` / `data.market` / `calibration.financial` + shared `climateCCR/utils/`, `3a9818a`); Step 1b (YAML config `configs/pimpa_fixture.yaml` + `build_global_parameters`, `a4189cf`, `CCR-MIG-06`). Baseline green throughout. **Follow-ups:** style cleanup (`CCR-MIG-07`), `infra.get_rng` seeding (`OQ-CCR-09`).
 4. **HAZ pipelines** 🟡 PARTIAL — scripts are on disk under `data/hazard_mx/`; remaining: wire as a package (`__init__.py`, editable import) and replace the CENAPRED `sys.path`/stub import of the shared entity cleaner.
 5. **Signatures** ⬜ PENDING — `MOVE+FIX` per `CODE_REVIEW`; seed the reservoir; fix the solver contract.
 6. **Calibration** ⬜ PENDING — `calibration/financial` (emit `'direct_input'`; `MarketDataBuilder` lands here) then `calibration/impact` (CLIMADA).
