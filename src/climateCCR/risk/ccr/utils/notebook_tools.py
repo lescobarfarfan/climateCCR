@@ -8,9 +8,9 @@ import pandas as pd
 
 from scipy.stats import pearsonr
 
-from .calendar_utils import transform_dates_to_time_differences
-from ..market_data_objects.curve import Curve
-from ..market_data_objects.correlation_matrix import CorrelationMatrix
+from climateCCR.utils.calendar_utils import transform_dates_to_time_differences
+from climateCCR.data.market.curve import Curve
+from climateCCR.simulation.correlation_matrix import CorrelationMatrix
 
 
 def simulate_single_risk_factor(model, simulation_dates, number_paths, number_of_risk_drivers=1):

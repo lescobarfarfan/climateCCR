@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
-from ..scenario_generation.risk_factor_evolution import RiskFactorEvolution
-from ..scenario_generation.brownian_motion import BrownianMotion
-from ..scenario_generation.geometric_brownian_motion import GeometricBrownianMotion
-from ..scenario_generation.hw1f import HW1F
+from climateCCR.processes.diffusions.risk_factor_evolution import RiskFactorEvolution
+from climateCCR.processes.diffusions.brownian_motion import BrownianMotion
+from climateCCR.processes.diffusions.geometric_brownian_motion import GeometricBrownianMotion
+from climateCCR.processes.diffusions.hw1f import HW1F
 
 
 @dataclass

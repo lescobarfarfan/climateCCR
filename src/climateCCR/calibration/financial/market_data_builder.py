@@ -1,9 +1,9 @@
 import pandas as pd
 
-from ..market_data_objects.curve import Curve
-from ..market_data_objects.surface import Surface
-from ..market_data_objects.correlation_matrix import CorrelationMatrix
-from ..data_objects.risk_factor import RiskFactor
+from climateCCR.data.market.curve import Curve
+from climateCCR.data.market.surface import Surface
+from climateCCR.simulation.correlation_matrix import CorrelationMatrix
+from climateCCR.simulation.risk_factor import RiskFactor
 
 
 class MarketDataBuilder:

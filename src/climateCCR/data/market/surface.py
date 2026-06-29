@@ -7,7 +7,7 @@ import numpy as np
 
 from scipy.interpolate import RectBivariateSpline
 
-from ..utils.calendar_utils import translate_tenor_to_years
+from climateCCR.utils.calendar_utils import translate_tenor_to_years
 
 
 class Surface:

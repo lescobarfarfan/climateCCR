@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from .trade import Trade
-from ..utils.calendar_utils import generate_fixings_and_payments_schedule
+from climateCCR.utils.calendar_utils import generate_fixings_and_payments_schedule
 
 
 class EquityEuropeanOption(Trade):

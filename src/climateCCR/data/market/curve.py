@@ -6,7 +6,7 @@ Base day counting is done in unit of days, not of years
 import numpy as np
 
 from scipy.interpolate import interp1d
-from ..utils.calendar_utils import translate_tenor_to_years
+from climateCCR.utils.calendar_utils import translate_tenor_to_years
 
 
 class Curve:

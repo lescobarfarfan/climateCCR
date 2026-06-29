@@ -1,7 +1,7 @@
 import numpy as np
 
 from .pricing_model import PricingModel
-from ..utils.calendar_utils import transform_dates_to_time_differences
+from climateCCR.utils.calendar_utils import transform_dates_to_time_differences
 from scipy.stats import norm
 
 

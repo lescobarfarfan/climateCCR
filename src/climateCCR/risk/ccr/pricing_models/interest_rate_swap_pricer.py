@@ -3,8 +3,8 @@ import numpy as np
 from datetime import datetime
 
 from .pricing_model import PricingModel
-from ..utils.calendar_utils import time_step_from_frequency, payments_frequency_in_y, transform_dates_to_time_differences
-from ..data_objects.simulated_hw1f_curve import SimulatedHW1FCurve
+from climateCCR.utils.calendar_utils import time_step_from_frequency, payments_frequency_in_y, transform_dates_to_time_differences
+from climateCCR.simulation.simulated_hw1f_curve import SimulatedHW1FCurve
 
 
 class InterestRateSwapPricer(PricingModel):
