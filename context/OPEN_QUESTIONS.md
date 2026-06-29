@@ -6,7 +6,7 @@ integration questions `OQ-INT-NN` come first because they gate the others.
 
 ## Table of contents
 - **Integration (decide first)** — `OQ-INT-01`–`OQ-INT-08`
-- **CCR arm** — `OQ-CCR-02`–`OQ-CCR-09`
+- **CCR arm** — `OQ-CCR-02`–`OQ-CCR-08`
 - **MKT arm** — `OQ-MKT-01`–`OQ-MKT-11`
 - **HAZ arm** — `OQ-HAZ-01`–`OQ-HAZ-15`
 
@@ -32,7 +32,6 @@ integration questions `OQ-INT-NN` come first because they gate the others.
 - `OQ-CCR-06` ✅ **Location resolved** — the PIMPA prototype CSVs live in `tests/fixtures/pimpa/` (the regression fixture; `CCR-MIG-05`, `DC-CCR-RISK-2`). **Still open:** a second code-review pass on the IRS pricer / `Curve` / `Surface` / `CorrelationMatrix` internals before relying on them — the migration preserved behaviour but did not audit their correctness (the `Surface` interpolator was just swapped off `interp2d`, `CCR-MIG-04`).
 - `OQ-CCR-07` **Where the randomized signatures fit, now that HAZ carries the empirical climate→price link (`INT-11`).** Options: (a) a **complementary detection/validation** method — use signatures to test whether a climate signal is present in price series independently of the hazard panels; (b) a **robustness probe** on the jump channel; (c) repositioned to future work. Decide before investing in fixing/extending the reservoir beyond the `CODE_REVIEW` repairs. Couples with `OQ-INT-02/08`.
 - `OQ-CCR-08` **Should PIMPA's PE floor at 0?** The engine computes PE as a **raw** quantile of portfolio value, so a net-liability (short) book yields a **negative PE99** with EE=0 (observed: fixture counterparty 26). Standard CCR PFE is `quantile(max(MtM, 0)) ≥ 0`. Confirm whether this is an intended PIMPA convention or a defect to fix; affects the headline CCR metric (couples with `OQ-INT-02`). Captured as-is in the golden baseline (`CCR-MIG-05`, `DC-CCR-RISK-2`).
-- `OQ-CCR-09` **Route `simulate_random_increments` through `infra.get_rng` — preserve the stream or re-baseline?** The decomposition (`CCR-MIG-05`) landed the simulation modules but left PIMPA's `scipy multivariate_normal(seed=random_state)` draw untouched, so the EE/PE golden baseline stays exact. Migrating to the project seeding entry point (`GEN-07`, `CODE_REVIEW` C4, `DC-CCR-SIM-1`) will change the RNG stream and break the byte-for-byte baseline. Decide: reproduce the exact stream (wrap, don't replace), or accept a one-time re-capture of the golden CSV under the new seeded generator. Gates the climate-jump injection (`DC-CCR-SIM-2`), which must share the same seeded engine.
 
 ## MKT arm
 
@@ -75,6 +74,7 @@ integration questions `OQ-INT-NN` come first because they gate the others.
 - ~~Path A vs Path B framing~~ → subsumed by `INT-12`: HAZ→jump = concrete Path A; fixed parameter shift = Path B; both via one injection hook. Signatures' role → `OQ-CCR-07`.
 - ~~Package name should change~~ → **keep `climateCCR`** for the integrated project (`INT-02`); the broad rename to `climrisk` was rejected (name already taken by a UNAM package).
 - ~~CCR risk-evaluator API name~~ → keep `CCR_Valuation_Session` verbatim, behaviour-unchanged migration (`CCR-MIG-05`, resolves `OQ-CCR-01`).
+- ~~Route the MC draw through `infra` — preserve stream or re-baseline?~~ → **preserve the stream** via `infra.get_legacy_rng` (`RandomState(seed)` ≡ SciPy int-seed); baseline unchanged (`CCR-MIG-08`, resolves `OQ-CCR-09`).
 - ~~Meaning of `NU` (CNSF)~~ → unlocated → `No Disponible` (`HAZ-CLEAN-CNSF-01`).
 - ~~CENAPRED vs CLIMADA output structures differ~~ → they do; processor emits both A + B (`HAZ-CENAPRED-02`).
 - ~~Pressure-governed Holland-profile bug~~ → anchor to Vmax (`HAZ-IBTRACS-04`).
