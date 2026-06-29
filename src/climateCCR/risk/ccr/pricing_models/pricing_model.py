@@ -6,11 +6,38 @@ class PricingModel:
         self.calibration = None
         self.name = name
 
-    def price(self, trade_ids, trade_inventory, valuation_dates, scenarios, market_data, global_parameters, pricer_parameters=None):
-        return {trade_id: self.price_single_trade(trade_inventory[trade_id], valuation_dates, scenarios, market_data, global_parameters, pricer_parameters) for trade_id in trade_ids}
+    def price(
+        self,
+        trade_ids,
+        trade_inventory,
+        valuation_dates,
+        scenarios,
+        market_data,
+        global_parameters,
+        pricer_parameters=None,
+    ):
+        return {
+            trade_id: self.price_single_trade(
+                trade_inventory[trade_id],
+                valuation_dates,
+                scenarios,
+                market_data,
+                global_parameters,
+                pricer_parameters,
+            )
+            for trade_id in trade_ids
+        }
 
     @abstractmethod
-    def price_single_trade(self, trade, valuation_dates, scenarios, market_data, global_parameters, pricer_parameters=None):
+    def price_single_trade(
+        self,
+        trade,
+        valuation_dates,
+        scenarios,
+        market_data,
+        global_parameters,
+        pricer_parameters=None,
+    ):
         pass
 
     @abstractmethod

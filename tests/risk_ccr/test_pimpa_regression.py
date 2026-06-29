@@ -7,10 +7,10 @@ the safety net that protects the Step-2 decomposition and the YAML/paths rewirin
 
     python -m tests.risk_ccr.pimpa_baseline
 """
+
 import numpy as np
 import pandas as pd
 import pytest
-
 from pimpa_baseline import BASELINE_CSV, run_all
 
 VALUE_COLS = [

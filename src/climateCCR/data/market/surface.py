@@ -1,10 +1,9 @@
-""" Class that implements surface interpolation
+"""Class that implements surface interpolation
 
 Base day counting is done in unit of days, not of years
 """
 
 import numpy as np
-
 from scipy.interpolate import RectBivariateSpline
 
 from climateCCR.utils.calendar_utils import translate_tenor_to_years
@@ -12,8 +11,7 @@ from climateCCR.utils.calendar_utils import translate_tenor_to_years
 
 class Surface:
     def __init__(self, vol_surface) -> None:
-        tenors = np.asarray(
-            [translate_tenor_to_years(x) for x in vol_surface.columns], dtype=float)
+        tenors = np.asarray([translate_tenor_to_years(x) for x in vol_surface.columns], dtype=float)
         strikes = np.asarray([float(x) for x in vol_surface.index], dtype=float)
         values = vol_surface.to_numpy(dtype=float)  # (n_strikes, n_tenors)
 
@@ -28,8 +26,7 @@ class Surface:
         # RectBivariateSpline on a regular grid is bilinear interpolation -- scipy's
         # documented near bug-for-bug replacement (CCR-MIG-02 extension, 2026-06-28).
         # z must be shape (len(x), len(y)) == (len(tenors), len(strikes)).
-        self._spline = RectBivariateSpline(
-            self.tenors, self.strikes, self.values.T, kx=1, ky=1)
+        self._spline = RectBivariateSpline(self.tenors, self.strikes, self.values.T, kx=1, ky=1)
 
     def get_interpolated_surface(self, K, t):
         # Mirrors the old interp2d(t, K): returns vols flattened so that [0] is the

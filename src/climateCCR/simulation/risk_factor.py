@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
-from climateCCR.processes.diffusions.risk_factor_evolution import RiskFactorEvolution
 from climateCCR.processes.diffusions.brownian_motion import BrownianMotion
 from climateCCR.processes.diffusions.geometric_brownian_motion import GeometricBrownianMotion
 from climateCCR.processes.diffusions.hw1f import HW1F
+from climateCCR.processes.diffusions.risk_factor_evolution import RiskFactorEvolution
 
 
 @dataclass
@@ -28,17 +28,16 @@ class RiskFactor:
         self.reference = None
 
         if simulated:
-            if model_name == 'BM':
+            if model_name == "BM":
                 self.model = BrownianMotion(name)
-            elif model_name == 'GBM':
+            elif model_name == "GBM":
                 self.model = GeometricBrownianMotion(name)
-            elif model_name == 'HW1F':
+            elif model_name == "HW1F":
                 self.model = HW1F(name)
-            elif model_name == 'NOT_AVAILABLE':
+            elif model_name == "NOT_AVAILABLE":
                 self.model = None
             else:
-                raise ValueError(
-                    f'Model {model_name} for risk factor {name} is not implemented.')
+                raise ValueError(f"Model {model_name} for risk factor {name} is not implemented.")
 
-        if asset_type[:6] == 'SPREAD':
-            self.reference = kwargs.get('reference')
+        if asset_type[:6] == "SPREAD":
+            self.reference = kwargs.get("reference")
