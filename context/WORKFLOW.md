@@ -45,7 +45,10 @@ project so code is read directly. Theory docs live in `notes/theory/`; papers in
 4. If a **term** appeared, add it to `GLOSSARY.md`.
 5. If a **reference** was used or confirmed, add/verify it in `REFERENCES.md` (unconfirmed → §99).
 6. If something is **open** (or got closed), update `OPEN_QUESTIONS.md`.
-7. Commit in git with a message naming the module/arm touched.
+7. Write the **session read-log** — `notes/reading/YYYY-MM-DD_<slug>.md`: per decision made, *what
+   to read* (work + specific chapters/sections) and *why* (which decision/code it backs), using
+   `REFERENCES.md` citation keys; linked from its arm MOC(s). Always, even if not asked (`GEN-21`).
+8. Commit in git with a message naming the module/arm touched.
 
 > **Promote, don't duplicate.** If a decision supersedes another, **edit** the old line (or mark it
 > `→ SUPERSEDED by [date]` only when the history matters); do not append a second. One source of
