@@ -36,13 +36,22 @@ def _load_global_parameters() -> dict:
     return build_global_parameters(config, data_root=FIXTURE)
 
 
-def run_all() -> pd.DataFrame:
-    """Run the EE/PE engine for every counterparty in the fixture ledger."""
+def run_all(climate_jumps=None) -> pd.DataFrame:
+    """Run the EE/PE engine for every counterparty in the fixture ledger.
+
+    ``climate_jumps`` optionally injects a
+    :class:`~climateCCR.processes.jumps.ClimateJumpProcess` (DC-CCR-SIM-2); the
+    default ``None`` is the jump-off golden baseline (CCR-MIG-03), which the jump
+    overlay leaves bit-for-bit unchanged. The jump-on fixture configuration lives
+    in ``climate_jump_baseline.py``.
+    """
     # Imports are local so `conftest` can put `src/` on the path first.
     from climateCCR.risk.ccr.evaluators.ccr_valuation_session import CCR_Valuation_Session
     from climateCCR.risk.ccr.trade_models.portfolio import Portfolio
 
     gp = _load_global_parameters()
+    if climate_jumps is not None:
+        gp["climate_jumps"] = climate_jumps
     ledger = pd.read_csv(
         FIXTURE / "portfolio_data" / "positions_keeping_system" / "master_ledger.csv"
     )

@@ -15,6 +15,15 @@ class MultiRiskFactorSimulation(ScenarioGenerator):
         ).get_correlation_matrix()
 
     def generate_scenarios(self, valuation_dates, simulation_parameters):
+        """Simulate all risk factors; optionally superimpose the climate jump overlay.
+
+        If ``simulation_parameters["climate_jumps"]`` holds a
+        :class:`~climateCCR.processes.jumps.ClimateJumpProcess`, its shocks are
+        applied to the matching simulated factors after the diffusion step
+        (DC-CCR-SIM-2). The jump draw uses its own substream of the master seed,
+        so the diffusive component of every path is bit-for-bit identical with
+        the overlay on or off (INT-09).
+        """
         nr_risk_drivers = 0
         for rf in self.simulated_risk_factors:
             nr_risk_drivers += rf.model.number_of_risk_drivers
@@ -49,5 +58,23 @@ class MultiRiskFactorSimulation(ScenarioGenerator):
             )
             random_paths[rf.name + "_dates"] = valuation_dates
             index_risk_drivers += rf.model.number_of_risk_drivers
+
+        climate_jumps = simulation_parameters.get("climate_jumps")
+        if climate_jumps is not None:
+            jump_scenario = climate_jumps.generate(
+                valuation_dates,
+                simulation_parameters["n_paths"],
+                simulation_parameters["random_state"],
+            )
+            # Targets a portfolio does not simulate are skipped: marks are drawn
+            # for every configured target either way, so the jump stream (and any
+            # shared factor's shocks) is identical across portfolios.
+            for rf in self.simulated_risk_factors:
+                if rf.name in jump_scenario.step_marks:
+                    random_paths[rf.name] = rf.model.apply_jump_overlay(
+                        random_paths[rf.name],
+                        jump_scenario.step_marks[rf.name],
+                        valuation_dates,
+                    )
 
         return random_paths

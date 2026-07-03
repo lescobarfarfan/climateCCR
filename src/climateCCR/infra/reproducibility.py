@@ -35,6 +35,20 @@ def get_rng(seed: int | None = None) -> np.random.Generator:
     return np.random.default_rng(seed)
 
 
+def get_stream_rng(seed: int, stream: int) -> np.random.Generator:
+    """Derive an independent, reproducible substream from a master seed.
+
+    Distinct ``stream`` keys yield statistically independent generators from the
+    same master ``seed`` (NumPy ``SeedSequence`` spawning). This lets an optional
+    stochastic component (e.g. the climate jump overlay, ``DC-CCR-SIM-2``) draw
+    from the run's single seed *without consuming or shifting* another
+    component's stream: with the jump overlay on, the diffusion increments stay
+    bit-for-bit identical, so jump-on minus jump-off isolates the climate
+    component exactly (GEN-07, INT-09).
+    """
+    return np.random.default_rng(np.random.SeedSequence(entropy=seed, spawn_key=(stream,)))
+
+
 def get_legacy_rng(seed: int | None = None) -> np.random.RandomState:
     """Return an independent legacy ``RandomState`` without touching global state.
 

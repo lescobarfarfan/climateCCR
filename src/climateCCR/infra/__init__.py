@@ -8,7 +8,7 @@ from .config import Config, load_config
 from .logging_utils import get_logger
 from .manifest import RunManifest
 from .paths import ProjectPaths, find_project_root, project_paths
-from .reproducibility import DEFAULT_SEED, get_legacy_rng, get_rng, set_seed
+from .reproducibility import DEFAULT_SEED, get_legacy_rng, get_rng, get_stream_rng, set_seed
 
 __all__ = [
     "Config",
@@ -21,5 +21,6 @@ __all__ = [
     "DEFAULT_SEED",
     "get_rng",
     "get_legacy_rng",
+    "get_stream_rng",
     "set_seed",
 ]

@@ -105,6 +105,17 @@ class GeometricBrownianMotion(RiskFactorEvolution):
         drift = self.calibration["drift"] * simulation_times
         return self.calibration["initial_value"] * np.exp(drift + fluctuations)
 
+    def apply_jump_overlay(self, paths, step_marks, simulation_dates):
+        """Apply log-return jumps: the price is multiplied by ``exp(mark)`` per event.
+
+        Marks accumulate in the log-price (Merton jump-diffusion,
+        [ContTankov2004]), so a mark at step ``i`` scales the path from date
+        ``i + 1`` onward (DC-CCR-SIM-2).
+        """
+        log_jumps = np.cumsum(step_marks, axis=1)
+        log_jumps = np.concatenate((np.zeros((log_jumps.shape[0], 1)), log_jumps), axis=1)
+        return paths * np.exp(log_jumps)
+
     def get_dependencies(self, calibration_parameters):
         calibration_method = calibration_parameters["RFE_GBM_calibration"][self.name].get(
             "calibration_method", "market_implied"
