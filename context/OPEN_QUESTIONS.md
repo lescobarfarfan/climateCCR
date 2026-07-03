@@ -88,4 +88,4 @@ integration questions `OQ-INT-NN` come first because they gate the others.
 
 ## Related
 Reads with: [[DECISIONS]] (resolved items move there) · [[DATA_CONTRACTS]] (the contracts they gate) · [[WORKFLOW]] (the ritual that closes them). By arm: [[CCR_MOC]] · [[MKT_MOC]] · [[HAZ_MOC]] · Home: [[_INDEX]]
-#type/open #status/open
+#arm/int #type/open #status/open

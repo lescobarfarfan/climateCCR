@@ -36,11 +36,22 @@ note's top as needed:
 - **Arm:** `#arm/ccr` · `#arm/mkt` · `#arm/haz` · `#arm/int` · `#cross/gen`
 - **Type:** `#type/decision` · `#type/contract` · `#type/glossary` · `#type/reference` ·
   `#type/open` · `#type/workflow` · `#type/theory` · `#type/source` · `#type/pipeline` ·
-  `#type/review` · `#type/plan`
+  `#type/review` · `#type/plan` · `#type/reading`
 - **Status:** `#status/built` · `#status/todo` · `#status/open` · `#status/resolved`
 
-The canon files are intentionally left mostly untagged so you can adopt whatever subset you actually
-use — start with `#arm/*` on the theory notes and `#status/open` on the live open questions.
+The canon files (`context/`) all carry `#arm/int` + their `#type/*` tag — the canon is cross-arm by
+definition. On working notes, start with `#arm/*` + `#type/*` (e.g. `#type/theory`, or
+`#type/reading` for the session read-logs of `GEN-21`) and `#status/open` on live open questions.
+
+### Audit exemptions (`/link-check` treats these as intended, not findings)
+
+- **`_INDEX.md` carries no `## Related` footer** — it is the home note every other footer points
+  *to*; a footer there would be circular.
+- **`notes/setup/` notes are linked from `[[_INDEX]]`, not from an arm MOC** — setup material is
+  cross-arm and belongs to the home note.
+- **`literature/refs.bib` is referenced as inline code, never a wikilink** — extension-less
+  wikilinks resolve only to Markdown notes, and Obsidian does not index `.bib` attachments by
+  default, so a `[[refs]]`-style link would sit unresolved in the graph forever.
 
 ## 4. How your existing theory notes join the network
 

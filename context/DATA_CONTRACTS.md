@@ -145,4 +145,4 @@ If a contract changes, **edit it here** (do not append) and log it in `DECISIONS
 
 ## Related
 Reads with: [[DECISIONS]] (the decisions behind each contract) · [[GLOSSARY]] (column/term meanings) · [[OPEN_QUESTIONS]] (unspecified fields). By arm: [[CCR_MOC]] · [[MKT_MOC]] · [[HAZ_MOC]] · Home: [[_INDEX]]
-#type/contract
+#arm/int #type/contract

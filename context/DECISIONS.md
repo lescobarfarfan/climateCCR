@@ -282,4 +282,4 @@ standard the whole project obeys.
 
 ## Related
 Reads with: [[DATA_CONTRACTS]] (the contracts these decisions imply) · [[OPEN_QUESTIONS]] (what is still undecided) · [[REFERENCES]] (the keys cited here) · [[GLOSSARY]] (terms). By arm: [[CCR_MOC]] · [[MKT_MOC]] · [[HAZ_MOC]] · Home: [[_INDEX]]
-#type/decision
+#arm/int #type/decision

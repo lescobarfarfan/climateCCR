@@ -153,4 +153,4 @@ J. Content-word retrieval index
 
 ## Related
 Reads with: [[DECISIONS]] · [[DATA_CONTRACTS]] · [[REFERENCES]] · Home: [[_INDEX]]
-#type/glossary
+#arm/int #type/glossary

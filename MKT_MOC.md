@@ -42,7 +42,7 @@ in on (`INT-12`).
   [[referencias_weather_derivatives]].
 - Pipelines (`notes/pipelines/`): [[dashboard_riesgo_excel]].
 - Sources (`notes/sources/`): [[mexican_data_sources]].
-- Writeup (`literature/`): [[climate_integrated_investment_analysis]], [[refs]].
+- Writeup (`literature/`): [[climate_integrated_investment_analysis]], `refs.bib` (BibTeX).
 
 ## Wires to the other arms
 - Supplies **diffusion calibration** (HW/GBM) to [[CCR_MOC]] via `DC-CCR-CAL-1`.

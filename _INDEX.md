@@ -37,7 +37,7 @@ is incorporated — applied to Mexico. The integrating mechanism is a **climate-
 
 ## Literature
 
-- [[refs]] — `literature/refs.bib`, the 47-entry climate-finance bibliography (authoritative for DOIs).
+- `literature/refs.bib` — the 47-entry climate-finance BibTeX bibliography (authoritative for DOIs).
 - [[Compagnoni_2023_RandomizedSignatures]] — the randomized-signature paper (CCR).
 - [[Cuchiero_2022_DiscreteTimeSignatures]] — discrete-time signatures & reservoir computing (CCR).
 - [[Mandel_2025_MappingFinancialRisks]] — mapping global financial risks under climate change (INT).

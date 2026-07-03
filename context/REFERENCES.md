@@ -100,5 +100,5 @@ anchors `[Sharpe1964]`, `[Fama1995]`, `[Carhart1997]`, `[Engle2002]`.
 ---
 
 ## Related
-Reads with: [[DECISIONS]] (what each key backs) · [[OPEN_QUESTIONS]] (the §99 to-confirm items) · [[refs]] (the 47-entry BibTeX). Home: [[_INDEX]]
-#type/reference
+Reads with: [[DECISIONS]] (what each key backs) · [[OPEN_QUESTIONS]] (the §99 to-confirm items) · `literature/refs.bib` (the 47-entry BibTeX). Home: [[_INDEX]]
+#arm/int #type/reference

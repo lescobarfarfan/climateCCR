@@ -187,4 +187,4 @@ is:
 
 ## Related
 Reads with: [[00_README_CONTEXT]] · [[DECISIONS]] · [[OPEN_QUESTIONS]] · [[OBSIDIAN_SETUP]] (the vault this workflow maintains). Home: [[_INDEX]]
-#type/workflow
+#arm/int #type/workflow
