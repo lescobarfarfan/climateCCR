@@ -1,0 +1,33 @@
+# Climate jump-injection demo configuration (DC-CCR-SIM-2, INT-10).
+#
+# Drives pipelines/01_climate_jump_demo.py: the PIMPA fixture book is run jump-OFF
+# (the golden EE/PE baseline) and jump-ON with the climate shock below, and the
+# EE/PE shift is reported. This is the OQ-INT-03 provisional configuration
+# (2026-07-02): homogeneous Poisson arrivals, shared event times across both
+# targets, jumps independent of the diffusions, one-sided lognormal adverse marks.
+#
+# Every value under climate_jumps is an ARBITRARY-BUT-PLAUSIBLE placeholder [eng]:
+# the mechanism proof, not a calibration. The real intensity and impact
+# distribution are HAZ's to estimate (OQ-INT-07, DC-XWALK-4) and swap in through
+# the same interface.
+
+seed: 233423        # master seed; jumps draw from a derived substream (GEN-07)
+n_paths: 10000      # matches the locked baseline (CCR-MIG-03)
+
+valuation_date: "2020-01-01"   # the fixture's locked as-of date (CCR-MIG-05)
+
+climate_jumps:
+  intensity: 0.6    # events / year (homogeneous Poisson; trajectory/Cox = to-do)
+  # Rate channel: every event lifts each HW1F short rate (sign +1: yields rise).
+  rate_marks:
+    median: 0.0025  # median +25 bp per event
+    sigma: 0.5
+    sign: 1.0
+    targets: [EUR_ZERO_YIELD_CURVE, GBP_ZERO_YIELD_CURVE, USD_ZERO_YIELD_CURVE]
+  # Price channel: every event knocks each GBM share down (sign -1: value drops).
+  equity_marks:
+    median: 0.04    # median -4% log-return (~ -3.9% price) per event
+    sigma: 0.7
+    sign: -1.0
+    targets:
+      [CREDIT_SUISSE_SHARE, CREDIT_SUISSE_PREFERRED_SHARE, UBS_SHARE, JULIUS_BAER_SHARE]
