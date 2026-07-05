@@ -16,6 +16,26 @@ n_paths: 10000      # matches the locked baseline (CCR-MIG-03)
 
 valuation_date: "2020-01-01"   # the fixture's locked as-of date (CCR-MIG-05)
 
+# Analysis horizon: the Basel default grid the EE/PE profile is reported on
+# (selected per run via --horizonte/--horizon; the simulation itself always
+# runs to trade maturity — grid dates are where the exact-transition paths are
+# *sampled*, not a discretization step). `largo` keeps the fixture's regulatory
+# long grid (b3_grid: null = fixture default, out to 50Y); `corto` is a dense
+# 3-year CCR grid — risk-management horizons front-load the first months [eng].
+# max_step_days caps the *simulation* grid spacing (1 = daily paths between
+# reporting points); null keeps the sparse event-driven grid — largo stays
+# null so the INT-14 demo numbers remain bit-for-bit reproducible.
+horizons:
+  largo:
+    b3_grid: null
+    max_step_days: null
+  corto:
+    b3_grid: ["0D", "1D", "1W", "2W", "1M", "2M", "3M", "6M", "9M", "1Y", "18M", "2Y", "3Y"]
+    max_step_days: 1
+  medio:
+    b3_grid: ["0D", "1D", "1W", "2W", "1M", "2M", "3M", "6M", "9M", "1Y", "18M", "2Y", "3Y", "4Y", "5Y"]
+    max_step_days: 1
+
 climate_jumps:
   intensity: 0.6    # events / year (homogeneous Poisson; trajectory/Cox = to-do)
   # Rate channel: every event lifts each HW1F short rate (sign +1: yields rise).

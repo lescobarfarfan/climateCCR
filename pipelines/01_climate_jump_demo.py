@@ -9,9 +9,12 @@ share every diffusion draw and the shift is purely the climate component.
 
 Jump parameters are arbitrary-but-plausible placeholders [eng]; the calibrated
 intensity and impact distribution are HAZ's to deliver (OQ-INT-07, DC-XWALK-4).
+The analysis horizon (--horizonte largo|corto, a key of the config's `horizons`
+block) selects the B3 default grid the EE/PE profile is reported on; the short
+grid serves risk-management horizons, the long one the regulatory/climate view.
 Idempotent (GEN-*): skips if the output exists, rerun with --forzar/--force.
 
-    python pipelines/01_climate_jump_demo.py [--forzar]
+    python pipelines/01_climate_jump_demo.py [--forzar] [--horizonte corto]
 """
 
 from __future__ import annotations
@@ -67,6 +70,12 @@ def main() -> None:
     parser.add_argument(
         "--forzar", "--force", action="store_true", help="recompute even if the output exists"
     )
+    parser.add_argument(
+        "--horizonte",
+        "--horizon",
+        default="largo",
+        help="analysis horizon: a key of the config's `horizons` block (largo | corto)",
+    )
     args = parser.parse_args()
 
     from climateCCR.infra import RunManifest, get_logger, load_config
@@ -76,7 +85,15 @@ def main() -> None:
     config.paths.ensure()
     logger = get_logger("climateCCR.climate_jump_demo", log_dir=config.paths.logs)
 
-    out_dir = config.paths.results / "climate_jump_demo"
+    horizons = config.extra["horizons"]
+    if args.horizonte not in horizons:
+        parser.error(f"--horizonte must be one of {sorted(horizons)}, got {args.horizonte!r}")
+    b3_grid = horizons[args.horizonte]["b3_grid"]  # None = the fixture's long default grid
+
+    run_name = (
+        "climate_jump_demo" if args.horizonte == "largo" else f"climate_jump_demo_{args.horizonte}"
+    )
+    out_dir = config.paths.results / run_name
     out_csv = out_dir / "ee_pe_climate_shift.csv"
     if out_csv.exists() and not args.forzar:
         logger.info("Output exists, nothing to do (rerun with --forzar): %s", out_csv)
@@ -94,6 +111,17 @@ def main() -> None:
     gp = build_global_parameters(fixture_config, data_root=FIXTURE)
     gp["n_paths"] = config.n_paths
     gp["random_state"] = config.seed
+    if b3_grid is not None:
+        gp["B3_grid"] = list(b3_grid)
+    max_step_days = horizons[args.horizonte].get("max_step_days")
+    if max_step_days:
+        gp["simulation_max_step_days"] = int(max_step_days)
+    logger.info(
+        "Horizon %r: B3 default grid %s, max simulation step %s",
+        args.horizonte,
+        gp["B3_grid"],
+        max_step_days or "event-driven",
+    )
 
     logger.info("Running jump-OFF (baseline) ...")
     baseline = run_book(gp, today_date)
@@ -109,6 +137,12 @@ def main() -> None:
 
     out_dir.mkdir(parents=True, exist_ok=True)
     comparison.to_csv(out_csv, index=False)
+    # Record the horizon actually run, so the manifest pins the reporting grid.
+    config.extra["selected_horizon"] = {
+        "name": args.horizonte,
+        "b3_grid": gp["B3_grid"],
+        "max_step_days": max_step_days,
+    }
     manifest = RunManifest.create(seed=config.seed, config=config, project_root=config.paths.root)
     manifest_path = manifest.write(config.paths.manifests)
 

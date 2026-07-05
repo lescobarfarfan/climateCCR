@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
@@ -62,6 +62,22 @@ class CCR_Valuation_Session:
             self.b3_default_grid + self.b3_closeout_grid + self.portfolio.portfolio_valuation_dates
         )
         self.simulation_dates = [d for d in simulation_schedule if d >= self.b3_default_grid[0]]
+
+        # Optional densification: cap the spacing of the simulation grid (e.g.
+        # 1 = daily) so the path dynamics exist *between* reporting/cashflow
+        # dates. The diffusions are exact-transition, so this changes no
+        # marginal law — only where paths are sampled (and hence the draw
+        # stream). Absent/None keeps the sparse event-driven grid and every
+        # locked baseline bit-for-bit (CCR-MIG-03). [eng]
+        max_step_days = global_parameters.get("simulation_max_step_days")
+        if max_step_days:
+            step = timedelta(days=int(max_step_days))
+            dense = [self.simulation_dates[0]]
+            for date in self.simulation_dates[1:]:
+                while date - dense[-1] > step:
+                    dense.append(dense[-1] + step)
+                dense.append(date)
+            self.simulation_dates = dense
 
     def get_pricers(self, pricer_mapping):
         self.trade_pricer_mapping = {}
