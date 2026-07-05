@@ -30,6 +30,8 @@ J. Content-word retrieval index
 - **`src/` layout / editable install** — packaging pattern (`pip install -e .`) that makes imports work from any directory.
 - **ProjectPaths** — the `infra` resolver anchoring paths to the repo root (replaces CWD-relative paths).
 - **DoD** — Definition of Done.
+- **Comparison frame** — the tidy EE/PE climate-vs-baseline result table (`<metric>_baseline/_climate/_shift` per counterparty × default date, `DC-CCR-RISK-3`); the `viz` layer's input contract for CCR figures (`INT-15`).
+- **Grid densification (`simulation_max_step_days`)** — optional cap on the simulation-grid spacing (1 = daily paths) separating the *sampling* grid from the B3 *reporting* grid; law-preserving because the diffusions are exact-transition (`CCR-SIM-01`).
 - **Claude Code** — Anthropic's agentic CLI/IDE coding tool; the project's primary working interface (`GEN-15`). Scoped to the directory it launches in; the context canon serves as its memory.
 - **git worktree** — a second working-tree checkout of one repo on a separate branch; used for parallel Claude Code agents, created **outside** the Obsidian-indexed vault to avoid duplicate-note / wikilink clashes (`GEN-16`).
 - **`additionalDirectories`** — the Claude Code setting (also `--add-dir` / `/add-dir`) that grants read/write access to one extra path (e.g. an external data drive) without widening filesystem scope (`GEN-15`).
@@ -116,6 +118,9 @@ J. Content-word retrieval index
 | The arm-relationship / unifying RQ | **CCR spine MKT HAZ supporting arms unifying research question** |
 | The unifying narrative / general objective | **price climate relationship jump-diffusion Monte Carlo change baseline INT-09** |
 | The climate jump channel | **lambda jump process compound Poisson Cox impact GBM Hull-White injection** |
+| Viz layer-vs-arm decision + contract rule | **viz cross-cutting layer contract-shaped inputs never model objects INT-15** |
+| The figure palette / colors | **green orange scenario palette CVD validator baseline climate GEN-22** |
+| Daily paths / sampling vs reporting grid | **simulation max step days daily densification reporting grid horizonte CCR-SIM-01** |
 | Fixed vs trajectory climate assumption | **fixed level vs trajectory climate assumption Path A Path B INT-12** |
 | Where signatures fit now | **randomized signatures detection validation role under review OQ-CCR-07** |
 | The package name (kept climateCCR) | **climateCCR keep name climrisk rejected UNAM INT-02** |

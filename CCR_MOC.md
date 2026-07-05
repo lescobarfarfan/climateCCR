@@ -33,6 +33,7 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 - Plan: [[PROJECT_PLAN]], [[PHASE_0]] — `notes/plan/`.
 - Review: [[CODE_REVIEW]] — `notes/reviews/` (PIMPA + randomized-signature bugs C1–C5).
 - Reading: [[2026-07-02_climate_jump_channel]] — the jump-channel read-log (`notes/reading/`, `GEN-21`).
+- Reading: [[2026-07-05_viz_layer_horizons]] — viz layer, horizons & grid-densification read-log (`notes/reading/`, `GEN-21`).
 
 ## Literature
 - [[Compagnoni_2023_RandomizedSignatures]] — randomized signatures as a reservoir (`CCR-SIG-01`).

@@ -49,7 +49,7 @@ points there for exact DOIs rather than risk transcribing them imperfectly here.
 
 - **`[Hull1990]`** — Hull, J., & White, A. (1990). *Pricing Interest-Rate-Derivative Securities.* Review of Financial Studies, 3(4), 573–592. DOI: 10.1093/rfs/3.4.573 — Backs `MKT-IR-01/02`, `MKT-MEAS-02`. *(The Hull–White model.)*
 - **`[Vasicek1977]`** — Vasicek, O. (1977). *An equilibrium characterization of the term structure.* Journal of Financial Economics, 5(2), 177–188. DOI: 10.1016/0304-405X(77)90016-2 — Backs the Vasicek estimation device (`MKT-IR-01`).
-- **`[AndersenPiterbarg2010]`** — Andersen, L., & Piterbarg, V. (2010). *Interest Rate Modeling* (Vols. I–III). Atlantic Financial Press. — Backs `MKT-IR-01` and the HW1F simulation scheme PIMPA uses (`CCR` `processes`; Proposition 10.1.7 is the exact-discretization recursion `processes.diffusions.hw1f` implements and the jump overlay of `DC-CCR-SIM-2` reuses). *(Confirm volume/page on citation.)*
+- **`[AndersenPiterbarg2010]`** — Andersen, L., & Piterbarg, V. (2010). *Interest Rate Modeling* (Vols. I–III). Atlantic Financial Press. — Backs `MKT-IR-01` and the HW1F simulation scheme PIMPA uses (`CCR` `processes`; Proposition 10.1.7 is the exact-discretization recursion `processes.diffusions.hw1f` implements and the jump overlay of `DC-CCR-SIM-2` reuses); also backs `CCR-SIM-01` (exact transition ⇒ grid densification is law-preserving). *(Confirm volume/page on citation.)*
 - **`[BrigoMercurio2006]`** — Brigo, D., & Mercurio, F. (2006). *Interest Rate Models — Theory and Practice* (2nd ed.). Springer Finance. DOI: 10.1007/978-3-540-34604-3 — Backs `MKT-IR-01`.
 - **`[NelsonSiegel1987]`** — Nelson, C. R., & Siegel, A. F. (1987). *Parsimonious Modeling of Yield Curves.* Journal of Business, 60(4), 473–489. DOI: 10.1086/296409 — Backs `MKT-CURVE-03`.
 - **`[Svensson1994]`** — Svensson, L. E. O. (1994). *Estimating and Interpreting Forward Interest Rates: Sweden 1992–1994.* NBER Working Paper 4871. DOI: 10.3386/w4871 — Backs `MKT-CURVE-03`.
@@ -94,6 +94,7 @@ anchors `[Sharpe1964]`, `[Fama1995]`, `[Carhart1997]`, `[Engle2002]`.
 - **`[Hazus]`** — FEMA Hazus technical/flood manual. — Confirm exact edition. Backs the CLIMADA flood route. (→ `OQ-HAZ-08`)
 - **`[Wagenaar2018]`** — Wagenaar, D., et al. (2018), flood depth–damage. — Confirm journal/DOI. Backs the CLIMADA flood route. (→ `OQ-HAZ-08`)
 - **`[AndersenPiterbarg2010]` / `[JamesWebber2000]` / `[Yasuoka2018]` / `[Gregory_xVA]` / `[Compagnoni2023]` / `[Lyons1998]`** — standard texts/papers cited above with edition/venue/pages still to pin down precisely. (→ `OQ-MKT-05`, `OQ-CCR-05`)
+- **`[IPCC_AR6]`** — IPCC (2021). *AR6 WG1: The Physical Science Basis* (likely Ch. 11, *Weather and Climate Extreme Events in a Changing Climate*). — Confirm report/chapter + DOI. Already cited by `MKT-PHYS-02` (SSP scenario choice) without a §-entry (gap found 2026-07-05); also motivates the frequency/severity-trend note in `OQ-INT-07` (time-varying `λ(t)` + time-aware marks).
 - **Climate-finance `.bib` (47 entries)** — verify each DOI in `literature/refs.bib` before the literature review hardens.
 
 
