@@ -28,6 +28,11 @@ Recommended **Settings → Files and links**: *Use `[[Wikilinks]]`* ON · *New l
 path when possible" · *Automatically update internal links* ON · *Default location for new notes* =
 `notes/` (or vault root).
 
+### Formatting convention (how Obsidian renders these notes)
+
+- **No hard-wrapping inside a paragraph or list item.** Obsidian renders a single newline as a real line break, so a sentence wrapped at ~100 chars renders broken mid-line. One paragraph / one list item = one source line, however long. (Deliberate sub-lines inside an item — e.g. the **Why:** line of a read-log entry — are the exception: that break is the point.)
+- **Math is LaTeX, never backticks.** Inline math in dollar signs — `$\lambda(t)$`, `$E[N(t)] = \lambda t$` — display math in `$$…$$`. Backticks are reserved for code identifiers, paths, and canon IDs (`INT-13`, `processes/jumps/`); an equation in backticks renders as code and never typesets.
+
 ## 3. Recommended tags
 
 Tags give the graph a second, type-based structure that complements the arm folders. Add them to a

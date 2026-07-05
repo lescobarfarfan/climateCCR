@@ -23,7 +23,10 @@ Run the end-of-chat ritual from `context/WORKFLOW.md` §2.
    keys from `context/REFERENCES.md`; any reading not yet there gets added in step 3 (verified, or
    §99 if unconfirmed — never invented). Vault conventions apply: `## Related` footer linking the
    relevant MOC(s), the decision-backing notes, and `Home: [[_INDEX]]`; tags `#type/reading` +
-   `#arm/<…>`; link the note from its arm MOC(s). If a session made no analytical decisions (pure
+   `#arm/<…>`; link the note from its arm MOC(s). **Formatting sanity check before writing**
+   (`OBSIDIAN_SETUP.md` §2): no hard-wrapped lines — one paragraph/list item = one source line
+   (Obsidian renders single newlines as line breaks) — and math in LaTeX `$…$`, never in backticks
+   (backticks are for code/paths/canon IDs only). If a session made no analytical decisions (pure
    mechanics), a one-line read-log saying so is enough.
 5. Show me the diff, then commit with a message naming the module/arm touched, keeping **behaviour
    changes separate from packaging/move changes** (`GEN-09`).

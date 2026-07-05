@@ -9,6 +9,7 @@ integration questions `OQ-INT-NN` come first because they gate the others.
 - **CCR arm** — `OQ-CCR-02`–`OQ-CCR-08`
 - **MKT arm** — `OQ-MKT-01`–`OQ-MKT-11`
 - **HAZ arm** — `OQ-HAZ-01`–`OQ-HAZ-15`
+- **GEN — housekeeping** — `OQ-GEN-01`
 
 ---
 
@@ -64,6 +65,10 @@ integration questions `OQ-INT-NN` come first because they gate the others.
 - `OQ-HAZ-13` **Parametric-instrument pricing** — downstream HAZ deliverable.
 - `OQ-HAZ-14` **Integration/testing of the remaining CNSF sectors** through the scraper pipeline.
 - `OQ-HAZ-15` **CNSF test-harness import bug (pre-existing).** The 4 `tests/data/hazard_mx/cnsf/` modules `import scraper_cnsf` (etc.) by bare name, so pytest collection errors out under the `src/`-layout (`conftest` puts `src/` on the path, not the HAZ package dirs). Confirmed present on `main` before the PIMPA work; blocks the full suite from collecting. Fix: import via the package path (`climateCCR.data.hazard_mx.cnsf.…`) or add a `rootdir`/`conftest` shim. Pure test-harness `[eng]`.
+
+## GEN — housekeeping (small, quick tasks)
+
+- `OQ-GEN-01` **Vault formatting back-fill** (leftover from `GEN-23`, 2026-07-05 — the two read-logs are fixed and the convention is codified/enforced; the rest is a small pass for a light session): (a) pre-convention notes still carrying backtick math (`referencias_riesgo_catastrofico.md`, `diseno_calibracion_funciones_impacto_mexico.md`, the HW-1F notes) → convert to `$…$`, leaving code/column identifiers in backticks; (b) the canon and older notes are hard-wrapped at ~100 chars and render with mid-sentence line breaks in Obsidian — decide whether a one-shot unwrap (a `/compact-canon` candidate) is worth the diff noise; (c) triage two stray untracked root files: `market_calibration.md` (same basename as `notes/theory/hull_white_1f/market_calibration.md` — likely saved to the wrong folder) and `Sin título.base`. [eng]
 
 ---
 

@@ -13,7 +13,9 @@ guessing.
    `pipeline`→`notes/pipelines/`, `plan`→`notes/plan/`, `review`→`notes/reviews/`.
    Keep the filename verbatim (Spanish names stay Spanish, `INT-07`).
 2. **Scaffold the content:** an H1 title, a one-line purpose, a placeholder body,
-   and a footer:
+   and a footer. Body text follows the formatting convention in `OBSIDIAN_SETUP.md`
+   §2: no hard-wrapped lines (one paragraph/item = one source line), math in
+   LaTeX `$…$` — backticks only for code/paths/canon IDs. Footer:
    ```
    ## Related
    Reads with: [[<arm>_MOC]] · [[relevant sibling notes]]. Home: [[_INDEX]]
