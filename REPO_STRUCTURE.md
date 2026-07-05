@@ -190,4 +190,4 @@ Key contracts that make the wiring work (full text in `context/DATA_CONTRACTS.md
 
 ## Related
 Reads with: [[README]] · [[ASSET_MAP]] (what fills this tree) · [[DATA_CONTRACTS]] (the wiring contracts) · [[00_README_CONTEXT]]. Home: [[_INDEX]]
-#type/workflow
+#arm/int #type/workflow

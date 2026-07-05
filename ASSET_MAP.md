@@ -166,4 +166,4 @@ changes** (`GEN-09`). Spanish filenames are kept **verbatim** (they are real art
 
 ## Related
 Reads with: [[REPO_STRUCTURE]] (the destination tree) · [[README]] · [[WORKFLOW]] (commit discipline). By arm: [[CCR_MOC]] · [[MKT_MOC]] · [[HAZ_MOC]] · Home: [[_INDEX]]
-#type/workflow
+#arm/int #type/workflow
