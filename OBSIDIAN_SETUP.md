@@ -94,3 +94,7 @@ stays current for free.
 > the canon to be clickable on GitHub too, switch *New link format* off wikilinks (Obsidian will
 > write `[text](path.md)` instead) — but you lose some of the graph fluidity. For an Obsidian-first
 > knowledge vault, keep wikilinks.
+
+## Related
+Reads with: [[00_README_CONTEXT]] (the canon this vault wraps) · [[WORKFLOW]] (the ritual §6 feeds) · [[REPO_STRUCTURE]] · [[ASSET_MAP]]. Home: [[_INDEX]]
+#arm/int #type/workflow
