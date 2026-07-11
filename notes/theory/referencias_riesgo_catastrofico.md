@@ -13,11 +13,11 @@
 ## 1. Marco conceptual y restricciones de diseño
 
 Dos descomposiciones ordenan el uso de los datos:
-1. **Triángulo del riesgo:** `Riesgo = Peligro × Exposición × Vulnerabilidad` + módulo financiero (AAL, PML, curva de excedencia).
-2. **Frecuencia–severidad (riesgo colectivo):** `S = Σ_{i=1}^{N} X_i`. `S(t)` es un **Poisson compuesto** (Lévy de saltos puros); con intensidad dependiente del peligro se llega a los **procesos de Cox / Poisson doblemente estocásticos** — el puente al cálculo estocástico.
+1. **Triángulo del riesgo:** $\text{Riesgo} = \text{Peligro} \times \text{Exposición} \times \text{Vulnerabilidad}$ + módulo financiero (AAL, PML, curva de excedencia).
+2. **Frecuencia–severidad (riesgo colectivo):** $S = \sum_{i=1}^{N} X_i$. $S(t)$ es un **Poisson compuesto** (Lévy de saltos puros); con intensidad dependiente del peligro se llega a los **procesos de Cox / Poisson doblemente estocásticos** — el puente al cálculo estocástico.
 
 **Restricciones confirmadas con los datos:**
-- **Grano:** `estado × peril × año`. Sin mes. → panel estatal anual (~32 estados × ~17 años); la dimensión espacial compensa la temporal. Intensidad `λ_{año}(estado) = f(covariables de peligro anuales)`.
+- **Grano:** $\text{estado} \times \text{peril} \times \text{año}$. Sin mes. → panel estatal anual (~32 estados × ~17 años); la dimensión espacial compensa la temporal. Intensidad $\lambda_{\text{año}}(\text{estado}) = f(\text{covariables de peligro anuales})$.
 - **Exposición peril-agnóstica:** ninguna hoja de exposición (`emisión`, `suma asegurada`, `unidades expuestas`) trae la causa/tipo de evento; sólo `siniestros` la trae. Por tanto **tasa de un peril = pérdida de ese peril ÷ exposición total del estrato**, y el grano máximo de normalización es la **intersección de llaves** entre siniestros y la hoja de exposición.
 - **Dos preocupaciones distintas:** la **subestimación por baja penetración** es de *nivel* (sólo se ve lo asegurado; se cierra con CENAPRED); la **atribución del peril** es de *resolución* y la resuelve el campo de causa/tipo de evento de la CNSF.
 
@@ -144,7 +144,7 @@ Catálogos discutidos para complementar la información de seguros. Mapeo peril�
 
 ### 5.4 Orden de obtención (priorizado por relevancia en la literatura + diseño)
 
-Ordenado por el peso que la literatura de *cat modeling*, seguro paramétrico/agrícola y atribución clima-económica da a cada insumo, y por su valor para este diseño (panel estatal anual, perils climáticos, covariables de la intensidad `λ`, puente asegurado→económico).
+Ordenado por el peso que la literatura de *cat modeling*, seguro paramétrico/agrícola y atribución clima-económica da a cada insumo, y por su valor para este diseño (panel estatal anual, perils climáticos, covariables de la intensidad $\lambda$, puente asegurado→económico).
 
 **Tier 1 — indispensables (sin esto no hay atribución):**
 1. **Ciclón tropical — IBTrACS / HURDAT2.** Peril con mayores pérdidas aseguradas catastróficas en México (hidro y autos) y centro de la literatura de cat modeling y valuación de cat bonds; el *best track* es el insumo de peligro estándar. Acceso fácil (descarga directa) → **empezar aquí**.

@@ -20,7 +20,7 @@ For a chosen valuation date $t_0$ (e.g., 27 February 2026), assemble the followi
 
 **From your Bonos M CSV (CF300, Bonos block):**
 
-For each of the six on-the-run buckets $\text{Serie} \in \{$`Bonos_0_3`, `Bonos_3_5`, `Bonos_5_7`, `Bonos_7_10`, `Bonos_10_20`, `Bonos_20_30`$\}$, take the row where `Date = t₀` and read off:
+For each of the six on-the-run buckets $\text{Serie} \in \{$`Bonos_0_3`, `Bonos_3_5`, `Bonos_5_7`, `Bonos_7_10`, `Bonos_10_20`, `Bonos_20_30`$\}$, take the row where `Date` $= t_0$ and read off:
 
 | Symbol | Column in your CSV | Meaning | Units |
 |:---|:---|:---|:---|
@@ -507,7 +507,7 @@ The bucket label `Bonos_0_3` does not mean "the 3-year Mexican zero rate". It me
 So the right mental model is:
 
 - **The bucket label tells you which segment of the curve the observation lives in**, not the tenor itself.
-- **The actual tenor of each observation is `Plazo/365`**, and this is a property of the day, not of the bucket.
+- **The actual tenor of each observation is `Plazo`$/365$**, and this is a property of the day, not of the bucket.
 
 This is not a bug or an inconvenience. It is how an "on-the-run" vector works. The same is true of the US on-the-run Treasury curve, the German Bund curve, and so on.
 
@@ -527,7 +527,7 @@ So if you want the "5-year zero rate today", you compute $z(5)$ by evaluating yo
 
 A natural mistake is to treat the `Bonos_0_3` row as "the 3-year point", `Bonos_3_5` as "the 5-year point", `Bonos_5_7` as "the 7-year point", and so on, and to feed those labels into an interpolation as if they were the tenors. This produces a curve that is mis-located by anywhere from a few months to nearly two years at each pillar, in a direction that drifts as benchmarks age. The error is largest near a benchmark roll and smallest just after one.
 
-Always use `Plazo/365` as the tenor for each pillar. The bucket label is documentation, not data.
+Always use `Plazo`$/365$ as the tenor for each pillar. The bucket label is documentation, not data.
 
 ### 2.4 What the Buckets *Do* Tell You
 

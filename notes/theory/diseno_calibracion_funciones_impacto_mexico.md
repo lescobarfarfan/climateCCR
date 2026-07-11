@@ -39,7 +39,7 @@ Fuera de alcance (documentado en §9): inundación pluvial/urbana.
 | D3 | Unidad de calibración: **año × estado** (no evento × estado). | CNSF reporta por año-estado-ramo; asignar pérdidas anuales a tormentas individuales introduce ambigüedad cuando múltiples ciclones afectan el mismo estado el mismo año. Eberenz et al. (2021) agregan de forma análoga ante solapamientos en EM-DAT. |
 | D4 | Periodo de análisis: **2000–presente**. | Acotado por el lado de pérdidas (serie CENAPRED "Impacto Socioeconómico de los Desastres en México" inicia ~2000). El hazard IBTrACS es confiable hacia atrás hasta ~1980 (era satelital, cuenca EP), pero no se inventan pérdidas hacia atrás. |
 | D5 | Deflactación a pesos constantes con **INPC (INEGI)**, año base = último año completo del panel. | Serie doméstica de pérdidas en MXN → deflactor doméstico oficial y público. Deflactores del PIB (Banco Mundial/FMI) son para comparación internacional. Conversión a USD (FIX promedio anual, Banxico) solo para comparar magnitudes con literatura, nunca dentro de la calibración. |
-| D6 | Forma funcional viento→daño: sigmoide de Emanuel (2011) vía `ImpfTropCyclone.from_emanuel_usa`, con `v_thresh = 25.7` m/s y `scale = 1` **fijos**; único parámetro libre: `v_half` por estado. | El nombre del constructor refleja los *defaults* de la calibración original de EE.UU.; la forma funcional es general. Eberenz et al. (2021) fijan `v_thresh = 25.7` m/s (valor de Emanuel 2011) y `scale = 1` por identificabilidad: liberar dos parámetros de forma con pérdidas agregadas produce valles planos en la superficie de costo. Sensibilidad opcional: `v_thresh ∈ {20, 25.7, 30}`. |
+| D6 | Forma funcional viento→daño: sigmoide de Emanuel (2011) vía `ImpfTropCyclone.from_emanuel_usa`, con $v_{\text{thresh}} = 25.7$ m/s y $\text{scale} = 1$ **fijos**; único parámetro libre: $v_{\text{half}}$ por estado. | El nombre del constructor refleja los *defaults* de la calibración original de EE.UU.; la forma funcional es general. Eberenz et al. (2021) fijan $v_{\text{thresh}} = 25.7$ m/s (valor de Emanuel 2011) y $\text{scale} = 1$ por identificabilidad: liberar dos parámetros de forma con pérdidas agregadas produce valles planos en la superficie de costo. Sensibilidad opcional: $v_{\text{thresh}} \in \{20, 25.7, 30\}$. |
 | D7 | Curvas de inundación/marejada: forma profundidad-daño del **JRC** (Huizinga et al. 2017, región Norteamérica, sector residencial como base) con un **escalar multiplicativo del MDD por estado** como único parámetro libre. | Mantiene la forma anclada al estándar de literatura; un parámetro por estado, simétrico al esquema de `v_half`. Sobre transferibilidad de curvas entre regiones: Wagenaar et al. (2018). |
 | D8 | Timestep de interpolación de trayectorias: **1 h por defecto**, sujeto a test de convergencia (§4.1). Idéntico en calibración y en toda aplicación downstream. | Eberenz et al. (2021) interpolan a pasos horarios; tutoriales de CLIMADA usan 0.5–1 h. Principio rector: el sesgo de timestep se absorbe en `v_half` durante la calibración, por lo que la **consistencia** calibración↔aplicación domina sobre la "precisión" absoluta. Observación pendiente de explicar: en pruebas previas, timesteps más finos produjeron pérdidas menores — se investiga vía test de convergencia, no se elige el timestep por el resultado que produce. |
 | D9 | Escasez de eventos por estado → **modelo jerárquico bayesiano** (partial pooling) en lugar de pooling duro por grupos. Implementación externa a CLIMADA (PyMC, con réplica opcional en Stan), con CLIMADA como forward model vía superficie precomputada (§5). | Conserva el detalle estatal solicitado. Estados sin costa / con pocos ciclones se contraen hacia la media regional/nacional con interpretación física directa. El `BayesianOptimizer` de `climada.util.calibrate` es optimización bayesiana (búsqueda GP, devuelve punto óptimo), **no** inferencia bayesiana — no produce posteriores. |
@@ -128,23 +128,23 @@ Protocolo:
 
 ### 4.1 Viento (Emanuel 2011)
 
-Fracción de daño en función del viento sostenido `V`:
+Fracción de daño en función del viento sostenido $V$:
 
 ```
 v_n   = max(V − V_thresh, 0) / (V_half − V_thresh)
 f(V)  = v_n³ / (1 + v_n³)
 ```
 
-- `V_thresh = 25.7 m/s` (fijo; Emanuel 2011, mantenido por Eberenz et al. 2021).
-- `scale = 1` (fijo).
-- `V_half,s` = parámetro libre, uno por estado `s` (jerárquico, §5).
+- $V_{\text{thresh}} = 25.7\ \text{m/s}$ (fijo; Emanuel 2011, mantenido por Eberenz et al. 2021).
+- $\text{scale} = 1$ (fijo).
+- $V_{\text{half},s}$ = parámetro libre, uno por estado $s$ (jerárquico, §5).
 
 Constructor: `ImpfTropCyclone.from_emanuel_usa(impf_id=s, v_thresh=25.7, v_half=...)`.
 
 ### 4.2 Marejada e inundación (JRC profundidad-daño)
 
 Curva base: `ImpfRiverFlood.from_jrc_region_sector('NorthAmerica', 'residential')`
-(Huizinga et al. 2017). Parámetro libre por estado: escalar multiplicativo `κ_s` sobre
+(Huizinga et al. 2017). Parámetro libre por estado: escalar multiplicativo $\kappa_s$ sobre
 el MDD (recortado a [0, 1] tras escalar):
 
 ```
@@ -152,16 +152,16 @@ MDD_s(d) = min(κ_s · MDD_JRC(d), 1)
 ```
 
 La misma curva base aplica a marejada (`TCSurgeBathtub`, intensidad en m) y a
-inundación fluvial (`RF`), con escalares separados `κ_s^surge` y `κ_s^RF` (mecanismos
+inundación fluvial (`RF`), con escalares separados $\kappa_s^{\text{surge}}$ y $\kappa_s^{\text{RF}}$ (mecanismos
 de daño distintos: agua salada + oleaje vs agua dulce).
 
 ### 4.3 Lluvia ciclónica
 
 No existe función estándar precipitación→daño en CLIMADA core. Opciones, en orden de
 preferencia:
-1. **Sigmoide tipo Emanuel sobre precipitación acumulada** con umbral `P_thresh` fijo
+1. **Sigmoide tipo Emanuel sobre precipitación acumulada** con umbral $P_{\text{thresh}}$ fijo
    (calibración exploratoria nacional para fijarlo, p.ej. percentil de eventos sin
-   pérdida) y `P_half,s` libre — simetría total con el esquema de viento.
+   pérdida) y $P_{\text{half},s}$ libre — simetría total con el esquema de viento.
 2. Lineal-a-trozos con un escalar libre.
 
 La decisión se toma con datos en mano (identificabilidad, §6) y se documenta. Si la
@@ -257,7 +257,7 @@ débilmente identificada.
 **Diseño:**
 
 1. **Combinación a nivel celda** (requiere centroides compartidos, §3.3). Con
-   fracciones de daño por celda-evento `f_viento`, `f_surge`, `f_lluvia` (de
+   fracciones de daño por celda-evento $f_{\text{viento}}$, $f_{\text{surge}}$, $f_{\text{lluvia}}$ (de
    `imp_mat / valor expuesto`):
 
    ```
