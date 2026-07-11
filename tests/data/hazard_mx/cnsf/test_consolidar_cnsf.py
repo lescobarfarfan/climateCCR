@@ -1,17 +1,30 @@
 """
 Pruebas del consolidador CNSF (usa la muestra real 2024 de Incendio + fixtures
 sintéticos para simular años viejos con deriva de estructura).
+
+La muestra real vive en el data-root del repo (git-ignorado); si no está
+descargada, las pruebas se saltan en vez de fallar.
 """
+
 import shutil
+import tempfile
 from pathlib import Path
 
+import consolidar_cnsf as C
 import openpyxl
 import pandas as pd
+import pytest
 
-import consolidar_cnsf as C
+_REPO = Path(__file__).resolve().parents[4]
+BASE_2024 = (
+    _REPO / "data" / "hazard_mx" / "datos_CNSF" / "crudos" / "incendio" / "2024 Incendio Bases.xlsx"
+)
+ROOT = Path(tempfile.gettempdir()) / "prueba_consol_cnsf"
 
-BASE_2024 = Path("real_root/incendio/2024 Incendio Bases.xlsx")
-ROOT = Path("/home/claude/prueba_consol")
+pytestmark = pytest.mark.skipif(
+    not BASE_2024.exists(),
+    reason="muestra real CNSF ausente (data/hazard_mx/datos_CNSF/crudos/incendio)",
+)
 
 
 def _preparar():
@@ -23,7 +36,7 @@ def _preparar():
 
     # 2007 simulado con deriva:
     wb = openpyxl.load_workbook(BASE_2024)
-    wb["Emision"].title = "Emisión"                       # nombre de hoja con acento (años viejos)
+    wb["Emision"].title = "Emisión"  # nombre de hoja con acento (años viejos)
     ws = wb["Siniestros"]
     for c in range(1, ws.max_column + 1):
         v = ws.cell(2, c).value
@@ -71,13 +84,17 @@ def test_validacion_detecta_y_no_falsea():
     _preparar()
     out = ROOT / "out_val"
     import json
+
     C.consolidar(ROOT, out, categorias=["incendio"])
     rep = json.loads((out / "incendio" / "_reporte.json").read_text())
     sin = [h for h in rep["hojas"] if h["hoja"] == "Siniestros"][0]
-    em = [h for h in rep["hojas"] if h["hoja"] == "Emisión" or h["hoja"] == "Emision"][0]
+    assert [h for h in rep["hojas"] if h["hoja"] in ("Emisión", "Emision")], rep["hojas"]
     # Siniestros: detecta el par GIRO como posible alias (variante histórica vs canónica)
-    dups = [d for d in sin["validaciones"]["posibles_duplicados"]
-            if "GIRO" in d["variante"] and "GIRO" in d["canonica"]]
+    dups = [
+        d
+        for d in sin["validaciones"]["posibles_duplicados"]
+        if "GIRO" in d["variante"] and "GIRO" in d["canonica"]
+    ]
     assert dups, sin["validaciones"]["posibles_duplicados"]
     # columna en blanco fue descartada (no aparece como sin_encabezado en datos)
     assert sin["validaciones"]["columnas_sin_encabezado"] == [], sin["validaciones"]
