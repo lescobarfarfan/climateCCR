@@ -2,11 +2,13 @@
 Prueba de la lógica de sincronización del scraper CNSF SIN red.
 Monkeypatch de las tres costuras de red: inventario_remoto, _head_meta, _descargar_a.
 """
-import hashlib, shutil
+
+import hashlib
+import shutil
 from pathlib import Path
 
 import scraper_cnsf as S
-from scraper_cnsf import ArchivoCNSF, sincronizar, cargar_estado, guardar_estado, evaluar
+from scraper_cnsf import ArchivoCNSF, cargar_estado, guardar_estado, sincronizar
 
 CAT = "Agrícola y Animales"
 SLUG = "agricola_y_animales"
@@ -17,8 +19,15 @@ REMOTO: dict = {}
 
 def _arch(anio, nombre, kb):
     url = f"https://www.cnsf.gob.mx/.../AyA Bases/{nombre}"
-    return ArchivoCNSF(categoria=CAT, categoria_slug=SLUG, anio=anio,
-                       nombre_archivo=nombre, url=url, ext=".xlsx", tamano_kb=kb)
+    return ArchivoCNSF(
+        categoria=CAT,
+        categoria_slug=SLUG,
+        anio=anio,
+        nombre_archivo=nombre,
+        url=url,
+        ext=".xlsx",
+        tamano_kb=kb,
+    )
 
 
 def _set_remoto(url, data: bytes, lm="Mon, 01 Jan 2024 00:00:00 GMT", etag='"v1"'):
@@ -73,8 +82,12 @@ def main():
     print("Run2 OK: sin cambios, 0 descargas, categorias_cambiadas vacío")
 
     # ---------- Run 3: 2024 cambia de contenido + aparece 2022 ----------
-    _set_remoto(a2024.url, b"CONTENIDO-2024-v2-DISTINTO" * 100,
-                lm="Tue, 01 Apr 2025 00:00:00 GMT", etag='"v2"')  # mismo kb en listado
+    _set_remoto(
+        a2024.url,
+        b"CONTENIDO-2024-v2-DISTINTO" * 100,
+        lm="Tue, 01 Apr 2025 00:00:00 GMT",
+        etag='"v2"',
+    )  # mismo kb en listado
     a2022 = _arch(2022, "2022 Agricola Bases.xlsx", 631)
     _set_remoto(a2022.url, b"CONTENIDO-2022-v1" * 100)
 

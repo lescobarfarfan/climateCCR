@@ -1,5 +1,6 @@
 """Pruebas de parseo del scraper CNSF (sin red, con fixtures realistas)."""
-from scraper_cnsf import descubrir_categorias, listar_archivos, Categoria, _normalizar_url
+
+from scraper_cnsf import Categoria, _normalizar_url, descubrir_categorias, listar_archivos
 
 B = "https://www.cnsf.gob.mx"
 PRE = "/EntidadesSupervisadas/InstitucionesSociedadesMutualistas"
@@ -17,6 +18,7 @@ HTML_INDICE = f"""
 </body></html>
 """
 
+
 # --- Fixture categoría: imita la tabla agrupada con ruido de postbacks ---
 def _fila(anio, tam, carpeta, nombre):
     href = f"{B}{PRE}/{carpeta}/{nombre}"
@@ -28,12 +30,15 @@ def _fila(anio, tam, carpeta, nombre):
         <td><a href="{href}"><img src="{B}/_layouts/images/{icon}" title="{nombre}"></a></td>
       </tr>"""
 
+
 HTML_AGRICOLA = f"""
 <html><body>
  <table>
   <tr>
-    <th><a href="javascript: __doPostBack('ctl00$ctl37$g_abc$ctl02','dvt_sortfield=Title')">Título</a></th>
-    <th><a href="javascript: __doPostBack('ctl00$ctl37$g_abc$ctl02','dvt_sortfield=FileSizeDisplay')">Tamaño</a></th>
+    <th><a href="javascript: __doPostBack('ctl00$ctl37$g_abc$ctl02','dvt_sortfield=Title')">
+      Título</a></th>
+    <th><a href="javascript: __doPostBack('ctl00$ctl37$g_abc$ctl02',
+      'dvt_sortfield=FileSizeDisplay')">Tamaño</a></th>
     <th>Tipo</th>
   </tr>
   <tr><td colspan="3"><a href="javascript:">Agrícola y de Animales : Bases (5)</a></td></tr>
@@ -54,8 +59,12 @@ def test_indice():
     cats = descubrir_categorias(None, html=HTML_INDICE)
     nombres = [c.nombre for c in cats]
     slugs = [c.slug for c in cats]
-    assert nombres == ["Vida", "Agrícola y Animales",
-                       "Riesgos Hidrometereológicos", "Diversos"], nombres
+    assert nombres == [
+        "Vida",
+        "Agrícola y Animales",
+        "Riesgos Hidrometereológicos",
+        "Diversos",
+    ], nombres
     assert "agricola_y_animales" in slugs
     assert all("detalladaseguros" not in c.url.lower() for c in cats)
     assert all("authenticate" not in c.url.lower() for c in cats)
@@ -63,8 +72,7 @@ def test_indice():
 
 
 def test_listado():
-    cat = Categoria(nombre="Agrícola y Animales",
-                    url=f"{B}{PRE}/Paginas/AgricolayAnimales.aspx")
+    cat = Categoria(nombre="Agrícola y Animales", url=f"{B}{PRE}/Paginas/AgricolayAnimales.aspx")
     arch = listar_archivos(None, cat, html=HTML_AGRICOLA)
     assert len(arch) == 5, f"esperaba 5, obtuve {len(arch)}: {[a.nombre_archivo for a in arch]}"
     # Orden por año desc
