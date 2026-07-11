@@ -90,7 +90,7 @@ If a contract changes, **edit it here** (do not append) and log it in `DECISIONS
 
 ### DC-HAZ-CNSF — CNSF consolidation + cleaning
 
-- `DC-HAZ-CNSF-1` **Input:** CNSF SharePoint downloads in `datos/datos_CNSF/crudos`. Sectors in `.xlsx` (agrícola, incendio, hidrometeorológicos, …); autos in `.zip` → `.mdb` (Access), subfolders `automoviles/individual/`, `automoviles/flotilla/`.
+- `DC-HAZ-CNSF-1` **Input:** CNSF SharePoint downloads in `data/hazard_mx/datos_CNSF/crudos` (`GEN-24`; script defaults still name the legacy `datos/` root → `OQ-HAZ-16`). Sectors in `.xlsx` (agrícola, incendio, hidrometeorológicos, …); autos in `.zip` → `.mdb` (Access), subfolders `automoviles/individual/`, `automoviles/flotilla/`.
 - `DC-HAZ-CNSF-2` **xlsx sector output (`consolidar_cnsf.py`):** one consolidated CSV per sector; canonical headers (typos fixed via `CORRECCIONES_CANONICAS`); spacer columns dropped; optional `--comprimir {gzip,bz2,xz}`. Loss = `MONTO PAGADO`; frequency = `NÚMERO DE SINIESTROS`; empty = NA.
 - `DC-HAZ-CNSF-3` **autos output (`procesar_autos_cnsf.py`):** **three** CSVs — claims, premiums, **Unidades Expuestas**. Codes kept + `_desc` columns (catalog join); `Marca` → `Marca_desc` + `Tipo_desc`; 2007 excluded (wide format); year from `.zip` filename.
 - `DC-HAZ-CNSF-4` **Config:** `catalogos_autos_cnsf.json` (incl. `Tipo de poliza` catalog); key resolution accent/case-insensitive.
@@ -125,7 +125,7 @@ If a contract changes, **edit it here** (do not append) and log it in `DECISIONS
 
 ### DC-HAZ-DROUGHT — drought pipeline
 
-- `DC-HAZ-DROUGHT-1` **Input:** ERA5/Copernicus CDS (`.nc` clipped to Mexico) in `datos/datos_sequia/crudos`; official SPI/SPEI benchmarks.
+- `DC-HAZ-DROUGHT-1` **Input:** ERA5/Copernicus CDS (`.nc` clipped to Mexico) in `data/hazard_mx/datos_sequia/crudos` (`GEN-24`; script defaults legacy → `OQ-HAZ-16`); official SPI/SPEI benchmarks.
 - `DC-HAZ-DROUGHT-2` **Processing:** `indices_sequia` (SPI/SPEI by scale) → `agregacion_sequia` (to state via `--shp-estados`) → `validacion_sequia` (`reporte_validacion.json` vs official product).
 - `DC-HAZ-DROUGHT-3` **Canonical download targets:** `crudo_era5`, `benchmark_spi`, `benchmark_spei` (fixed canonical names so `verificar` recognizes them).
 - `DC-HAZ-DROUGHT-4` **Provenance:** CDS request + version + DOI + sha256 + bytes + date.
