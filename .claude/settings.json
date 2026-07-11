@@ -25,8 +25,8 @@
       "Bash(git push *)"
     ],
     "deny": [
-      "Edit(data/**)",
-      "Edit(results/**)",
+      "Edit(/data/**)",
+      "Edit(/results/**)",
       "Bash(git reset --hard *)"
     ]
   }

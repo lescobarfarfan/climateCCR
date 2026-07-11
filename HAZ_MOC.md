@@ -11,7 +11,7 @@ the intensity `λ` and the per-event **impact/jump-mark** that drive the climate
 
 ## Decisions → [[DECISIONS]]
 - CNSF cleaning: `HAZ-CLEAN-CNSF-01..11` (`NU`→No Disponible; `MONTO PAGADO`; 32 states; peril taxonomy).
-- CNSF pipeline: `HAZ-SCRAPER-CNSF-01..08` (orchestrator; year regex; autos `.mdb`→3 CSVs).
+- CNSF pipeline: `HAZ-SCRAPER-CNSF-01..09` (orchestrator; year regex; autos `.mdb`→3 CSVs; tests run from the repo root).
 - IBTrACS: `HAZ-IBTRACS-01..11` (Vmax-anchored Holland; K&D decay; wind-field > buffer; covariates).
 - CENAPRED: `HAZ-CENAPRED-01..09` (A/B/A′ structures; multi-state kept as one record).
 - CLIMADA: `HAZ-CLIMADA-01..12` (subnational impf; `v_thresh=25.7`, `v_half=74.7`; LitPop; PyMC; multi-peril union).
@@ -27,13 +27,14 @@ the intensity `λ` and the per-event **impact/jump-mark** that drive the climate
 ## Open questions → [[OPEN_QUESTIONS]]
 - `OQ-HAZ-01` CDMX discretization · `OQ-HAZ-03` `MONEDA`/FX (closable via MKT) · `OQ-HAZ-06` validate covariates (Odile/Otis).
 - `OQ-HAZ-07/08/09` references & source access · `OQ-HAZ-10` timestep convergence.
-- `OQ-HAZ-12` stochastic-model calibration · `OQ-HAZ-13` parametric pricing · `OQ-HAZ-14` remaining CNSF sectors.
+- `OQ-HAZ-12` stochastic-model calibration · `OQ-HAZ-13` parametric pricing · `OQ-HAZ-14` remaining CNSF sectors · `OQ-HAZ-16` re-anchor default data roots (`GEN-24`).
 - Estimation core (shared): `OQ-INT-07` jump-mark / impact estimation.
 
 ## Notes (import under `notes/`)
 - Theory (`notes/theory/`): [[referencias_riesgo_catastrofico]] (master), [[diseno_calibracion_funciones_impacto_mexico]] (CLIMADA design).
 - Sources (`notes/sources/`): [[cenapred]], [[ibtracs]].
 - Pipelines (`notes/pipelines/`): [[README_scraper_cnsf]], [[README_sequia]], [[DISENO_pipeline_autos_CNSF]], [[Guia_MDB_Automoviles_CNSF]], [[shared_entity_cleaner_clasificar_entidad]].
+- Reading: [[2026-07-11_cnsf_harness_data_consolidation]] — housekeeping read-log, no analytical decisions (CNSF harness + `GEN-24` data consolidation; `notes/reading/`, `GEN-21`).
 
 ## Wires to the other arms
 - Sends **`λ` + impact** to [[CCR_MOC]]/`processes.jumps` (`DC-CCR-SIM-2`, `DC-XWALK-4`) — the climate shock.

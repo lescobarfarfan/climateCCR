@@ -1,23 +1,14 @@
 # Pipeline de sequía (Tier 1) — ERA5 → SPI/SPEI → agregación estatal
 
-Documentación del módulo de obtención y procesamiento de datos de **sequía** para la
-tesis de atribución de riesgo financiero al cambio climático en México. Sigue las
-mismas convenciones que la documentación de CENAPRED y CNSF: verificación de fuentes,
-trazabilidad de decisiones, reproducibilidad y control de versiones.
+Documentación del módulo de obtención y procesamiento de datos de **sequía** para la tesis de atribución de riesgo financiero al cambio climático en México. Sigue las mismas convenciones que la documentación de CENAPRED y CNSF: verificación de fuentes, trazabilidad de decisiones, reproducibilidad y control de versiones.
 
 ---
 
 ## 1. Propósito y contexto
 
-La sequía es uno de los peligros del Tier 1 cuya intensidad debe medirse con un índice
-**continuo, multiescalar y reproducible** que sirva como covariable de intensidad para
-la calibración de modelos estocásticos y, aguas abajo, para el pricing de instrumentos
-paramétricos. Este pipeline produce ese índice a partir del reanálisis ERA5 y lo
-agrega a nivel estatal para empatar con la microdata CNSF.
+La sequía es uno de los peligros del Tier 1 cuya intensidad debe medirse con un índice **continuo, multiescalar y reproducible** que sirva como covariable de intensidad para la calibración de modelos estocásticos y, aguas abajo, para el pricing de instrumentos paramétricos. Este pipeline produce ese índice a partir del reanálisis ERA5 y lo agrega a nivel estatal para empatar con la microdata CNSF.
 
-El **Monitor de Sequía en México (MSM)** de CONAGUA/SMN se trata como capa de
-**validación** independiente (producto categórico oficial, ligado a declaratorias), no
-como insumo de calibración. Ver §3.1.
+El **Monitor de Sequía en México (MSM)** de CONAGUA/SMN se trata como capa de **validación** independiente (producto categórico oficial, ligado a declaratorias), no como insumo de calibración. Ver §3.1.
 
 ---
 
@@ -41,31 +32,16 @@ como insumo de calibración. Ver §3.1.
 
 ### 3.1 Elección de índice: SPEI primario, SPI robustez, MSM validación
 
-- **SPEI** (Vicente-Serrano et al. 2010) es el índice **primario**. Incorpora el balance
-  hídrico climático *D = P − ETP*, capturando el efecto de la demanda evaporativa —que es
-  **el canal por el que el calentamiento intensifica la sequía**—, justo lo que se quiere
-  atribuir. En México la señal de secamiento está en el balance hídrico, no en la lluvia:
-  la temperatura nacional subió ~0.71 °C (1951-2017) sin tendencia clara en precipitación,
-  pero el balance P−ETP muestra una estación seca mucho más seca (Cruz-Reyes/scielo 2021;
-  estudios locales con Mann-Kendall confirman tendencia en temperatura, no en lluvia).
-- **SPI** (McKee et al. 1993; estándar OMM) se calcula **en paralelo** como índice de
-  robustez/comparabilidad. Solo usa precipitación, por lo que es ciego a la temperatura.
-- **MSM** (SMN/CONAGUA, parte del NADM): producto **categórico de consenso** (D0–D4),
-  semi-subjetivo, ideal como verdad-terreno oficial y para empatar con **declaratorias**,
-  pero **no** apto como covariable continua de calibración.
+- **SPEI** (Vicente-Serrano et al. 2010) es el índice **primario**. Incorpora el balance hídrico climático *D = P − ETP*, capturando el efecto de la demanda evaporativa —que es **el canal por el que el calentamiento intensifica la sequía**—, justo lo que se quiere atribuir. En México la señal de secamiento está en el balance hídrico, no en la lluvia: la temperatura nacional subió ~0.71 °C (1951-2017) sin tendencia clara en precipitación, pero el balance P−ETP muestra una estación seca mucho más seca (Cruz-Reyes/scielo 2021; estudios locales con Mann-Kendall confirman tendencia en temperatura, no en lluvia).
+- **SPI** (McKee et al. 1993; estándar OMM) se calcula **en paralelo** como índice de robustez/comparabilidad. Solo usa precipitación, por lo que es ciego a la temperatura.
+- **MSM** (SMN/CONAGUA, parte del NADM): producto **categórico de consenso** (D0–D4), semi-subjetivo, ideal como verdad-terreno oficial y para empatar con **declaratorias**, pero **no** apto como covariable continua de calibración.
 
 ### 3.2 Dos periodos de referencia (Opción II: cálculo propio)
 
-El índice se estandariza contra un periodo de referencia que define "lo normal". El
-registro de **salida** cubre todo el rango descargado (incluye 2011-2012, 2020-2021);
-el periodo de referencia solo cambia **respecto a qué** se mide la anomalía.
+El índice se estandariza contra un periodo de referencia que define "lo normal". El registro de **salida** cubre todo el rango descargado (incluye 2011-2012, 2020-2021); el periodo de referencia solo cambia **respecto a qué** se mide la anomalía.
 
-- **1991-2020** — normal climatológica vigente de la OMM; idéntica al producto oficial,
-  habilita comparabilidad y validación.
-- **1961-1990** — normal "pre-aceleración", base estándar de cambio climático para México.
-  Contra esta base más fría las sequías recientes se ven **más anómalas**, exponiendo la
-  señal de calentamiento (verificado en pruebas internas: la sequía de 2012 pasa de
-  SPEI-12 ≈ −2.2 con base 1991-2020 a ≈ −2.5 con base 1961-1990).
+- **1991-2020** — normal climatológica vigente de la OMM; idéntica al producto oficial, habilita comparabilidad y validación.
+- **1961-1990** — normal "pre-aceleración", base estándar de cambio climático para México. Contra esta base más fría las sequías recientes se ven **más anómalas**, exponiendo la señal de calentamiento (verificado en pruebas internas: la sequía de 2012 pasa de SPEI-12 ≈ −2.2 con base 1991-2020 a ≈ −2.5 con base 1961-1990).
 
 > **Por qué cálculo propio (Opción II).** El producto oficial ERA5-Drought está
 > estandarizado a 1991-2020 **fijo**, y un índice ya estandarizado **no** se puede
@@ -79,56 +55,29 @@ el periodo de referencia solo cambia **respecto a qué** se mide la anomalía.
 
 ### 3.3 Escalas de acumulación
 
-Cada escala n-meses mide un tipo de sequía distinto y se asocia a sistemas/pérdidas
-distintos: **3–6 meses** → agrícola (ciclo de cultivo); **12 meses** → hidrológica anual
-(presas, año-agua); **24 meses** → plurianual (mega-sequías como 2011-2012). La escala
-operativa para cada ramo CNSF se elige **empíricamente por correlación** con las pérdidas.
+Cada escala n-meses mide un tipo de sequía distinto y se asocia a sistemas/pérdidas distintos: **3–6 meses** → agrícola (ciclo de cultivo); **12 meses** → hidrológica anual (presas, año-agua); **24 meses** → plurianual (mega-sequías como 2011-2012). La escala operativa para cada ramo CNSF se elige **empíricamente por correlación** con las pérdidas.
 
 - Set base: **{3, 6, 12, 24}**. Escalas opcionales {1, 48} con `--escalas-extra`.
 
 ### 3.4 Distribuciones (estandarización)
 
-- **SPI**: Gamma de 2 parámetros, estimador de Thom (1958), con corrección de ceros
-  (mezcla *q + (1−q)·Gamma*). Recomendada por WMO (2012) y Stagge et al. (2015).
-- **SPEI**: log-logística de 3 parámetros por **L-momentos** (Vicente-Serrano et al. 2010;
-  Beguería et al. 2014). *Diferencia conocida*: ERA5-Drought usa logística generalizada;
-  la brecha frente al producto oficial se **cuantifica** en la validación (§7).
+- **SPI**: Gamma de 2 parámetros, estimador de Thom (1958), con corrección de ceros (mezcla *q + (1−q)·Gamma*). Recomendada por WMO (2012) y Stagge et al. (2015).
+- **SPEI**: log-logística de 3 parámetros por **L-momentos** (Vicente-Serrano et al. 2010; Beguería et al. 2014). *Diferencia conocida*: ERA5-Drought usa logística generalizada; la brecha frente al producto oficial se **cuantifica** en la validación (§7).
 - Ajuste **por mes calendario** (elimina estacionalidad); índice saturado a ±3.09.
 
 ### 3.5 Ensemble e incertidumbre
 
-Se usan los **10 miembros del ensemble de ERA5 (EDA)**. Esto representa incertidumbre del
-**reanálisis/observacional**, *no* dispersión multi-modelo de cambio climático. La
-estimación central es la **media** sobre miembros; la **desviación estándar** entre
-miembros se reporta como banda de incertidumbre (útil para pricing).
+Se usan los **10 miembros del ensemble de ERA5 (EDA)**. Esto representa incertidumbre del **reanálisis/observacional**, *no* dispersión multi-modelo de cambio climático. La estimación central es la **media** sobre miembros; la **desviación estándar** entre miembros se reporta como banda de incertidumbre (útil para pricing).
 
 ### 3.6 Agregación espacial: estatal, ponderada por área
 
-Unidad de análisis: **estado** (32 entidades), porque la mayoría de las fuentes no llega a
-detalle municipal; los crudos quedan en `.nc`, así que la capa municipal puede aplicarse
-después sobre los mismos datos. La agregación es **media ponderada por área de
-intersección** celda-estado en proyección de área igual (EPSG:6933), con **fallback** a
-la celda con dato más cercana. Esto evita que entidades pequeñas (p. ej. CDMX, ~2 celdas
-a 0.25°) desaparezcan del panel —el artefacto de discretización observado en el panel de
-viento IBTrACS a 0.5°—. Verificado en pruebas: la entidad chica recibe siempre valor finito.
+Unidad de análisis: **estado** (32 entidades), porque la mayoría de las fuentes no llega a detalle municipal; los crudos quedan en `.nc`, así que la capa municipal puede aplicarse después sobre los mismos datos. La agregación es **media ponderada por área de intersección** celda-estado en proyección de área igual (EPSG:6933), con **fallback** a la celda con dato más cercana. Esto evita que entidades pequeñas (p. ej. CDMX, ~2 celdas a 0.25°) desaparezcan del panel —el artefacto de discretización observado en el panel de viento IBTrACS a 0.5°—. Verificado en pruebas: la entidad chica recibe siempre valor finito.
 
-**Rendimiento (por qué no se requiere `exactextract` ni GeoTIFF).** La intersección
-geométrica (geopandas) se calcula **una sola vez** —la malla es fija para todos los años,
-escalas, índices, miembros y periodos— en ~0.6 s para ~10,300 celdas × 32 estados. Esos
-pesos se guardan como **matriz dispersa** `W` (n_estados × n_celdas) y la agregación de
-toda la serie temporal se hace con **un solo producto matriz** (BLAS, sin geometría por
-paso de tiempo): ~4 s para 16 campos × 768 meses × (media + sd), frente a ~300 s de un
-bucle por paso. Una librería de zonal-stats por raster (exactextract, rasterstats) sería
-más lenta aquí y exigiría convertir a GeoTIFF en cada paso. El verdadero cuello de botella
-del pipeline NO es la agregación sino el **ajuste de índices** (§7), que es numérico, no
-espacial; ahí es donde conviene optimizar (vectorización por celda / numba).
+**Rendimiento (por qué no se requiere `exactextract` ni GeoTIFF).** La intersección geométrica (geopandas) se calcula **una sola vez** —la malla es fija para todos los años, escalas, índices, miembros y periodos— en ~0.6 s para ~10,300 celdas × 32 estados. Esos pesos se guardan como **matriz dispersa** `W` (n_estados × n_celdas) y la agregación de toda la serie temporal se hace con **un solo producto matriz** (BLAS, sin geometría por paso de tiempo): ~4 s para 16 campos × 768 meses × (media + sd), frente a ~300 s de un bucle por paso. Una librería de zonal-stats por raster (exactextract, rasterstats) sería más lenta aquí y exigiría convertir a GeoTIFF en cada paso. El verdadero cuello de botella del pipeline NO es la agregación sino el **ajuste de índices** (§7), que es numérico, no espacial; ahí es donde conviene optimizar (vectorización por celda / numba).
 
 ### 3.7 Unidades
 
-ERA5 entrega `tp`/`pev` en metros y `pev ≤ 0` (convención descendente). El pipeline
-convierte a **mm/mes** y toma |pev| como demanda positiva, registrando los rangos en log
-para revisión manual (verification-first). **Verificar en la máquina** que las magnitudes
-sean físicamente razonables antes de confiar en los índices.
+ERA5 entrega `tp`/`pev` en metros y `pev ≤ 0` (convención descendente). El pipeline convierte a **mm/mes** y toma |pev| como demanda positiva, registrando los rangos en log para revisión manual (verification-first). **Verificar en la máquina** que las magnitudes sean físicamente razonables antes de confiar en los índices.
 
 ---
 
@@ -164,8 +113,7 @@ proyecto/
 pip install -r requirements_sequia.txt
 ```
 
-Configurar credenciales del CDS en `~/.cdsapirc` (ver
-`https://cds.climate.copernicus.eu/how-to-api`):
+Configurar credenciales del CDS en `~/.cdsapirc` (ver `https://cds.climate.copernicus.eu/how-to-api`):
 
 ```
 url: https://cds.climate.copernicus.eu/api
@@ -212,10 +160,7 @@ Banderas principales:
 
 Ejemplos:
 
-**Ejemplo 1 — Pre-vuelo (primer paso): verificar configuración y listar descargas.**
-No baja nada; confirma que `~/.cdsapirc` y `cdsapi` están bien, e imprime el plan exacto
-de descarga (datasets, variables, años, área) y qué archivos están pendientes o ya existen.
-Es lo primero que conviene correr, especialmente la primera vez.
+**Ejemplo 1 — Pre-vuelo (primer paso): verificar configuración y listar descargas.** No baja nada; confirma que `~/.cdsapirc` y `cdsapi` están bien, e imprime el plan exacto de descarga (datasets, variables, años, área) y qué archivos están pendientes o ya existen. Es lo primero que conviene correr, especialmente la primera vez.
 
 ```bash
 python scraper_sequia.py --modo verificar
@@ -223,10 +168,7 @@ python scraper_sequia.py --modo verificar
 python scraper_sequia.py --modo verificar --anio-inicial 1960 --anio-final 2023
 ```
 
-**Ejemplo 2 — Solo descargar los crudos (+ benchmark oficial).**
-Primera vez: correr antes el Ejemplo 1 (`verificar`), porque aún no existe
-`_procedencia.json` ni logs; así confirmas la config y revisas el plan antes de bajar GB de
-datos. El rango de años y las escalas (para el benchmark oficial) se pasan como banderas.
+**Ejemplo 2 — Solo descargar los crudos (+ benchmark oficial).** Primera vez: correr antes el Ejemplo 1 (`verificar`), porque aún no existe `_procedencia.json` ni logs; así confirmas la config y revisas el plan antes de bajar GB de datos. El rango de años y las escalas (para el benchmark oficial) se pasan como banderas.
 
 ```bash
 # 1) pre-vuelo (si es la primera vez)
@@ -235,21 +177,9 @@ python scraper_sequia.py --modo verificar --anio-inicial 1960 --anio-final 2023
 python scraper_sequia.py --modo descargar --anio-inicial 1960 --anio-final 2023 --escalas 3 6 12 24
 ```
 
-`descargar` deja los `.nc` recortados a México en `datos/datos_sequia/crudos/` y escribe
-`_procedencia.json` (request CDS + versión + DOI + sha256 + bytes + fecha) por cada archivo.
-Es **idempotente y verificado por integridad**: omite los archivos cuyo `sha256`/`bytes`
-coinciden con `_procedencia.json` (salvo `--forzar`), y **re-baja los faltantes, cambiados o
-parciales** (una descarga interrumpida no deja registro de procedencia, así que se detecta y
-se vuelve a bajar). Esto permite *reanudar* sin repetir lo ya descargado **y** sin arrastrar
-archivos corruptos. Corre `verificar` antes para ver el estado de cada archivo sin red.
+`descargar` deja los `.nc` recortados a México en `datos/datos_sequia/crudos/` y escribe `_procedencia.json` (request CDS + versión + DOI + sha256 + bytes + fecha) por cada archivo. Es **idempotente y verificado por integridad**: omite los archivos cuyo `sha256`/`bytes` coinciden con `_procedencia.json` (salvo `--forzar`), y **re-baja los faltantes, cambiados o parciales** (una descarga interrumpida no deja registro de procedencia, así que se detecta y se vuelve a bajar). Esto permite *reanudar* sin repetir lo ya descargado **y** sin arrastrar archivos corruptos. Corre `verificar` antes para ver el estado de cada archivo sin red.
 
-**Ejemplo 2b — Recuperar un job que quedó pendiente, por su `request_id`.**
-Si una descarga quedó en estado *accepted/running* y tuviste que cortarla, el job sigue
-vivo en el servidor del CDS. Toma el `Request ID is …` impreso en consola (también queda en
-`scraper_sequia.log`) y bájalo —solo ese— sin re-enviar el request. **Usa `--objetivo`**
-(no `--destino` libre): así cae con el nombre canónico y la procedencia completa que
-`verificar`/`descargar` reconocen. (La caché del CDS retiene el resultado ~día y medio;
-recupéralo dentro de ~un día.)
+**Ejemplo 2b — Recuperar un job que quedó pendiente, por su `request_id`.** Si una descarga quedó en estado *accepted/running* y tuviste que cortarla, el job sigue vivo en el servidor del CDS. Toma el `Request ID is …` impreso en consola (también queda en `scraper_sequia.log`) y bájalo —solo ese— sin re-enviar el request. **Usa `--objetivo`** (no `--destino` libre): así cae con el nombre canónico y la procedencia completa que `verificar`/`descargar` reconocen. (La caché del CDS retiene el resultado ~día y medio; recupéralo dentro de ~un día.)
 
 ```bash
 python scraper_sequia.py --modo recuperar \
@@ -257,11 +187,7 @@ python scraper_sequia.py --modo recuperar \
     --request-id f112b1f7-77e8-496d-9f88-6a56a57ae26d
 ```
 
-**Ejemplo 2c — Adoptar un archivo ya descargado pero `SIN_PROCEDENCIA`.**
-Si un archivo se recuperó con nombre libre y lo renombraste a mano (o por cualquier razón
-existe completo en disco pero sin registro), `verificar` lo marcará `SIN_PROCEDENCIA` y
-`descargar` lo volvería a bajar. Adóptalo (calcula su sha256/bytes y escribe el registro),
-sin red, dándole su nombre canónico primero:
+**Ejemplo 2c — Adoptar un archivo ya descargado pero `SIN_PROCEDENCIA`.** Si un archivo se recuperó con nombre libre y lo renombraste a mano (o por cualquier razón existe completo en disco pero sin registro), `verificar` lo marcará `SIN_PROCEDENCIA` y `descargar` lo volvería a bajar. Adóptalo (calcula su sha256/bytes y escribe el registro), sin red, dándole su nombre canónico primero:
 
 ```bash
 # 1) asegúrate de que el archivo tenga el nombre canónico esperado:
@@ -271,13 +197,9 @@ python scraper_sequia.py --modo registrar --objetivo benchmark_spi
 # ahora 'verificar' lo marca OK y 'descargar' ya no lo re-baja.
 ```
 
-Alternativa a recuperar: volver a correr `--modo descargar` reengancha al mismo job vía la
-deduplicación de requests idénticos del CDS (cache hit) si el resultado sigue en caché.
+Alternativa a recuperar: volver a correr `--modo descargar` reengancha al mismo job vía la deduplicación de requests idénticos del CDS (cache hit) si el resultado sigue en caché.
 
-**Ejemplo 3 — Solo calcular índices y agregar a estatal (descarga ya hecha).**
-Condicional a que los crudos ya estén descargados. Calcula SPI/SPEI propios para ambas
-bases, agrega a nivel estatal y corre el QA contra el oficial. *(Atención: `calcular` es
-el paso más costoso en cómputo.)*
+**Ejemplo 3 — Solo calcular índices y agregar a estatal (descarga ya hecha).** Condicional a que los crudos ya estén descargados. Calcula SPI/SPEI propios para ambas bases, agrega a nivel estatal y corre el QA contra el oficial. *(Atención: `calcular` es el paso más costoso en cómputo.)*
 
 ```bash
 # calcular + agregar + validar, sin volver a descargar:
@@ -301,46 +223,26 @@ python scraper_sequia.py --modo todo --escalas-extra --shp-estados datos/inegi/e
 
 ## 7. Procedimiento de cálculo (resumen reproducible)
 
-1. **Acumulación.** Suma móvil de n meses sobre P (para SPI) o sobre el balance
-   *D = P − ETP* (para SPEI). Los primeros n−1 meses quedan indefinidos (NaN).
-2. **Ajuste por mes calendario.** Para cada uno de los 12 meses, se ajusta la
-   distribución (Gamma o log-logística) **solo** sobre los años del periodo de referencia.
-3. **Transformación.** Toda la serie se mapea con la CDF ajustada a la normal estándar:
-   *índice = Φ⁻¹(F(x))*, saturado a ±3.09.
+1. **Acumulación.** Suma móvil de n meses sobre P (para SPI) o sobre el balance *D = P − ETP* (para SPEI). Los primeros n−1 meses quedan indefinidos (NaN).
+2. **Ajuste por mes calendario.** Para cada uno de los 12 meses, se ajusta la distribución (Gamma o log-logística) **solo** sobre los años del periodo de referencia.
+3. **Transformación.** Toda la serie se mapea con la CDF ajustada a la normal estándar: *índice = Φ⁻¹(F(x))*, saturado a ±3.09.
 4. **Por miembro del ensemble**, luego media (central) y sd (incertidumbre).
 
 ### Validación contra el producto oficial
 
-El módulo compara, por índice y escala, el cálculo propio con base **1991-2020** contra
-ERA5-Drought oficial (misma base), reportando **correlación, sesgo y RMSE**. Criterio
-orientativo de reproducción satisfactoria: *corr ≥ 0.95* y *|sesgo| ≤ 0.1*. Solo si el
-caso 1991-2020 reproduce al oficial se confía en los números de 1961-1990 (que no existen
-como producto oficial). Una brecha grande motivaría revisar la elección de distribución
-(log-logística vs logística generalizada).
+El módulo compara, por índice y escala, el cálculo propio con base **1991-2020** contra ERA5-Drought oficial (misma base), reportando **correlación, sesgo y RMSE**. Criterio orientativo de reproducción satisfactoria: *corr ≥ 0.95* y *|sesgo| ≤ 0.1*. Solo si el caso 1991-2020 reproduce al oficial se confía en los números de 1961-1990 (que no existen como producto oficial). Una brecha grande motivaría revisar la elección de distribución (log-logística vs logística generalizada).
 
 ---
 
 ## 8. Limitaciones y caveats
 
-- **Back-extension ERA5 (pre-1979):** menor confiabilidad; afecta parte de la base
-  1961-1990. Documentar al reportar tendencias; considerar 1971-2000 como sensibilidad.
-- **PET de ERA5:** se usa la PET propia de ERA5 (consistencia con el producto oficial); su
-  definición tiene particularidades. La validación es el control de que la elección es
-  adecuada.
-- **Distribución SPEI:** log-logística (propio) vs logística generalizada (oficial); la
-  diferencia se cuantifica, no se asume nula.
-- **Resolución 0.25°:** mejora frente a 0.5° (IBTrACS) pero sigue siendo gruesa para
-  entidades muy pequeñas; la ponderación por área + fallback lo mitiga, no lo elimina.
-- **MSM:** los shapefiles requieren solicitud al SMN; el Excel municipal cambió de criterio
-  de asignación de categoría en 2016 (antes: ≥40% de superficie; después: intensidad máxima
-  observada) — relevante al construir series largas de validación.
-- **Recencia del benchmark oficial:** el `consolidated_dataset` de ERA5-Drought va 2-3 meses
-  detrás de tiempo real, así que el pipeline **topa los años del benchmark** a `año_actual−1`
-  (pedir el año en curso da `400 invalid request`). Esto no afecta a los crudos ERA5 ni al
-  cálculo; solo a la ventana de validación, que de todos modos se ancla en 1991-2020.
-- **Robustez de descarga:** un fallo del benchmark es **no crítico** y no aborta la corrida
-  (los crudos, que son lo que necesita `calcular`, ya quedaron); `validar` simplemente omite
-  lo que falte. Los errores `4xx`/"invalid request" **no se reintentan** (son de cliente).
+- **Back-extension ERA5 (pre-1979):** menor confiabilidad; afecta parte de la base 1961-1990. Documentar al reportar tendencias; considerar 1971-2000 como sensibilidad.
+- **PET de ERA5:** se usa la PET propia de ERA5 (consistencia con el producto oficial); su definición tiene particularidades. La validación es el control de que la elección es adecuada.
+- **Distribución SPEI:** log-logística (propio) vs logística generalizada (oficial); la diferencia se cuantifica, no se asume nula.
+- **Resolución 0.25°:** mejora frente a 0.5° (IBTrACS) pero sigue siendo gruesa para entidades muy pequeñas; la ponderación por área + fallback lo mitiga, no lo elimina.
+- **MSM:** los shapefiles requieren solicitud al SMN; el Excel municipal cambió de criterio de asignación de categoría en 2016 (antes: ≥40% de superficie; después: intensidad máxima observada) — relevante al construir series largas de validación.
+- **Recencia del benchmark oficial:** el `consolidated_dataset` de ERA5-Drought va 2-3 meses detrás de tiempo real, así que el pipeline **topa los años del benchmark** a `año_actual−1` (pedir el año en curso da `400 invalid request`). Esto no afecta a los crudos ERA5 ni al cálculo; solo a la ventana de validación, que de todos modos se ancla en 1991-2020.
+- **Robustez de descarga:** un fallo del benchmark es **no crítico** y no aborta la corrida (los crudos, que son lo que necesita `calcular`, ya quedaron); `validar` simplemente omite lo que falte. Los errores `4xx`/"invalid request" **no se reintentan** (son de cliente).
 
 ---
 

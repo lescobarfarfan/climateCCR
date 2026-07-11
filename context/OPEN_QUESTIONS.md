@@ -8,7 +8,7 @@ integration questions `OQ-INT-NN` come first because they gate the others.
 - **Integration (decide first)** — `OQ-INT-01`–`OQ-INT-08`
 - **CCR arm** — `OQ-CCR-02`–`OQ-CCR-08`
 - **MKT arm** — `OQ-MKT-01`–`OQ-MKT-11`
-- **HAZ arm** — `OQ-HAZ-01`–`OQ-HAZ-15`
+- **HAZ arm** — `OQ-HAZ-01`–`OQ-HAZ-16`
 - **GEN — housekeeping** — `OQ-GEN-01`
 
 ---
@@ -64,11 +64,11 @@ integration questions `OQ-INT-NN` come first because they gate the others.
 - `OQ-HAZ-12` **Stochastic-model calibration** (compound Poisson, Cox / doubly stochastic) — begins once hazard-attribution data are consolidated. (Couples with `OQ-INT-07`.)
 - `OQ-HAZ-13` **Parametric-instrument pricing** — downstream HAZ deliverable.
 - `OQ-HAZ-14` **Integration/testing of the remaining CNSF sectors** through the scraper pipeline.
-- `OQ-HAZ-15` **CNSF test-harness import bug (pre-existing).** The 4 `tests/data/hazard_mx/cnsf/` modules `import scraper_cnsf` (etc.) by bare name, so pytest collection errors out under the `src/`-layout (`conftest` puts `src/` on the path, not the HAZ package dirs). Confirmed present on `main` before the PIMPA work; blocks the full suite from collecting. Fix: import via the package path (`climateCCR.data.hazard_mx.cnsf.…`) or add a `rootdir`/`conftest` shim. Pure test-harness `[eng]`.
+- `OQ-HAZ-16` **Re-anchor HAZ pipeline default data roots.** The scripts' CLI defaults and module constants still name the legacy CWD-relative `datos/datos_<FUENTE>/…` (e.g. `scraper_cnsf --out-dir`, `config_sequia.DIR_*`, `procesar_cenapred.DIR_BASE`), but the data now lives at `data/hazard_mx/` (`GEN-24`). Route them through `infra.ProjectPaths`/configs (`GEN-08`); until then run pipelines with explicit `--root`/`--out-dir` flags. Couples `DC-HAZ-CNSF-1`, `DC-HAZ-DROUGHT-1`. [eng]
 
 ## GEN — housekeeping (small, quick tasks)
 
-- `OQ-GEN-01` **Vault formatting back-fill** (leftover from `GEN-23`, 2026-07-05 — the two read-logs are fixed and the convention is codified/enforced; the rest is a small pass for a light session): (a) pre-convention notes still carrying backtick math (`referencias_riesgo_catastrofico.md`, `diseno_calibracion_funciones_impacto_mexico.md`, the HW-1F notes) → convert to `$…$`, leaving code/column identifiers in backticks; (b) the canon and older notes are hard-wrapped at ~100 chars and render with mid-sentence line breaks in Obsidian — decide whether a one-shot unwrap (a `/compact-canon` candidate) is worth the diff noise; (c) triage two stray untracked root files: `market_calibration.md` (same basename as `notes/theory/hull_white_1f/market_calibration.md` — likely saved to the wrong folder) and `Sin título.base`; (d) commit-message hygiene: the shell's `cat`→`bat` alias decorates anything built via `$(cat <<EOF)` with box-art/ANSI codes — unpushed commits were repaired 2026-07-05 (messages rebuilt with `git commit -F`), but commits already on `origin` (`8c07071` and earlier) still carry mangled messages; decide whether a history rewrite + force-push is worth it or let them stand. [eng]
+- `OQ-GEN-01` **Canon hard-wrap unwrap** (the residual of the `GEN-23` back-fill; the rest closed 2026-07-11 — (a) notes' backtick math → LaTeX done, notes unwrapped; (c) stray root files gone; (d) closed as accepted: the bat-mangled messages already on `origin` stand — a main-branch history rewrite + force-push is not worth the breakage): the canon (`context/`) is still hard-wrapped at ~100 chars and renders with mid-sentence line breaks in Obsidian — a `/compact-canon` candidate; decide whether the diff noise is worth it there. [eng]
 
 ---
 
@@ -87,6 +87,8 @@ integration questions `OQ-INT-NN` come first because they gate the others.
 - ~~Drought-index choice~~ → SPEI primary, SPI robustness, MSM complementary (`HAZ-DROUGHT-01`).
 - ~~NGFS policy rate used as a level~~ → used as a shock source (`MKT-NGFS-01`).
 - ~~1-year curve gap~~ → 364-day Cetes pillar (`MKT-CURVE-01`).
+- ~~CNSF test-harness import bug (`OQ-HAZ-15`)~~ → resolved (`HAZ-SCRAPER-CNSF-09`, 2026-07-11): root-conftest `sys.path` shim + origin-sandbox portability fixes; tests pass against the real 2024 Incendio sample from `data/hazard_mx` (`GEN-24`); collection-safe without the `[haz]` extra.
+- ~~Vault formatting back-fill — (a) note math, (c) stray files, (d) mangled pushed messages~~ → done/closed 2026-07-11; `OQ-GEN-01` slimmed to the canon unwrap (a `/compact-canon` task).
 
 
 ---

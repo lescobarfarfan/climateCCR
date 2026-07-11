@@ -21,6 +21,7 @@ venv/
 data/raw/*
 data/interim/*
 data/processed/*
+data/hazard_mx/*
 !data/**/.gitkeep
 
 # Results (generated): figures, logs, run manifests
@@ -32,8 +33,9 @@ results/*
 
 # NOTE: notes/ is intentionally TRACKED (working notes, code review, plan).
 
-# claude settings local
+# claude settings local + session worktrees (hidden from Obsidian; GEN-16)
 .claude/settings.local.json
+.claude/worktrees/
 
 # Obsidian per-machine workspace/config state (vault content is tracked; this is UI state)
 .obsidian/
