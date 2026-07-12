@@ -36,8 +36,6 @@ class InterestRateSwapPricer(PricingModel):
         )
         if calibration_method == "direct_input":
             self.calibration = market_data["Pricing_HW1F_calibration"]
-        else:
-            pass
 
     def price_single_trade(
         self,
@@ -177,7 +175,5 @@ class InterestRateSwapPricer(PricingModel):
             )
             if calibration_method == "direct_input":
                 dependencies.update([("Pricing_HW1F_calibration", discount_curve)])
-            else:
-                pass
 
         return dependencies

@@ -116,6 +116,7 @@ Every result a thesis figure depends on must be reconstructible from raw inputs 
 - **Tracked vs ignored** — `notes/`, `context/`, and `literature/*.md` are **tracked**; `data/` and `results/` are **git-ignored** (keep folder structure with `.gitkeep`). Large data goes out-of-band (DVC or a documented external store).
 - **Tests** — `pytest` units per module + ≥1 end-to-end integration test on a tiny fixture (the PIMPA prototype CSVs are an ideal regression fixture — `CCR-MIG-03`).
 - **Quality gates** — pre-commit (black/ruff); type hints on public APIs.
+- **Minimalism gate (`GEN-25`, ponytail/YAGNI)** — before writing code, climb the ladder: needed at all? → reuse what the repo has → stdlib → an already-installed dependency → the minimum new code. No speculative abstractions (one-implementation interfaces, config nobody sets). Never traded against robustness: validation, error handling, reproducibility (`GEN-04/05/06/07`) and standard style (`GEN-11`) stay; a **new** dependency is fine when it demonstrably buys a sturdier, more future-proof implementation. In Claude Code the `ponytail` plugin enforces the ladder in-session; `/ponytail-audit` runs the periodic repo sweep.
 - **Secrets** — API keys via environment variables / a git-ignored `.env`.
 
 ---

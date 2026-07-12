@@ -33,18 +33,6 @@ FIXTURE_CONFIG = REPO_ROOT / "configs" / "pimpa_fixture.yaml"
 VALUE_COLS = ["uncollateralized_ee", "uncollateralized_pe_0.99"]
 
 
-def build_jump_process(jump_config: dict):
-    """Assemble the ClimateJumpProcess from the YAML block (both channels, shared events)."""
-    from climateCCR.processes.jumps import ClimateJumpProcess, LognormalMark
-
-    targets = {}
-    for channel in ("rate_marks", "equity_marks"):
-        block = jump_config[channel]
-        sampler = LognormalMark(median=block["median"], sigma=block["sigma"], sign=block["sign"])
-        targets.update(dict.fromkeys(block["targets"], sampler))
-    return ClimateJumpProcess(jump_config["intensity"], targets)
-
-
 def run_book(global_parameters: dict, today_date: str) -> pd.DataFrame:
     """EE/PE profiles for every counterparty in the fixture ledger."""
     from climateCCR.risk.ccr.evaluators.ccr_valuation_session import CCR_Valuation_Session
@@ -79,6 +67,7 @@ def main() -> None:
     args = parser.parse_args()
 
     from climateCCR.infra import RunManifest, get_logger, load_config
+    from climateCCR.processes.jumps import ClimateJumpProcess
     from climateCCR.risk.ccr.config import build_global_parameters
 
     config = load_config(DEMO_CONFIG)
@@ -100,7 +89,7 @@ def main() -> None:
         return
 
     today_date = config.extra["valuation_date"]
-    jump_process = build_jump_process(config.extra["climate_jumps"])
+    jump_process = ClimateJumpProcess.from_config(config.extra["climate_jumps"])
     logger.info(
         "Climate jump config: intensity=%s /yr, targets=%s",
         config.extra["climate_jumps"]["intensity"],

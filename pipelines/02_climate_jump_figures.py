@@ -38,18 +38,6 @@ PATH_FACTORS = {
 }
 
 
-def build_jump_process(jump_config: dict):
-    """Same assembly as pipeline 01 — identical process, identical substream."""
-    from climateCCR.processes.jumps import ClimateJumpProcess, LognormalMark
-
-    targets = {}
-    for channel in ("rate_marks", "equity_marks"):
-        block = jump_config[channel]
-        sampler = LognormalMark(median=block["median"], sigma=block["sigma"], sign=block["sign"])
-        targets.update(dict.fromkeys(block["targets"], sampler))
-    return ClimateJumpProcess(jump_config["intensity"], targets)
-
-
 def find_counterparty_simulating(factor: str, global_parameters: dict) -> int:
     """First netting agreement whose portfolio simulates ``factor``."""
     from climateCCR.risk.ccr.trade_models.portfolio import Portfolio
@@ -92,6 +80,7 @@ def main() -> None:
 
     from climateCCR import viz
     from climateCCR.infra import RunManifest, get_logger, load_config
+    from climateCCR.processes.jumps import ClimateJumpProcess
     from climateCCR.risk.ccr.config import build_global_parameters
 
     config = load_config(DEMO_CONFIG)
@@ -140,7 +129,7 @@ def main() -> None:
     # -- Process-level figures: re-simulate under the demo config (same master
     #    seed as pipeline 01, so these paths are the ones behind the CSV).
     today_date = config.extra["valuation_date"]
-    jump_process = build_jump_process(config.extra["climate_jumps"])
+    jump_process = ClimateJumpProcess.from_config(config.extra["climate_jumps"])
     fixture_config = load_config(FIXTURE_CONFIG)
     gp = build_global_parameters(fixture_config, data_root=FIXTURE)
     gp["n_paths"] = config.n_paths

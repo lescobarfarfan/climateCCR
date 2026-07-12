@@ -36,13 +36,16 @@ import re
 import shutil
 import subprocess
 import tempfile
-import unicodedata
 import zipfile
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable, Iterator, Optional
 
 import pandas as pd
+
+# Vocabulario compartido con el consolidador (mismo directorio; los scripts CNSF
+# se importan entre sí por nombre plano — ver tests/conftest.py, OQ-HAZ-15).
+from consolidar_cnsf import _sin_acentos, _slug
 
 log = logging.getLogger("cnsf.autos")
 
@@ -54,14 +57,6 @@ CHUNK = 200_000
 # --------------------------------------------------------------------------- #
 # Utilidades
 # --------------------------------------------------------------------------- #
-
-def _sin_acentos(s: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFKD", str(s))
-                   if not unicodedata.combining(c))
-
-
-def _slug(t: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", _sin_acentos(t).lower()).strip("_") or "x"
 
 
 def _norm(v) -> str:
@@ -92,7 +87,8 @@ def _abrir_salida(path: Path, compresion: str):
 # Acceso al .mdb (costuras aisladas para poder probar sin mdbtools/zip)
 # --------------------------------------------------------------------------- #
 
-def _descomprimir(zip_path: Path, destino: Path) -> Optional[Path]:
+
+def _descomprimir(zip_path: Path, destino: Path) -> Path | None:
     """Extrae el .mdb del .zip y devuelve su ruta."""
     try:
         with zipfile.ZipFile(zip_path) as z:
@@ -106,13 +102,13 @@ def _descomprimir(zip_path: Path, destino: Path) -> Optional[Path]:
         return None
 
 
-def _columnas(mdb: Path, tabla: str) -> Optional[list[str]]:
+def _columnas(mdb: Path, tabla: str) -> list[str] | None:
     """Encabezados de una tabla (lee solo la primera línea de mdb-export)."""
     try:
-        p = subprocess.Popen(["mdb-export", str(mdb), tabla],
-                             stdout=subprocess.PIPE, text=True)
-        linea = p.stdout.readline() # type: ignore
-        p.stdout.close(); p.terminate() # type: ignore
+        p = subprocess.Popen(["mdb-export", str(mdb), tabla], stdout=subprocess.PIPE, text=True)
+        linea = p.stdout.readline()  # type: ignore
+        p.stdout.close()
+        p.terminate()  # type: ignore
     except Exception:  # noqa: BLE001
         return None
     if not linea:
@@ -120,11 +116,12 @@ def _columnas(mdb: Path, tabla: str) -> Optional[list[str]]:
     return next(_csv.reader([linea]))
 
 
-def _leer_completa(mdb: Path, tabla: str) -> Optional[pd.DataFrame]:
+def _leer_completa(mdb: Path, tabla: str) -> pd.DataFrame | None:
     """Lee una tabla completa (para catálogos, que son chicos)."""
     try:
-        r = subprocess.run(["mdb-export", str(mdb), tabla],
-                           capture_output=True, text=True, check=True)
+        r = subprocess.run(
+            ["mdb-export", str(mdb), tabla], capture_output=True, text=True, check=True
+        )
     except subprocess.CalledProcessError:
         return None
     if not r.stdout.strip():
@@ -134,11 +131,9 @@ def _leer_completa(mdb: Path, tabla: str) -> Optional[pd.DataFrame]:
 
 def _iter_chunks(mdb: Path, tabla: str, chunksize: int = CHUNK) -> Iterator[pd.DataFrame]:
     """Itera una tabla en bloques (streaming; para tablas enormes como Emisión)."""
-    p = subprocess.Popen(["mdb-export", str(mdb), tabla],
-                         stdout=subprocess.PIPE, text=True)
+    p = subprocess.Popen(["mdb-export", str(mdb), tabla], stdout=subprocess.PIPE, text=True)
     try:
-        for chunk in pd.read_csv(p.stdout, dtype=object, chunksize=chunksize): # type: ignore
-            yield chunk
+        yield from pd.read_csv(p.stdout, dtype=object, chunksize=chunksize)  # type: ignore
     finally:
         if p.stdout:
             p.stdout.close()
@@ -149,14 +144,14 @@ def _iter_chunks(mdb: Path, tabla: str, chunksize: int = CHUNK) -> Iterator[pd.D
 # Catálogos
 # --------------------------------------------------------------------------- #
 
-def _build_lookup(dfc: pd.DataFrame, llave: str, descs: list[str],
-                  llave_tipo: Optional[str]) -> dict:
+
+def _build_lookup(dfc: pd.DataFrame, llave: str, descs: list[str], llave_tipo: str | None) -> dict:
     d = {}
     for _, row in dfc.iterrows():
         k = row.get(llave)
         if llave_tipo == "entero":
             try:
-                k = str(int(float(k))) # type: ignore
+                k = str(int(float(k)))  # type: ignore
             except (TypeError, ValueError):
                 k = _norm(k)
         else:
@@ -180,9 +175,11 @@ def cargar_catalogos(mdb: Path, config: dict) -> dict:
             dfc = _leer_completa(mdb, alias)
             if dfc is not None and not dfc.empty:
                 break
-        lookups[catname] = (None if dfc is None or dfc.empty
-                            else _build_lookup(dfc, spec["llave"], spec["desc"],
-                                               spec.get("llave_tipo")))
+        lookups[catname] = (
+            None
+            if dfc is None or dfc.empty
+            else _build_lookup(dfc, spec["llave"], spec["desc"], spec.get("llave_tipo"))
+        )
     return lookups
 
 
@@ -190,8 +187,10 @@ def cargar_catalogos(mdb: Path, config: dict) -> dict:
 # Resolución de un chunk
 # --------------------------------------------------------------------------- #
 
-def resolver_chunk(chunk: pd.DataFrame, tabla: str, config: dict, lookups: dict,
-                   centinelas: set, etiqueta: str) -> pd.DataFrame:
+
+def resolver_chunk(
+    chunk: pd.DataFrame, tabla: str, config: dict, lookups: dict, centinelas: set, etiqueta: str
+) -> pd.DataFrame:
     joins = config["uniones"].get(tabla, {})
     # mapa: nombre-de-columna-normalizado del config -> catálogo
     jn = {_clave_col(k): cat for k, cat in joins.items()}
@@ -203,8 +202,9 @@ def resolver_chunk(chunk: pd.DataFrame, tabla: str, config: dict, lookups: dict,
         outnames = _desc_out_names(col, descs)
         lk = lookups.get(catname)
         keys = chunk[col].map(_norm)
+        n_descs = len(descs)
 
-        def resolver(k, _lk=lk, _n=len(descs)):
+        def resolver(k, _lk=lk, _n=n_descs):
             if k.upper() in centinelas:
                 return tuple([etiqueta] * _n)
             if _lk is None:
@@ -236,6 +236,7 @@ def _orden_salida(canon: list[str], tabla: str, config: dict) -> list[str]:
 # Procesamiento
 # --------------------------------------------------------------------------- #
 
+
 @dataclass
 class ReporteTabla:
     tabla: str
@@ -246,7 +247,7 @@ class ReporteTabla:
     deriva_por_anio: dict = field(default_factory=dict)
 
 
-def _año_de(nombre: str) -> Optional[int]:
+def _año_de(nombre: str) -> int | None:
     m = RE_ANIO.search(nombre)
     return int(m.group(0)) if m else None
 
@@ -273,7 +274,7 @@ def descubrir_zips(root: Path, config: dict) -> dict:
         if anio is None:
             sin_anio.append(p)
         else:
-            out[name].setdefault(anio, p)   # las subcarpetas (1) ganan sobre sueltos (2)
+            out[name].setdefault(anio, p)  # las subcarpetas (1) ganan sobre sueltos (2)
 
     # (1) subcarpetas por subsector
     if root.exists():
@@ -295,15 +296,25 @@ def descubrir_zips(root: Path, config: dict) -> dict:
                 _clasificar(name, p)
 
     if sin_anio:
-        log.warning("Zips con patrón de subsector pero SIN año reconocible "
-                    "(NO se procesaron): %s",
-                    ", ".join(sorted({p.name for p in sin_anio})))
+        log.warning(
+            "Zips con patrón de subsector pero SIN año reconocible " "(NO se procesaron): %s",
+            ", ".join(sorted({p.name for p in sin_anio})),
+        )
     return {s: v for s, v in out.items() if v}
 
 
-def procesar_tabla(subsector: str, zips: dict, tabla: str, config: dict,
-                   out_dir: Path, *, compresion: str, centinelas: set,
-                   etiqueta: str, tmpbase: Path) -> Optional[ReporteTabla]:
+def procesar_tabla(
+    subsector: str,
+    zips: dict,
+    tabla: str,
+    config: dict,
+    out_dir: Path,
+    *,
+    compresion: str,
+    centinelas: set,
+    etiqueta: str,
+    tmpbase: Path,
+) -> ReporteTabla | None:
     excluir = set(config.get("anios_excluir", []))
     anios = sorted(a for a in zips if a not in excluir)
     if not anios:
@@ -344,8 +355,10 @@ def procesar_tabla(subsector: str, zips: dict, tabla: str, config: dict,
                 faltantes = [c for c in canon if c not in cols_anio]
                 extras = [c for c in cols_anio if c not in canon]
                 if faltantes or extras:
-                    rep.deriva_por_anio[anio] = {"faltantes_rellenadas_vacio": faltantes,
-                                                 "extras_ignoradas": extras}
+                    rep.deriva_por_anio[anio] = {
+                        "faltantes_rellenadas_vacio": faltantes,
+                        "extras_ignoradas": extras,
+                    }
                 lookups = cargar_catalogos(mdb, config)
                 filas = 0
                 for chunk in _iter_chunks(mdb, tabla):
@@ -368,9 +381,14 @@ def procesar_tabla(subsector: str, zips: dict, tabla: str, config: dict,
     return rep
 
 
-def procesar(root: Path, out_dir: Path, config: dict, *,
-             subsectores: Optional[Iterable[str]] = None,
-             compresion: str = "none") -> dict:
+def procesar(
+    root: Path,
+    out_dir: Path,
+    config: dict,
+    *,
+    subsectores: Iterable[str] | None = None,
+    compresion: str = "none",
+) -> dict:
     centinelas = {str(s).strip().upper() for s in config.get("centinelas_faltante", ["ND"])}
     etiqueta = config.get("etiqueta_faltante", "No disponible")
     zips_por_sub = descubrir_zips(root, config)
@@ -378,7 +396,8 @@ def procesar(root: Path, out_dir: Path, config: dict, *,
         zips_por_sub = {s: v for s, v in zips_por_sub.items() if s in set(subsectores)}
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    tmpbase = out_dir / "_tmp"; tmpbase.mkdir(exist_ok=True)
+    tmpbase = out_dir / "_tmp"
+    tmpbase.mkdir(exist_ok=True)
     resumen = []
     try:
         for sub, zips in zips_por_sub.items():
@@ -387,22 +406,41 @@ def procesar(root: Path, out_dir: Path, config: dict, *,
             log.info("Subsector %s: años %s", sub, sorted(zips))
             reportes = []
             for tabla in config["tablas_hecho"]:
-                rep = procesar_tabla(sub, zips, tabla, config, sub_dir,
-                                     compresion=compresion, centinelas=centinelas,
-                                     etiqueta=etiqueta, tmpbase=tmpbase)
+                rep = procesar_tabla(
+                    sub,
+                    zips,
+                    tabla,
+                    config,
+                    sub_dir,
+                    compresion=compresion,
+                    centinelas=centinelas,
+                    etiqueta=etiqueta,
+                    tmpbase=tmpbase,
+                )
                 if rep:
                     reportes.append(rep.__dict__)
             (sub_dir / "_reporte.json").write_text(
-                json.dumps({"subsector": sub, "anios": sorted(zips), "tablas": reportes},
-                           ensure_ascii=False, indent=2), encoding="utf-8")
-            resumen.append({"subsector": sub, "carpeta": str(sub_dir),
-                            "tablas": [r["tabla"] for r in reportes]})
+                json.dumps(
+                    {"subsector": sub, "anios": sorted(zips), "tablas": reportes},
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            resumen.append(
+                {
+                    "subsector": sub,
+                    "carpeta": str(sub_dir),
+                    "tablas": [r["tabla"] for r in reportes],
+                }
+            )
     finally:
         shutil.rmtree(tmpbase, ignore_errors=True)
 
     reporte = {"root": str(root), "out_dir": str(out_dir), "subsectores": resumen}
     (out_dir / "reporte_autos.json").write_text(
-        json.dumps(reporte, ensure_ascii=False, indent=2), encoding="utf-8")
+        json.dumps(reporte, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     return reporte
 
 
@@ -412,15 +450,26 @@ def main():
     ap.add_argument("--out-dir", default="datos/datos_CNSF/consolidados")
     ap.add_argument("--config", default="src/catalogos_autos_cnsf.json")
     ap.add_argument("--subsectores", nargs="*", help="individual flotillas (default: ambos)")
-    ap.add_argument("--comprimir", choices=list(EXT_COMPRESION), default="none",
-                    help="comprime los CSV (recomendado: gzip)")
+    ap.add_argument(
+        "--comprimir",
+        choices=list(EXT_COMPRESION),
+        default="none",
+        help="comprime los CSV (recomendado: gzip)",
+    )
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
-    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
-                        format="%(asctime)s %(levelname)s %(message)s")
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+    )
     config = json.loads(Path(args.config).read_text(encoding="utf-8"))
-    procesar(Path(args.root), Path(args.out_dir), config,
-             subsectores=args.subsectores, compresion=args.comprimir)
+    procesar(
+        Path(args.root),
+        Path(args.out_dir),
+        config,
+        subsectores=args.subsectores,
+        compresion=args.comprimir,
+    )
     log.info("Listo.")
 
 

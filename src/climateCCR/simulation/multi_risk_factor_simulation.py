@@ -3,12 +3,9 @@ from scipy.stats import multivariate_normal
 
 from climateCCR.infra import get_legacy_rng
 
-from .scenario_generator import ScenarioGenerator
 
-
-class MultiRiskFactorSimulation(ScenarioGenerator):
+class MultiRiskFactorSimulation:
     def __init__(self, risk_factors, correlation_matrix):
-        super().__init__("MultiRiskFactorSimulation")
         self.simulated_risk_factors = risk_factors
         self.correlation_matrix = correlation_matrix.get_sub_correlation_matrix(
             [rf.name for rf in risk_factors]

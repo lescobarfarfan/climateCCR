@@ -33,7 +33,7 @@ import numpy as np
 from climateCCR.infra import get_stream_rng
 from climateCCR.utils.calendar_utils import transform_dates_to_time_differences
 
-from .marks import MarkSampler
+from .marks import LognormalMark, MarkSampler
 
 # Fixed spawn key for the climate-jump substream of the master seed. Never reuse
 # for another component (each new consumer of get_stream_rng gets its own key).
@@ -94,6 +94,23 @@ class ClimateJumpProcess:
         self.targets = dict(targets)
         self.diffusion_dependence = diffusion_dependence
         self.mark_dependence = mark_dependence
+
+    @classmethod
+    def from_config(cls, jump_config: dict) -> ClimateJumpProcess:
+        """Assemble the process from a ``climate_jumps`` config block.
+
+        Schema: ``configs/climate_jump_demo.yaml`` — an ``intensity`` plus the
+        ``rate_marks``/``equity_marks`` channels, each mapping its ``targets``
+        to one lognormal mark sampler; both channels share the event stream.
+        """
+        targets: dict[str, MarkSampler] = {}
+        for channel in ("rate_marks", "equity_marks"):
+            block = jump_config[channel]
+            sampler = LognormalMark(
+                median=block["median"], sigma=block["sigma"], sign=block["sign"]
+            )
+            targets.update(dict.fromkeys(block["targets"], sampler))
+        return cls(jump_config["intensity"], targets)
 
     def _step_intensities(self, n_paths: int, step_sizes: np.ndarray) -> np.ndarray:
         """Expected events per (path, step): ``lambda_i * dt_i``, broadcast checked."""
