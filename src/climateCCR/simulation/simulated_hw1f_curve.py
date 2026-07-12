@@ -2,12 +2,9 @@ import numpy as np
 
 from climateCCR.utils.calendar_utils import transform_dates_to_time_differences
 
-from .simulated_data import SimulatedData
 
-
-class SimulatedHW1FCurve(SimulatedData):
+class SimulatedHW1FCurve:
     def __init__(self, short_rate) -> None:
-        super().__init__()
         self.short_rate = short_rate
 
     def get_value(self, **kwargs):
