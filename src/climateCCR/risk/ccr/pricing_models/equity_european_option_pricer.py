@@ -28,8 +28,6 @@ class EquityEuropeanOptionPricer(PricingModel):
             # The dependency is correct and originated by the need of simulating the
             # short rate in the BS formula
             self.calibration = market_data["Pricing_HW1F_calibration"]
-        else:
-            pass
 
     # I am implementing sticky strike valuation. This can be easily changed to sticky delta.
     def price_single_trade(
@@ -100,7 +98,5 @@ class EquityEuropeanOptionPricer(PricingModel):
                     dependencies.update([("Pricing_HW1F_calibration", underlying)])
             elif underlying[-7:] == "SURFACE":
                 dependencies.update([("equity_implied_volatility_surface", underlying)])
-            else:
-                pass
 
         return dependencies

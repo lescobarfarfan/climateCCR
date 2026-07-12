@@ -9,11 +9,8 @@ class Portfolio:
     def __init__(self, netting_agreement_id):
         self.netting_agreement_id = netting_agreement_id
         self.trade_inventory = None
-        self.collateral_inventory = None
         self.netting_sets = None
         self.vm_collateral_agreements = None
-        self.im_collateral_agreements = None
-        self.tlia_collateral_agreements = None
         self.portfolio_underlyings = None
         self.portfolio_valuation_dates = None
         self.settlement_currency = None
@@ -114,10 +111,6 @@ class Portfolio:
                 self.portfolio_underlyings.add(f"{trade.trade_currency}_USD_FX_RATE")
             if self.settlement_currency != "USD":
                 self.portfolio_underlyings.add(f"{self.settlement_currency}_USD_FX_RATE")
-
-    #        for vm_agreement in self.vm_collateral_agreements.values():
-    #            self.portfolio_underlyings.update(
-    #                vm_agreement['collateral_underlyings'])
 
     def load_portfolio_valuation_dates(self):
         self.portfolio_valuation_dates = []

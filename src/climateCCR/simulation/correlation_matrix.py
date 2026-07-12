@@ -63,15 +63,6 @@ class CorrelationMatrix:
     def get_value(self, underlying1, underlying2):
         return self.correlation_matrix[self.underlyings[underlying1], self.underlyings[underlying2]]
 
-    def get_cholesky_correlation_matrix(self):
-        return np.linalg.cholesky(self.correlation_matrix)
-
-    def get_underlying(self, index=None):
-        if index is None:
-            return self.underlyings
-        else:
-            return self.underlyings[index]
-
     def get_sub_correlation_matrix(self, underlyings):
         indices = []
         for u in underlyings:

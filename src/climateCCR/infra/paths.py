@@ -32,28 +32,8 @@ class ProjectPaths:
     root: Path
 
     @property
-    def src(self) -> Path:
-        return self.root / "src"
-
-    @property
     def configs(self) -> Path:
         return self.root / "configs"
-
-    @property
-    def data(self) -> Path:
-        return self.root / "data"
-
-    @property
-    def data_raw(self) -> Path:
-        return self.data / "raw"
-
-    @property
-    def data_interim(self) -> Path:
-        return self.data / "interim"
-
-    @property
-    def data_processed(self) -> Path:
-        return self.data / "processed"
 
     @property
     def results(self) -> Path:
@@ -67,11 +47,7 @@ class ProjectPaths:
     def manifests(self) -> Path:
         return self.results / "manifests"
 
-    @property
-    def notes(self) -> Path:
-        return self.root / "notes"
-
-    def ensure(self) -> "ProjectPaths":
+    def ensure(self) -> ProjectPaths:
         """Create the writable output folders if they do not yet exist."""
         for p in (self.results, self.logs, self.manifests):
             p.mkdir(parents=True, exist_ok=True)

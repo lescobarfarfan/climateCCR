@@ -36,8 +36,6 @@ class CCR_Valuation_Session:
         self.uncollateralised_pe = None
         self.collateralised_ee = None
         self.collateralised_pe = None
-        self.gross_exposure = None
-        self.gross_pe = None
 
     def generate_time_grids(self, today_date, global_parameters):
         today = datetime.strptime(today_date, global_parameters["date_format"])
@@ -190,8 +188,7 @@ class CCR_Valuation_Session:
         )
 
         for vm_collateral_agreement in self.portfolio.vm_collateral_agreements.items():
-            # uncollateralised trades have no agreement, otherwise there is a VM agreement
-
+            # uncollateralised trades have no agreement and contribute nothing here
             if vm_collateral_agreement[0] != "NOT_AVAILABLE":
                 # Pass variable to compute the MtM of the VM agreement
                 pass_vm_collateral_agreement_requirement = np.zeros(
@@ -232,9 +229,6 @@ class CCR_Valuation_Session:
                     self.scenarios_collateral_requirements += np.minimum(
                         pass_vm_collateral_agreement_requirement + T_P_TOT, 0
                     )
-
-            else:
-                self.scenarios_collateral_requirements += 0
 
         if self.portfolio.settlement_currency != "USD":
             self.scenarios_collateral_requirements *= self.scenarios[
