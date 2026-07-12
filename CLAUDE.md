@@ -81,6 +81,13 @@ When editing or creating notes, **maintain the graph**:
 ## Code standards
 
 - Python: **PEP 8 + Google Python Style Guide.** Type hints on public APIs.
+- **Minimalism (`GEN-25`, ponytail/YAGNI):** the simplest solution that works —
+  reuse what the repo has > stdlib > an installed dependency > minimal new code;
+  no speculative abstractions (one-implementation interfaces, config nobody sets).
+  **Never at the cost of robustness**: validation, error handling, reproducibility,
+  and standard practice always stay; a *new* dependency is welcome when it
+  demonstrably buys a more robust, scalable, future-proof implementation. The
+  `ponytail` plugin enforces this in-session; `/ponytail-audit` sweeps the repo.
 - Format/lint with **`ruff`** + **`black`** (line length 100); both clean before commit.
 - Tests: **`pytest`** units per module + ≥1 end-to-end test on a tiny fixture (PIMPA
   prototype CSVs — `GEN-11`). Lock the PIMPA EE/PE baseline before refactors (`CCR-MIG-03`).

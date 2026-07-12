@@ -95,6 +95,8 @@ anchors `[Sharpe1964]`, `[Fama1995]`, `[Carhart1997]`, `[Engle2002]`.
 - **`[Wagenaar2018]`** — Wagenaar, D., et al. (2018), flood depth–damage. — Confirm journal/DOI. Backs the CLIMADA flood route. (→ `OQ-HAZ-08`)
 - **`[AndersenPiterbarg2010]` / `[JamesWebber2000]` / `[Yasuoka2018]` / `[Gregory_xVA]` / `[Compagnoni2023]` / `[Lyons1998]`** — standard texts/papers cited above with edition/venue/pages still to pin down precisely. (→ `OQ-MKT-05`, `OQ-CCR-05`)
 - **`[IPCC_AR6]`** — IPCC (2021). *AR6 WG1: The Physical Science Basis* (likely Ch. 11, *Weather and Climate Extreme Events in a Changing Climate*). — Confirm report/chapter + DOI. Already cited by `MKT-PHYS-02` (SSP scenario choice) without a §-entry (gap found 2026-07-05); also motivates the frequency/severity-trend note in `OQ-INT-07` (time-varying `λ(t)` + time-aware marks).
+- **`[Ousterhout2018]`** — Ousterhout, J. (2018). *A Philosophy of Software Design.* Yaknyam Press. — Confirm edition (a 2nd ed., 2021, exists) + ISBN. Backs `GEN-25` (complexity as the design enemy; deep modules over shallow abstractions).
+- **`[Beck2004]`** — Beck, K., with Andres, C. (2004). *Extreme Programming Explained: Embrace Change* (2nd ed.). Addison-Wesley. — Confirm edition/ISBN. Backs `GEN-25` (YAGNI / simple design).
 - **Climate-finance `.bib` (47 entries)** — verify each DOI in `literature/refs.bib` before the literature review hardens.
 
 

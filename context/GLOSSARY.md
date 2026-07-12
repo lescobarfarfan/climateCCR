@@ -121,6 +121,7 @@ J. Content-word retrieval index
 | Viz layer-vs-arm decision + contract rule | **viz cross-cutting layer contract-shaped inputs never model objects INT-15** |
 | The figure palette / colors | **green orange scenario palette CVD validator baseline climate GEN-22** |
 | Daily paths / sampling vs reporting grid | **simulation max step days daily densification reporting grid horizonte CCR-SIM-01** |
+| The minimalism working principle + first sweep | **ponytail YAGNI minimalism ladder dead code audit GEN-25 CCR-MIG-09** |
 | Fixed vs trajectory climate assumption | **fixed level vs trajectory climate assumption Path A Path B INT-12** |
 | Where signatures fit now | **randomized signatures detection validation role under review OQ-CCR-07** |
 | The package name (kept climateCCR) | **climateCCR keep name climrisk rejected UNAM INT-02** |
