@@ -91,6 +91,7 @@ anchors `[Sharpe1964]`, `[Fama1995]`, `[Carhart1997]`, `[Engle2002]`.
 - **`[Klugman]`** — Klugman, S. A., Panjer, H. H., & Willmot, G. E. *Loss Models: From Data to Decisions.* Wiley. — Confirm edition/year + URL. Backs `HAZ-STOCH-01`. (→ `OQ-HAZ-07`)
 - **`[Baryshnikov2001]`** — Baryshnikov, Yu., Mayo, A., & Taylor, D. R. (2001). *Pricing of CAT bonds.* — Confirm full citation + URL. Backs `HAZ-STOCH-02`. (→ `OQ-HAZ-07`)
 - **`[Burnecki2005]`** — Burnecki, K., et al. (2005). Compound-Poisson / catastrophe-bond modelling (likely a chapter in *Statistical Tools for Finance and Insurance*). — Confirm exact reference + URL. Backs `HAZ-STOCH-02`. (→ `OQ-HAZ-07`)
+- **`[Garwood1936]`** — Garwood, F. (1936). *Fiducial limits for the Poisson distribution.* Biometrika 28(3/4). — Confirm pages + DOI. Backs `INT-16` (the exact χ² confidence interval on the arrival intensity in `calibration.impact`).
 - **`[Hazus]`** — FEMA Hazus technical/flood manual. — Confirm exact edition. Backs the CLIMADA flood route. (→ `OQ-HAZ-08`)
 - **`[Wagenaar2018]`** — Wagenaar, D., et al. (2018), flood depth–damage. — Confirm journal/DOI. Backs the CLIMADA flood route. (→ `OQ-HAZ-08`)
 - **`[AndersenPiterbarg2010]` / `[JamesWebber2000]` / `[Yasuoka2018]` / `[Gregory_xVA]` / `[Compagnoni2023]` / `[Lyons1998]`** — standard texts/papers cited above with edition/venue/pages still to pin down precisely. (→ `OQ-MKT-05`, `OQ-CCR-05`)
