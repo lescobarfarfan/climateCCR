@@ -1,5 +1,5 @@
 ---
-description: End-of-session ritual — produce the Decided/Changed/Open digest, write the session read-log, fold it all into the canon, and commit.
+description: End-of-session ritual — produce the Decided/Changed/Open digest, write the session read-log and summary-explanation note, fold it all into the canon, and commit.
 allowed-tools: Read, Write, Edit, Bash(git add:*), Bash(git status:*), Bash(git diff:*), Bash(git commit:*)
 disable-model-invocation: true
 ---
@@ -28,5 +28,14 @@ Run the end-of-chat ritual from `context/WORKFLOW.md` §2.
    (Obsidian renders single newlines as line breaks) — and math in LaTeX `$…$`, never in backticks
    (backticks are for code/paths/canon IDs only). If a session made no analytical decisions (pure
    mechanics), a one-line read-log saying so is enough.
-5. Show me the diff, then commit with a message naming the module/arm touched, keeping **behaviour
+5. **Write the summary-explanation note(s) — for every methodological decision made this session**
+   (`GEN-26`). Create `notes/summary_explanations/YYYY-MM-DD_<slug>_explained.md` (basename must
+   differ from the read-log's — wikilinks resolve by basename) explaining, in plain language:
+   **what each calibrated parameter / introduced quantity means**, **how to interpret the results
+   obtained**, and **the theoretical/empirical justification** behind the decision (citation keys
+   from `context/REFERENCES.md`; anything new gets added in step 3, verified or §99). Same vault
+   conventions and formatting sanity check as step 4; tags `#type/explanation` + `#arm/<…>`; link
+   the note from its arm MOC(s) and cross-link it with the session read-log. A session with no
+   methodological decisions (pure mechanics/workflow) skips this step.
+6. Show me the diff, then commit with a message naming the module/arm touched, keeping **behaviour
    changes separate from packaging/move changes** (`GEN-09`).

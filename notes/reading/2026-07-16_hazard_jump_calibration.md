@@ -11,6 +11,6 @@ Open decisions these readings feed: the loss→mark scale $K$ and the leading ev
 
 ## Related
 
-Backs: [[DECISIONS]] (`INT-16`, `HAZ-STOCH-04`) · gates: [[OPEN_QUESTIONS]] (`OQ-INT-07`, `OQ-HAZ-12`) · contract: [[DATA_CONTRACTS]] (`DC-XWALK-4`) · keys: [[REFERENCES]] §99. Arm MOCs: [[HAZ_MOC]] · [[CCR_MOC]] · Home: [[_INDEX]]
+Backs: [[DECISIONS]] (`INT-16`, `HAZ-STOCH-04`) · gates: [[OPEN_QUESTIONS]] (`OQ-INT-07`, `OQ-HAZ-12`) · contract: [[DATA_CONTRACTS]] (`DC-XWALK-4`) · keys: [[REFERENCES]] §99 · explanation: [[2026-07-16_hazard_jump_calibration_explained]] (`GEN-26`). Arm MOCs: [[HAZ_MOC]] · [[CCR_MOC]] · Home: [[_INDEX]]
 
 #arm/haz #arm/int #type/reading

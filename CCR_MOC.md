@@ -37,6 +37,7 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 - Reading: [[2026-07-05_viz_layer_horizons]] — viz layer, horizons & grid-densification read-log (`notes/reading/`, `GEN-21`).
 - Reading: [[2026-07-05_vault_formatting]] — housekeeping read-log, no analytical decisions (the `GEN-23` formatting convention; `notes/reading/`, `GEN-21`).
 - Reading: [[2026-07-11_ponytail_minimalism]] — ponytail-audit read-log, no analytical decisions (`GEN-25` grounding refs in §99; `notes/reading/`, `GEN-21`).
+- Reading: [[2026-07-16_summary_explanations_workflow]] — workflow read-log, no analytical decisions (`GEN-26` adds the summary-explanation note series to the ritual; `notes/reading/`, `GEN-21`).
 
 ## Literature
 - [[Compagnoni_2023_RandomizedSignatures]] — randomized signatures as a reservoir (`CCR-SIG-01`).
