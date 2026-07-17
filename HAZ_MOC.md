@@ -35,6 +35,7 @@ the intensity `λ` and the per-event **impact/jump-mark** that drive the climate
 - Sources (`notes/sources/`): [[cenapred]], [[ibtracs]].
 - Pipelines (`notes/pipelines/`): [[README_scraper_cnsf]], [[README_sequia]], [[DISENO_pipeline_autos_CNSF]], [[Guia_MDB_Automoviles_CNSF]], [[shared_entity_cleaner_clasificar_entidad]].
 - Reading: [[2026-07-11_cnsf_harness_data_consolidation]] — housekeeping read-log, no analytical decisions (CNSF harness + `GEN-24` data consolidation; `notes/reading/`, `GEN-21`).
+- Reading: [[2026-07-16_hazard_jump_calibration]] — `λ` + lognormal severity estimated from CENAPRED (`INT-16`, `HAZ-STOCH-04`; the `DC-XWALK-4` producer side).
 - Review: [[PONYTAIL_AUDIT_2026-07-11]] — over-engineering sweep; the CNSF normalizer dedup + the two deliberately rejected HAZ cuts (`HAZ-SCRAPER-CNSF-10`).
 
 ## Wires to the other arms
