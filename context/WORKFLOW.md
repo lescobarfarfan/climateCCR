@@ -48,7 +48,12 @@ project so code is read directly. Theory docs live in `notes/theory/`; papers in
 7. Write the **session read-log** — `notes/reading/YYYY-MM-DD_<slug>.md`: per decision made, *what
    to read* (work + specific chapters/sections) and *why* (which decision/code it backs), using
    `REFERENCES.md` citation keys; linked from its arm MOC(s). Always, even if not asked (`GEN-21`).
-8. Commit in git with a message naming the module/arm touched.
+8. Write the **summary-explanation note(s)** — `notes/summary_explanations/YYYY-MM-DD_<slug>_explained.md`:
+   per methodological decision made, *what each calibrated parameter means*, *how to interpret the
+   results obtained*, and *the theoretical/empirical justification* (with `REFERENCES.md` keys);
+   linked from its arm MOC(s) and cross-linked with the read-log (`GEN-26`). Skip only if the
+   session made no methodological decisions.
+9. Commit in git with a message naming the module/arm touched.
 
 > **Promote, don't duplicate.** If a decision supersedes another, **edit** the old line (or mark it
 > `→ SUPERSEDED by [date]` only when the history matters); do not append a second. One source of

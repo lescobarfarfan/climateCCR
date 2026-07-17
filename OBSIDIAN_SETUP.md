@@ -41,12 +41,13 @@ note's top as needed:
 - **Arm:** `#arm/ccr` · `#arm/mkt` · `#arm/haz` · `#arm/int` · `#cross/gen`
 - **Type:** `#type/decision` · `#type/contract` · `#type/glossary` · `#type/reference` ·
   `#type/open` · `#type/workflow` · `#type/theory` · `#type/source` · `#type/pipeline` ·
-  `#type/review` · `#type/plan` · `#type/reading`
+  `#type/review` · `#type/plan` · `#type/reading` · `#type/explanation`
 - **Status:** `#status/built` · `#status/todo` · `#status/open` · `#status/resolved`
 
 The canon files (`context/`) all carry `#arm/int` + their `#type/*` tag — the canon is cross-arm by
-definition. On working notes, start with `#arm/*` + `#type/*` (e.g. `#type/theory`, or
-`#type/reading` for the session read-logs of `GEN-21`) and `#status/open` on live open questions.
+definition. On working notes, start with `#arm/*` + `#type/*` (e.g. `#type/theory`, `#type/reading`
+for the session read-logs of `GEN-21`, or `#type/explanation` for the summary-explanation notes of
+`GEN-26` under `notes/summary_explanations/`) and `#status/open` on live open questions.
 
 ### Audit exemptions (`/link-check` treats these as intended, not findings)
 
@@ -66,8 +67,8 @@ filenames in `ASSET_MAP.md`** (e.g. `[[Hull_White_Comprehensive]]`,
 import those files they appear as **hollow nodes** (unresolved links) in the graph — that's expected.
 When you drop the real notes into `notes/` with those names, the links light up automatically. So:
 
-1. Import each theory note under `notes/{theory,sources,pipelines,plan,reviews}/` keeping the
-   filename from `ASSET_MAP.md`.
+1. Import each theory note under `notes/{theory,sources,pipelines,plan,reviews,summary_explanations}/`
+   keeping the filename from `ASSET_MAP.md`.
 2. The matching MOC link resolves; the note is now in the graph.
 3. Optionally add `#arm/*` + `#type/theory` and a one-line backlink to its MOC at the top.
 
