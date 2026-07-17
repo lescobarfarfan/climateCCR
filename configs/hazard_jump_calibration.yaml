@@ -1,0 +1,28 @@
+# Hazard jump-channel calibration (OQ-INT-07 / OQ-HAZ-12; DC-XWALK-4).
+#
+# Drives pipelines/03_hazard_jump_calibration.py: per event-set variant, fit the
+# Poisson arrival intensity (MLE + exact CI + log-linear trend) and the lognormal
+# per-event loss severity from the consolidated CENAPRED climate-event table.
+# The variants are the "which events trigger a jump" knob, compared side by side
+# in results/hazard_jump_calibration/parameters.csv.
+#
+# Losses stay in millions of *current* MXN until an INPC deflator is wired
+# (GEN-13): sev_median_mdp is nominal and the trends include inflation.
+
+events_csv: data/hazard_mx/datos_CENAPRED/consolidados/eventos_cenapred_climada.csv
+
+window:
+  start: 2002 # 2000-01 excluded — reporting ramp-in (32 / 11 events vs ~150-240 after)
+  end: 2015 # extent of the event-level base (DC-HAZ-CENAPRED-1)
+
+alpha: 0.05 # 1 - confidence level of the intensity interval
+
+variants:
+  todos: {} # every discrete climate-scope event
+  mayores_100mdp: # "major" events: damage >= 100 M MXN (~ p89 of positive losses)
+    min_damage_mdp: 100.0
+  ciclon_tropical: # the CLIMADA calibration peril (HAZ-CLIMADA-02)
+    perils: ["Ciclón tropical"]
+  hidrometeorologico: # the wet perils as one family
+    perils:
+      ["Ciclón tropical", "Daños por lluvia", "Inundación", "Tormenta severa", "Marejada"]
