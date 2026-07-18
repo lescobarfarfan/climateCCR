@@ -26,6 +26,7 @@ J. Content-word retrieval index
 - **Provenance (`_procedencia.json`)** — per raw artifact: URL/dataset, sha256, bytes, date (+ version/DOI/request).
 - **Run manifest** — per-run JSON (config + git commit + seed + package versions + timestamps) to `results/`, making every figure traceable.
 - **Deterministic reconstructor** — script that re-derives an artifact from raw; the source of truth (never a pickle).
+- **Inspección de datos (`data.inspeccion`)** — source-agnostic QA step (`GEN-27`): robust median/MAD z per group × time + `log10` ratio checks; findings get a deterministic **triaje** — `error_probable` (fix), `atipico_a_revisar` (domain review), `inconsistencia_estructural` (fix in pipeline).
 - **Idempotent** — re-running does not redo completed work (e.g. `descargar` skips existing raw unless `--forzar`).
 - **`src/` layout / editable install** — packaging pattern (`pip install -e .`) that makes imports work from any directory.
 - **ProjectPaths** — the `infra` resolver anchoring paths to the repo root (replaces CWD-relative paths).
@@ -108,6 +109,7 @@ J. Content-word retrieval index
 ## I. CNSF / insurance-loss conventions
 - **`MONTO PAGADO`** — chosen loss variable (vs `MONTO DEL SINIESTRO`). **`MONTO DEL SINIESTRO`** — accounting figure with reserve-driven negatives; **not** used. **`NÚMERO DE SINIESTROS`** — frequency. **`OCURRIDO`** — year of occurrence (vs report); avoids smearing year-end catastrophes.
 - **`NU`** — entity label = unlocated → `No Disponible`; not assigned to a state. **`vacío = NA`** — convention for late-introduced columns (not 0). **`CORRECCIONES_CANONICAS`** — dict fixing canonical-header typos (`OCOURRIDO`→`OCURRIDO`). **`__SIN_MAPEO__`** — marker for a CENAPRED subtype with no assigned peril. **Ramo** — insurance line of business (autos, agrícola, incendio, hidrometeorológicos, …).
+- **`dq_correccion` / `dq_valor_original`** — audit columns on the agro corrected copies: rule applied (`superficie_div1000` | `suma_div_fix`) + pre-correction value (`DC-HAZ-CNSF-6`). **`*_corregida.csv`** — in-copy corrected consolidados; the originals stay as-published. **FIX** — Banxico's representative MXN/USD exchange rate; annual averages back the ÷FIX correction (`HAZ-CLEAN-CNSF-13`).
 
 ---
 
@@ -150,6 +152,7 @@ J. Content-word retrieval index
 | Which CNSF loss variable | **MONTO PAGADO not MONTO DEL SINIESTRO negatives reservas** |
 | The CENAPRED A/B/A′ structures | **CENAPRED two grains panel A events B multiestado climada** |
 | The drought-index choice | **SPEI primary SPI robustness MSM complementary evapotranspiration** |
+| The agro magnitude errors + the data inspector | **superficie ×1000 suma FIX doble conversión dq_correccion corregida inspeccion triaje robust z MAD Maíz dulce Sinaloa** |
 | The CDMX discretization artifact | **CDMX wind-field panel 0.5 degree cell discretization** |
 | The CLIMADA calibration design | **subnational impact function v_thresh v_half LitPop PyMC partial pooling** |
 | The compound-Poisson/Cox plan | **compound Poisson Cox doubly stochastic aggregated tail CENAPRED** |
