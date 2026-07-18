@@ -8,7 +8,7 @@ integration questions `OQ-INT-NN` come first because they gate the others.
 - **Integration (decide first)** — `OQ-INT-01`–`OQ-INT-08`
 - **CCR arm** — `OQ-CCR-02`–`OQ-CCR-08`
 - **MKT arm** — `OQ-MKT-01`–`OQ-MKT-11`
-- **HAZ arm** — `OQ-HAZ-01`–`OQ-HAZ-16`
+- **HAZ arm** — `OQ-HAZ-01`–`OQ-HAZ-17`
 - **GEN — housekeeping** — `OQ-GEN-01`
 
 ---
@@ -65,6 +65,7 @@ integration questions `OQ-INT-NN` come first because they gate the others.
 - `OQ-HAZ-13` **Parametric-instrument pricing** — downstream HAZ deliverable.
 - `OQ-HAZ-14` **Integration/testing of the remaining CNSF sectors** through the scraper pipeline.
 - `OQ-HAZ-16` **Re-anchor HAZ pipeline default data roots.** The scripts' CLI defaults and module constants still name the legacy CWD-relative `datos/datos_<FUENTE>/…` (e.g. `scraper_cnsf --out-dir`, `config_sequia.DIR_*`, `procesar_cenapred.DIR_BASE`), but the data now lives at `data/hazard_mx/` (`GEN-24`). Route them through `infra.ProjectPaths`/configs (`GEN-08`); until then run pipelines with explicit `--root`/`--out-dir` flags. Couples `DC-HAZ-CNSF-1`, `DC-HAZ-DROUGHT-1`. [eng]
+- `OQ-HAZ-17` **Agro magnitude-correction residuals** (`HAZ-CLEAN-CNSF-12/13`): (a) manual review of the **132 weak-signature rows** (prima ≤ 0, no confirming own history — e.g. arándano/agave "por planta" with `UNIDADES ASEGURADAS` = 0) deliberately left uncorrected in the copies (the corrector lists them on each run); (b) external confirmation of the systemic ×FIX error (CNSF fe de erratas / INAI request; insurer attribution is impossible from the files); (c) intra-year FIX refinement — the annual-average ÷FIX carries ±5–10% level uncertainty in 2022–2024 (per-row issue-date FIX would remove it; the FX series is wireable via `DC-XWALK-5`); (d) the standing triage queue: `error_probable` findings on the corrected emisión (323) beyond the corrected rows, in `results/inspeccion/` (`GEN-27`).
 
 ## GEN — housekeeping (small, quick tasks)
 
