@@ -245,6 +245,18 @@ Se puede correr solo: `python consolidar_cnsf.py --root datos/cnsf --out-dir dat
 o encadenado vía `--modo sync` / `--modo consolidar` del scraper (mismas banderas
 `--estricto`, `--xlsx-si-cabe`, `--aliases`, `--limpiar-encabezados`, `--categorias`).
 
+### Inspección de calidad sobre los consolidados — `climateCCR.data.inspeccion`
+
+Paso de cordura sobre los **valores** (complementa las `validaciones` de estructura de arriba), a correr sobre cada consolidado antes de calibrar: `consolidar → inspeccionar → corregir → limpiar`. Chequeos robustos (mediana/MAD) por grupo × tiempo y razones derivadas (numerador/denominador) que detectan errores de magnitud tipo "Maíz dulce Sinaloa 2015" (superficie ×1000); cada hallazgo sale con triaje (`error_probable` / `atipico_a_revisar` / `inconsistencia_estructural`). Escribe `hallazgos.csv` + `resumen.md` + `figuras/` en `results/inspeccion/<fuente>/` (no versionado); el comando queda registrado en el resumen.
+
+```bash
+python -m climateCCR.data.inspeccion data/hazard_mx/datos_CNSF/consolidados/agricola_y_animales/emision.csv \
+    --tiempo anio --grupo ENTIDAD CULTIVO \
+    --razon "SUMA ASEGURADA" "SUPERFICIE ASEGURADA (HECTÁREAS)"
+```
+
+No corrige nada: los hallazgos requieren triaje humano. Las correcciones que ya son regla documentada viven aparte (p. ej. `corregir_consolidados_agricola.py` para las magnitudes del ramo agrícola — superficies ÷1000 y suma ÷FIX, en copia `*_corregida.csv` con auditoría `_correcciones_dq.csv`; ver [[referencias_riesgo_catastrofico]] §4).
+
 ---
 
 ## Explorar la estructura de los xlsx — `explorar_xlsx_cnsf.py`

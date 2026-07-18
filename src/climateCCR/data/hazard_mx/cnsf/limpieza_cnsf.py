@@ -18,11 +18,12 @@ Principios (ver documento):
 """
 
 from __future__ import annotations
+
 import unicodedata
 
 try:
-    import pandas as pd
     import numpy as np
+    import pandas as pd
 except ImportError:  # las funciones núcleo (clasificar_entidad) no requieren pandas
     pd = None
     np = None
@@ -36,8 +37,7 @@ def norm_txt(s) -> str:
     if s is None:
         return ""
     s = str(s).strip().lower()
-    s = "".join(c for c in unicodedata.normalize("NFD", s)
-                if unicodedata.category(c) != "Mn")
+    s = "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
     return " ".join(s.split())
 
 
@@ -46,22 +46,48 @@ def norm_txt(s) -> str:
 # --------------------------------------------------------------------------- #
 # 32 entidades federativas en su forma canónica (para mostrar).
 ENTIDADES_32 = [
-    "Aguascalientes", "Baja California", "Baja California Sur", "Campeche",
-    "Chiapas", "Chihuahua", "Ciudad de México", "Coahuila", "Colima", "Durango",
-    "Estado de México", "Guanajuato", "Guerrero", "Hidalgo", "Jalisco",
-    "Michoacán", "Morelos", "Nayarit", "Nuevo León", "Oaxaca", "Puebla",
-    "Querétaro", "Quintana Roo", "San Luis Potosí", "Sinaloa", "Sonora",
-    "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz", "Yucatán", "Zacatecas",
+    "Aguascalientes",
+    "Baja California",
+    "Baja California Sur",
+    "Campeche",
+    "Chiapas",
+    "Chihuahua",
+    "Ciudad de México",
+    "Coahuila",
+    "Colima",
+    "Durango",
+    "Estado de México",
+    "Guanajuato",
+    "Guerrero",
+    "Hidalgo",
+    "Jalisco",
+    "Michoacán",
+    "Morelos",
+    "Nayarit",
+    "Nuevo León",
+    "Oaxaca",
+    "Puebla",
+    "Querétaro",
+    "Quintana Roo",
+    "San Luis Potosí",
+    "Sinaloa",
+    "Sonora",
+    "Tabasco",
+    "Tamaulipas",
+    "Tlaxcala",
+    "Veracruz",
+    "Yucatán",
+    "Zacatecas",
 ]
 _ENTIDADES_32_NORM = {norm_txt(e): e for e in ENTIDADES_32}
 
 # Variantes/typos OBVIOS -> canónico. Se aplican automáticamente.
 # (claves en forma normalizada con norm_txt)
 CORRECCIONES_ENTIDAD = {
-    "quitana roo": "Quintana Roo",                 # typo confirmado
-    "chichuahua": "Chihuahua",                     # typo confirmado (CENAPRED)
-    "distrito federal": "Ciudad de México",        # DF -> CDMX
-    "mexico": "Estado de México",                  # 'México' (estado) -> Estado de México
+    "quitana roo": "Quintana Roo",  # typo confirmado
+    "chichuahua": "Chihuahua",  # typo confirmado (CENAPRED)
+    "distrito federal": "Ciudad de México",  # DF -> CDMX
+    "mexico": "Estado de México",  # 'México' (estado) -> Estado de México
     "edo de mexico": "Estado de México",
     "edo. de mexico": "Estado de México",
     # formas oficiales largas (por si aparecen)
@@ -82,7 +108,7 @@ ENTIDADES_EXTRANJERAS = {
 ENTIDADES_NO_LOCALIZADAS = {
     "nu",
     "no disponible",
-    "varios estados",      # CENAPRED: evento nacional/difuso, sin asignar (no repartir)
+    "varios estados",  # CENAPRED: evento nacional/difuso, sin asignar (no repartir)
     "todo el pais",
     "nacional",
     "no localizado",
@@ -124,7 +150,7 @@ def clasificar_entidad(raw) -> tuple[str, str]:
 # 2. Constantes de variables de pérdida / frecuencia
 # --------------------------------------------------------------------------- #
 # Nombres canónicos por ramo pueden variar; estos son los recomendados.
-COL_PERDIDA = "MONTO PAGADO"          # usar como pérdida (limpio, sin negativos)
+COL_PERDIDA = "MONTO PAGADO"  # usar como pérdida (limpio, sin negativos)
 COL_FRECUENCIA = "NÚMERO DE SINIESTROS"
 # NO usar como pérdida: es movimiento contable de reservas (puede ser negativo).
 COL_PERDIDA_PROHIBIDA = "MONTO DEL SINIESTRO"
@@ -157,6 +183,7 @@ def cargar_mapa_perils(path_csv: str) -> dict:
     dict[(ramo, norm(valor_crudo))] = (peril_canonico, en_alcance_climatico).
     """
     import csv
+
     mapa = {}
     with open(path_csv, encoding="utf-8") as f:
         for row in csv.DictReader(f):
@@ -196,8 +223,7 @@ def anexar_clasificacion_entidad(df, col_entidad="ENTIDAD"):
 def reporte_entidades(df, col_entidad="ENTIDAD", col_anio="anio"):
     """Auditoría: conteo de filas por categoría y año. Útil para verificar antes de filtrar."""
     d = anexar_clasificacion_entidad(df, col_entidad)
-    return (d.groupby([col_anio, "entidad_cat"]).size()
-              .unstack(fill_value=0).sort_index())
+    return d.groupby([col_anio, "entidad_cat"]).size().unstack(fill_value=0).sort_index()
 
 
 def filtrar_para_calibracion(df, col_entidad="ENTIDAD"):
@@ -214,8 +240,10 @@ def filtrar_para_calibracion(df, col_entidad="ENTIDAD"):
     desconocidos = df_no_asignado[df_no_asignado["entidad_cat"] == CAT_DESCONOCIDO]
     if len(desconocidos):
         etiquetas = sorted(desconocidos[col_entidad].astype(str).unique())
-        print(f"[limpieza_cnsf] AVISO: {len(desconocidos)} filas con ENTIDAD "
-              f"no clasificada (revisar, no se asignan): {etiquetas}")
+        print(
+            f"[limpieza_cnsf] AVISO: {len(desconocidos)} filas con ENTIDAD "
+            f"no clasificada (revisar, no se asignan): {etiquetas}"
+        )
     return df_estados, df_no_asignado
 
 
@@ -240,17 +268,26 @@ def validar_variable_perdida(df):
     if COL_PERDIDA_PROHIBIDA in df.columns:
         neg = (pd.to_numeric(df[COL_PERDIDA_PROHIBIDA], errors="coerce") < 0).sum()
         if neg:
-            print(f"[limpieza_cnsf] NOTA: '{COL_PERDIDA_PROHIBIDA}' tiene {neg} valores "
-                  f"negativos (movimiento contable de reservas). Usar '{COL_PERDIDA}' como pérdida.")
+            print(
+                f"[limpieza_cnsf] NOTA: '{COL_PERDIDA_PROHIBIDA}' tiene {neg} valores "
+                f"negativos (movimiento contable de reservas). Usar '{COL_PERDIDA}' como pérdida."
+            )
     return df
 
 
 # --------------------------------------------------------------------------- #
 # 5. Pipeline de conveniencia
 # --------------------------------------------------------------------------- #
-def limpiar_ramo(df, col_entidad="ENTIDAD", col_anio="anio",
-                 columnas_monetarias=None, path_mapa_perils=None,
-                 col_causa=None, ramo=None, solo_clima=True):
+def limpiar_ramo(
+    df,
+    col_entidad="ENTIDAD",
+    col_anio="anio",
+    columnas_monetarias=None,
+    path_mapa_perils=None,
+    col_causa=None,
+    ramo=None,
+    solo_clima=True,
+):
     """
     Pipeline mínimo: vacío->NA, clasificación de entidad, (opcional) mapeo de peril.
     Devuelve (df_estados, df_no_asignado). No normaliza MONEDA (requiere tipo de cambio Banxico;
@@ -262,14 +299,183 @@ def limpiar_ramo(df, col_entidad="ENTIDAD", col_anio="anio",
         mapa = cargar_mapa_perils(path_mapa_perils)
         df = df.copy()
         df["peril_canonico"] = df[col_causa].map(
-            lambda v: mapear_peril(ramo, v, mapa, solo_clima=solo_clima))
+            lambda v: mapear_peril(ramo, v, mapa, solo_clima=solo_clima)
+        )
     return filtrar_para_calibracion(df, col_entidad=col_entidad)
+
+
+# --------------------------------------------------------------------------- #
+# 6. Correcciones de magnitud — ramo agrícola (documento §4, recuadro agrícola)
+# --------------------------------------------------------------------------- #
+# Dos errores de magnitud documentados en el consolidado agrícola (evidencia en el
+# documento y en impactcal-mx `scraps/cnsf_agricola_dq/`):
+#   (a) superficies ×1000 (clúster 2015, ecos 2010-2024): superficie asegurada/siniestrada
+#       imposible (> territorio estatal) con montos intactos; ÷1000 devuelve el valor
+#       implícito MXN/ha al rango del propio historial de la celda.
+#   (b) SUMA ASEGURADA ≈×FIX (sistémico 2022-2024): superficies y prima intactas, suma
+#       inflada por ~el tipo de cambio del año (doble conversión MXN→"USD"→MXN en la
+#       entrega SESA); la tasa de prima colapsa a <0.5% vs 2.7-7.5% de mediana histórica.
+# Las correcciones son NO destructivas: se aplican sobre una copia, cada renglón tocado
+# queda marcado (`dq_correccion`, `dq_valor_original`) y se devuelve una auditoría.
+
+COL_SUP_ASEGURADA = "SUPERFICIE ASEGURADA\n(HECTÁREAS)"
+COL_SUP_SINIESTRADA = "SUPERFICIE SINIESTRADA\n(HECTÁREAS)"
+COL_SUMA_ASEGURADA = "SUMA ASEGURADA"
+COL_PRIMA_EMITIDA = "PRIMA EMITIDA"
+
+# FIX promedio del periodo (Banxico, Informe Anual — compilación 2024, cuadro "Tipos de
+# cambio representativos"): años con la firma "suma inflada" confirmada. Aproximación
+# documentada: el factor real por renglón depende de la fecha de emisión intra-año.
+FIX_PROMEDIO_ANUAL = {2022: 20.1274, 2023: 17.7587, 2024: 18.3049}
+
+BANDA_VALOR_MXN_HA = (1_000, 200_000)  # valor asegurado implícito plausible (MXN/ha)
+UMBRAL_MONTO_SIN_MXN_HA = 50  # monto/ha siniestrada mínimo plausible
+UMBRAL_FIRMA_MXN_HA = 200_000  # arriba de esto + tasa colapsada = firma ×FIX
+UMBRAL_TASA_PRIMA_PCT = 0.5  # tasa de prima bajo la cual la suma no es creíble
+FACTOR_HISTORIA = 5  # prima<=0: exigir >=5x la mediana histórica propia
+
+
+def _mascara_agricola_nacional(df):
+    col_tipo = "TIPO SEGURO" if "TIPO SEGURO" in df.columns else "TIPO DE SEGURO"
+    return (df[col_tipo].map(norm_txt) == "agricola") & (df["MONEDA"].map(norm_txt) == "nacional")
+
+
+def _marcar(df, mascara, columna, factor, etiqueta, auditoria):
+    """Divide `columna` entre `factor` en las filas de `mascara`; registra la auditoría."""
+    if mascara.any():
+        df[columna] = df[columna].astype(float)  # la división ÷FIX no cabe en int64
+    for idx in df.index[mascara]:
+        original = df.at[idx, columna]
+        df.at[idx, columna] = original / factor
+        df.at[idx, "dq_correccion"] = etiqueta
+        df.at[idx, "dq_valor_original"] = original
+        auditoria.append(
+            {
+                "fila_csv": idx,
+                "anio": df.at[idx, "anio"],
+                "entidad": df.at[idx, "ENTIDAD"],
+                "cultivo": df.at[idx, "CULTIVO"],
+                "campo": columna.splitlines()[0],
+                "valor_original": original,
+                "valor_corregido": df.at[idx, columna],
+                "regla": etiqueta,
+                "factor": factor,
+            }
+        )
+
+
+def corregir_magnitudes_agricola_emision(df):
+    """
+    Correcciones (a) superficie ÷1000 y (b) suma ÷FIX en la hoja de emisión agrícola.
+    Devuelve (df_corregido, auditoria: DataFrame). No toca renglones pecuarios ni en
+    moneda extranjera. Renglones con firma débil (prima<=0 sin historial propio que
+    los contradiga) NO se corrigen: quedan para revisión manual.
+    """
+    df, auditoria = df.copy(), []
+    df["dq_correccion"], df["dq_valor_original"] = "", np.nan
+    base = _mascara_agricola_nacional(df)
+    sup, suma, prima = df[COL_SUP_ASEGURADA], df[COL_SUMA_ASEGURADA], df[COL_PRIMA_EMITIDA]
+
+    # (a) superficie ×1000: valor implícito <100 MXN/ha que ÷1000 regresa a banda plausible
+    v = suma / sup.where(sup > 0)
+    div1000 = (
+        base
+        & (sup >= 1000)
+        & (v > 0)
+        & (v < BANDA_VALOR_MXN_HA[0] / 10)
+        & (v * 1000 >= BANDA_VALOR_MXN_HA[0])
+        & (v * 1000 <= BANDA_VALOR_MXN_HA[1])
+    )
+    _marcar(df, div1000, COL_SUP_ASEGURADA, 1000, "superficie_div1000", auditoria)
+
+    # (b) suma ×FIX (2022+): firma = MXN/ha > 200k con tasa de prima colapsada
+    sup, suma = df[COL_SUP_ASEGURADA], df[COL_SUMA_ASEGURADA]  # sup ya corregida en (a)
+    mxn_ha = suma / sup.where(sup >= 10)
+    tasa = 100 * prima / suma.where(suma > 0)
+    firma = base & df["anio"].isin(FIX_PROMEDIO_ANUAL) & (mxn_ha > UMBRAL_FIRMA_MXN_HA)
+    fix_a = firma & (prima > 0) & (tasa < UMBRAL_TASA_PRIMA_PCT)
+    # prima<=0: sin tasa que delate; exigir >=FACTOR_HISTORIA x la mediana pre-2022 propia
+    hist = df[base & (df["anio"] < min(FIX_PROMEDIO_ANUAL)) & (sup >= 10) & (suma > 0)]
+    mediana_hist = (
+        (hist[COL_SUMA_ASEGURADA] / hist[COL_SUP_ASEGURADA])
+        .groupby([hist["ENTIDAD"].map(norm_txt), hist["CULTIVO"].map(norm_txt)])
+        .median()
+    )
+    llaves = pd.MultiIndex.from_arrays([df["ENTIDAD"].map(norm_txt), df["CULTIVO"].map(norm_txt)])
+    mh = pd.Series(mediana_hist.reindex(llaves).to_numpy(), index=df.index)
+    fix_b = (
+        firma
+        & (prima <= 0)
+        & mh.notna()
+        & (mh < UMBRAL_FIRMA_MXN_HA)
+        & (mxn_ha >= FACTOR_HISTORIA * mh)
+    )
+    assert not (div1000 & (fix_a | fix_b)).any(), "una fila no puede llevar ambas correcciones"
+    for anio, factor in FIX_PROMEDIO_ANUAL.items():
+        _marcar(
+            df,
+            (fix_a | fix_b) & (df["anio"] == anio),
+            COL_SUMA_ASEGURADA,
+            factor,
+            "suma_div_fix",
+            auditoria,
+        )
+
+    debil = (firma & (prima <= 0) & ~fix_b).sum()
+    if debil:
+        print(
+            f"[limpieza_cnsf] AVISO: {debil} renglones de emisión con firma ×FIX débil "
+            f"(prima<=0, sin historial que la confirme) NO corregidos; revisar a mano."
+        )
+    return df, pd.DataFrame(auditoria)
+
+
+def corregir_magnitudes_agricola_siniestros(df, emision_corregida=None):
+    """
+    Corrección (a) superficie siniestrada ÷1000 en la hoja de siniestros agrícola. Dos vías:
+      - monto por hectárea siniestrada >0 y <50 MXN/ha (imposiblemente bajo);
+      - monto 0 (sin ratio que delate) pero superficie >10x la asegurada corregida de la
+        misma celda año×entidad×cultivo — requiere pasar `emision_corregida`.
+    Devuelve (df_corregido, auditoria: DataFrame).
+    """
+    df, auditoria = df.copy(), []
+    df["dq_correccion"], df["dq_valor_original"] = "", np.nan
+    base = _mascara_agricola_nacional(df)
+    sup = df[COL_SUP_SINIESTRADA]
+    monto = df[["MONTO DEL SINIESTRO OCURRIDO", "MONTO PAGADO"]].max(axis=1)
+    v = monto / sup.where(sup > 0)
+    div1000 = base & (sup >= 1000) & (v > 0) & (v < UMBRAL_MONTO_SIN_MXN_HA)
+    if emision_corregida is not None:
+        em = emision_corregida
+        em_ag = em[em["TIPO SEGURO"].map(norm_txt) == "agricola"]
+        aseg = em_ag.groupby(
+            [em_ag["anio"], em_ag["ENTIDAD"].map(norm_txt), em_ag["CULTIVO"].map(norm_txt)]
+        )[COL_SUP_ASEGURADA].sum()
+        llave = pd.MultiIndex.from_arrays(
+            [df["anio"], df["ENTIDAD"].map(norm_txt), df["CULTIVO"].map(norm_txt)]
+        )
+        aseg_celda = pd.Series(aseg.reindex(llave).to_numpy(), index=df.index)
+        div1000 |= (
+            base & (sup >= 1000) & (monto <= 0) & aseg_celda.notna() & (sup > 10 * aseg_celda)
+        )
+    _marcar(df, div1000, COL_SUP_SINIESTRADA, 1000, "superficie_div1000", auditoria)
+    return df, pd.DataFrame(auditoria)
 
 
 if __name__ == "__main__":
     # mini auto-prueba de la clasificación de entidades
-    pruebas = ["Quitana Roo", "Quintana Roo", "QUINTANA ROO", "Extranjero",
-               "No aplica (exportación)", "NU", "No Disponible", "Distrito Federal",
-               "México", "Coahuila de Zaragoza", "Marte"]
+    pruebas = [
+        "Quitana Roo",
+        "Quintana Roo",
+        "QUINTANA ROO",
+        "Extranjero",
+        "No aplica (exportación)",
+        "NU",
+        "No Disponible",
+        "Distrito Federal",
+        "México",
+        "Coahuila de Zaragoza",
+        "Marte",
+    ]
     for p in pruebas:
         print(f"{p!r:35} -> {clasificar_entidad(p)}")
