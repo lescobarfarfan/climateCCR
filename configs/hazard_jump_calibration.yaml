@@ -6,10 +6,14 @@
 # The variants are the "which events trigger a jump" knob, compared side by side
 # in results/hazard_jump_calibration/parameters.csv.
 #
-# Losses stay in millions of *current* MXN until an INPC deflator is wired
-# (GEN-13): sev_median_mdp is nominal and the trends include inflation.
+# Losses are deflated at load time to the latest year of the `deflator` index
+# (2025 pesos; GEN-13, OQ-INT-07b): sev_median_mdp is real and the damage
+# thresholds mean constant pesos — a nominal threshold is a falling real bar
+# (-40 % over 2002-2015), which fabricates arrivals growth. Set `deflator: null`
+# to reproduce the nominal INT-16 fits.
 
 events_csv: data/hazard_mx/datos_CENAPRED/consolidados/eventos_cenapred_climada.csv
+deflator: configs/inpc_anual.yaml
 
 window:
   start: 2002 # 2000-01 excluded — reporting ramp-in (32 / 11 events vs ~150-240 after)
@@ -19,8 +23,9 @@ alpha: 0.05 # 1 - confidence level of the intensity interval
 
 variants:
   todos: {} # every discrete climate-scope event
-  mayores_100mdp: # "major" events: damage >= 100 M MXN (~ p89 of positive losses)
-    min_damage_mdp: 100.0
+  mayores_200mdp: # "major" events: damage >= 200 M 2025-MXN (~ p86 of positive real
+    # losses; rarity-matched to the superseded nominal >= 100 set: n 270 vs 274)
+    min_damage_mdp: 200.0
   ciclon_tropical: # the CLIMADA calibration peril (HAZ-CLIMADA-02)
     perils: ["Ciclón tropical"]
   hidrometeorologico: # the wet perils as one family

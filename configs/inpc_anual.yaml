@@ -1,0 +1,44 @@
+# Annual consumer-price index for Mexico — the GEN-13 deflator (OQ-INT-07b).
+#
+# ANNUAL AVERAGE index, base 2010 = 100. Source: World Bank indicator
+# FP.CPI.TOTL for Mexico (tokenless mirror of the national CPI — INEGI's INPC —
+# via IMF IFS). A deflator only ever uses index RATIOS, so the 2010 re-base is
+# irrelevant: restatements are identical to those from the INPC in its official
+# 2Q-jul-2018 = 100 base up to rounding.
+#
+# Retrieved 2026-07-18 from
+#   https://api.worldbank.org/v2/country/MEX/indicator/FP.CPI.TOTL?format=json&per_page=80&date=2000:2026
+# Cross-checks against published INEGI annual-average inflation: 2017 = 6.04 %,
+# 2020 = 3.40 %, 2022 = 7.90 % — all match. Swapping in the INEGI BIE series
+# (API token required) is a pending confirmation, tracked in OPEN_QUESTIONS.
+#
+# Consumers restate amounts to the MAXIMUM year present here (2025 pesos).
+# Loaded by pipelines/03_hazard_jump_calibration.py (and the loss-to-mark
+# scale derivation) — keep this file the single source of the index.
+inpc:
+  2000: 63.3128
+  2001: 67.3444
+  2002: 70.7323
+  2003: 73.9484
+  2004: 77.4155
+  2005: 80.5028
+  2006: 83.4246
+  2007: 86.7340
+  2008: 91.1791
+  2009: 96.0092
+  2010: 100.0000
+  2011: 103.4074
+  2012: 107.6590
+  2013: 111.7569
+  2014: 116.2480
+  2015: 119.4107
+  2016: 122.7801
+  2017: 130.1978
+  2018: 136.5766
+  2019: 141.5425
+  2020: 146.3505
+  2021: 154.6767
+  2022: 166.8904
+  2023: 176.1160
+  2024: 184.4327
+  2025: 191.4534
