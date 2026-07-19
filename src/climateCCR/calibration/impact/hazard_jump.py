@@ -12,12 +12,14 @@ fits both from the consolidated CENAPRED climate-event table
   the trend onto simulation-grid years as the 1-D trajectory intensity the built
   channel already accepts (INT-13).
 - **Severity** — per-event losses ``danio_mdp`` -> lognormal fit by MLE (the INT-13
-  adverse mark family). Losses are millions of *current* MXN (GEN-13); pass
-  ``deflator`` (a price index by year, e.g. INEGI INPC) to fit in real terms.
-  The loss->mark translation stays an explicit seam: ``to_mark_sampler(K)`` maps a
-  loss ``L`` onto a mark ``L / K``, so the fitted ``sigma`` transfers exactly and
-  only the median rescales; fixing ``K`` — the loss-absorbing scale of the target
-  portfolio — is the open decision OQ-INT-04 / OQ-INT-07.
+  adverse mark family). Losses are millions of MXN (GEN-13); pass ``deflator`` (a
+  price index by year, e.g. INEGI INPC) to :func:`load_climate_events` to restate
+  them to the index's latest year *before* any damage threshold — a nominal
+  threshold is a falling real bar (~-40 % over 2002-2015), which fabricates
+  arrivals growth. The loss->mark translation stays an explicit seam:
+  ``to_mark_sampler(K)`` maps a loss ``L`` onto a mark ``L / K``, so the fitted
+  ``sigma`` transfers exactly and only the median rescales; fixing ``K`` — the
+  loss-absorbing scale of the target portfolio — is OQ-INT-04 / OQ-INT-07.
 
 Spanish column names are the data contract, kept verbatim (INT-07).
 """
@@ -54,6 +56,7 @@ def load_climate_events(
     end_year: int = 2015,
     perils: Iterable[str] | None = None,
     min_damage_mdp: float | None = None,
+    deflator: Mapping[int, float] | pd.Series | None = None,
 ) -> pd.DataFrame:
     """Discrete climate-scope CENAPRED events for the estimation window.
 
@@ -66,6 +69,12 @@ def load_climate_events(
       :data:`ANNUAL_AGGREGATE_MIN_DAYS`;
     - optionally a ``peril_canonico`` subset and a minimum ``danio_mdp`` —
       together the "which events trigger a jump" knob.
+
+    ``deflator`` is a price index by calendar year (e.g. INEGI INPC); when given,
+    ``danio_mdp`` is restated to the *latest* year in the index **before** the
+    ``min_damage_mdp`` filter, so the threshold means constant (latest-year)
+    pesos across the window instead of a nominal bar whose real height falls
+    with inflation (GEN-13, OQ-INT-07b).
 
     The window is stamped on ``.attrs["window"]`` so downstream counts keep the
     zero-event years in the exposure time.
@@ -84,9 +93,17 @@ def load_climate_events(
     )
     if perils is not None:
         mask &= events["peril_canonico"].isin(list(perils))
-    if min_damage_mdp is not None:
-        mask &= events["danio_mdp"] >= min_damage_mdp
     out = events.loc[mask].copy()
+    if deflator is not None:
+        index = pd.Series(deflator).astype(float)
+        years = out["anio"].astype(int)
+        missing_years = sorted(set(years.unique()) - set(index.index))
+        if missing_years:
+            raise ValueError(f"deflator missing years: {missing_years}")
+        base = index.loc[index.index.max()]
+        out["danio_mdp"] = out["danio_mdp"] * (base / index.loc[years].to_numpy())
+    if min_damage_mdp is not None:
+        out = out[out["danio_mdp"] >= min_damage_mdp]
     out.attrs["window"] = (int(start_year), int(end_year))
     return out
 
@@ -220,18 +237,109 @@ class LognormalSeverityFit:
         return LognormalMark(median=self.median / loss_to_mark_scale, sigma=self.sigma, sign=sign)
 
 
-def fit_severity(
-    events: pd.DataFrame,
+def annual_real_amounts(
+    csv_path: str | Path,
+    column: str,
+    deflator: Mapping[int, float] | pd.Series,
+) -> pd.Series:
+    """Per-year totals of a CNSF consolidado amount column, in real MDP.
+
+    Amounts are pesos regardless of ``MONEDA`` (the SESA delivery reports MXN;
+    reading ``Extranjera`` rows as foreign-currency units would put the 2014
+    hydro payout at ~4x the known Odile insured loss — see OQ-HAZ-03), summed by
+    ``anio``, converted to millions and restated to the deflator's latest year.
+    Column names resolve laxly (CNSF headers embed newlines, DC-CONV-11).
+    """
+    from climateCCR.data.inspeccion import resolve_column
+
+    df = pd.read_csv(csv_path, low_memory=False)
+    amounts = pd.to_numeric(df[resolve_column(df, column)], errors="coerce").fillna(0.0)
+    per_year = df.assign(_monto=amounts).groupby("anio")["_monto"].sum() / 1e6
+    index = pd.Series(deflator).astype(float)
+    missing_years = sorted(set(per_year.index.astype(int)) - set(index.index))
+    if missing_years:
+        raise ValueError(f"deflator missing years: {missing_years}")
+    return per_year * index.loc[index.index.max()] / index.loc[per_year.index].to_numpy()
+
+
+@dataclass(frozen=True)
+class LossToMarkScale:
+    """The OQ-INT-04/OQ-INT-07(a) resolution: mark = beta * L / k = L / k_eff.
+
+    ``beta`` is the pass-through — the share of national climate damage the
+    target book absorbs, estimated as insured payouts over CENAPRED damage on
+    the overlap window. ``k_mdp`` is the book's size — its annual real premium
+    volume in ``k_year`` — so a mark is a per-event loss-ratio contribution in
+    log-return form. ``k_eff_mdp = k_mdp / beta`` is the single number
+    :meth:`LognormalSeverityFit.to_mark_sampler` takes as its scale.
+    """
+
+    beta: float
+    k_mdp: float
+    k_eff_mdp: float
+    paid_mdp: float
+    damage_mdp: float
+    beta_start: int
+    beta_end: int
+    k_year: int
+    yearly_ratio_min: float
+    yearly_ratio_max: float
+
+
+def derive_loss_to_mark_scale(
+    paid: pd.Series,
+    premium: pd.Series,
+    damage: pd.Series,
     *,
-    deflator: Mapping[int, float] | pd.Series | None = None,
-) -> LognormalSeverityFit:
+    beta_window: tuple[int, int],
+    k_year: int,
+) -> LossToMarkScale:
+    """Combine the annual panels into the loss->mark scale.
+
+    All three series must be per-year real amounts in the same base pesos
+    (:func:`annual_real_amounts` / deflated CENAPRED damage). ``beta`` uses
+    sums over ``beta_window`` (robust to which year a payout lands in);
+    the yearly ratio range is reported as the honest dispersion diagnostic.
+    """
+    start, end = beta_window
+    for name, series in (("paid", paid), ("damage", damage)):
+        missing = [y for y in range(start, end + 1) if y not in series.index]
+        if missing:
+            raise ValueError(f"{name} series missing beta-window years: {missing}")
+    if k_year not in premium.index:
+        raise ValueError(f"premium series has no k_year {k_year}")
+    paid_w = paid.loc[start:end]
+    damage_w = damage.loc[start:end]
+    if (damage_w <= 0).any():
+        raise ValueError("damage must be > 0 in every beta-window year")
+    beta = float(paid_w.sum() / damage_w.sum())
+    k = float(premium.loc[k_year])
+    if beta <= 0 or k <= 0:
+        raise ValueError(f"scale needs beta > 0 and k > 0, got beta={beta}, k={k}")
+    ratio = paid_w / damage_w
+    return LossToMarkScale(
+        beta=beta,
+        k_mdp=k,
+        k_eff_mdp=k / beta,
+        paid_mdp=float(paid_w.sum()),
+        damage_mdp=float(damage_w.sum()),
+        beta_start=start,
+        beta_end=end,
+        k_year=k_year,
+        yearly_ratio_min=float(ratio.min()),
+        yearly_ratio_max=float(ratio.max()),
+    )
+
+
+def fit_severity(events: pd.DataFrame, *, deflated: bool = False) -> LognormalSeverityFit:
     """Fit the lognormal severity by MLE on per-event ``danio_mdp``.
 
     Non-positive / missing losses are dropped (reported via ``n_dropped``) — an
     event with no recorded damage carries no information about severity size.
-    ``deflator`` is a price index by calendar year (e.g. INEGI INPC); losses are
-    restated to the *latest* year in the index. Without it the fit is on current
-    pesos and inflation stays inside ``sigma`` and the trend (``deflated=False``).
+    Deflation happens at load time (:func:`load_climate_events`), *before* any
+    damage threshold; ``deflated`` only records here whether the losses passed
+    in are real (latest-index-year pesos) or current pesos, in which case
+    inflation stays inside ``sigma`` and the trend.
     """
     keep = events["danio_mdp"].notna() & (events["danio_mdp"] > 0)
     losses = events.loc[keep, "danio_mdp"].astype(float)
@@ -239,14 +347,6 @@ def fit_severity(
     n_dropped = int((~keep).sum())
     if len(losses) < 2:
         raise ValueError(f"need >= 2 positive losses to fit severity, got {len(losses)}")
-
-    if deflator is not None:
-        index = pd.Series(deflator).astype(float)
-        missing_years = sorted(set(years.unique()) - set(index.index))
-        if missing_years:
-            raise ValueError(f"deflator missing years: {missing_years}")
-        base = index.loc[index.index.max()]
-        losses = losses * (base / index.loc[years].to_numpy())
 
     logs = np.log(losses.to_numpy())
     if years.nunique() >= 2:
@@ -259,7 +359,7 @@ def fit_severity(
         sigma=float(logs.std(ddof=0)),  # MLE
         n_events=int(len(logs)),
         n_dropped=n_dropped,
-        deflated=deflator is not None,
+        deflated=deflated,
         trend_growth=trend_growth,
         trend_p_value=trend_p,
     )

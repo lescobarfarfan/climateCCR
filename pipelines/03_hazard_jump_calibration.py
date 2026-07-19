@@ -25,6 +25,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CALIB_CONFIG = REPO_ROOT / "configs" / "hazard_jump_calibration.yaml"
@@ -66,6 +67,16 @@ def main() -> None:
     window = config.extra["window"]
     alpha = float(config.extra["alpha"])
 
+    deflator = None
+    base_year = None
+    if config.extra.get("deflator"):
+        deflator_file = config.paths.root / config.extra["deflator"]
+        deflator = {
+            int(y): float(v) for y, v in yaml.safe_load(deflator_file.read_text())["inpc"].items()
+        }
+        base_year = max(deflator)
+        logger.info("Deflating losses to %d pesos via %s (GEN-13)", base_year, deflator_file)
+
     rows = []
     for name, spec in config.extra["variants"].items():
         events = load_climate_events(
@@ -74,11 +85,12 @@ def main() -> None:
             end_year=int(window["end"]),
             perils=spec.get("perils"),
             min_damage_mdp=spec.get("min_damage_mdp"),
+            deflator=deflator,
         )
         counts = annual_event_counts(events)
         intensity = estimate_intensity(counts, alpha=alpha)
         trend = fit_intensity_trend(counts)
-        severity = fit_severity(events)
+        severity = fit_severity(events, deflated=deflator is not None)
         logger.info(
             "%s: %d events, lambda=%.1f/yr [%.1f, %.1f], arrivals growth %+.1f%%/yr (p=%.3f), "
             "severity median %.2f MDP sigma %.2f, severity growth %+.1f%%/yr (p=%.3f)",
@@ -113,6 +125,7 @@ def main() -> None:
                 "sev_growth_log_yr": severity.trend_growth,
                 "sev_trend_p": severity.trend_p_value,
                 "deflated": severity.deflated,
+                "deflator_base_year": base_year,
             }
         )
 

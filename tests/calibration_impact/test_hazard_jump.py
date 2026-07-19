@@ -13,6 +13,8 @@ import pandas as pd
 import pytest
 from climateCCR.calibration.impact import (
     annual_event_counts,
+    annual_real_amounts,
+    derive_loss_to_mark_scale,
     estimate_intensity,
     fit_intensity_trend,
     fit_severity,
@@ -79,6 +81,26 @@ class TestLoader:
         assert len(load_climate_events(path, perils=["Ciclón tropical"])) == 2
         assert len(load_climate_events(path, min_damage_mdp=100.0)) == 2
         assert len(load_climate_events(path, perils=["Ciclón tropical"], min_damage_mdp=100.0)) == 1
+
+    def test_deflator_restates_before_threshold(self, tmp_path):
+        # Base year 2015 doubles 2002 losses: the 2002 event crosses the real
+        # threshold, the 2015 one does not — the filter must run on real pesos.
+        path = _events_csv(
+            tmp_path,
+            [
+                (2002, 1.0, "Ciclón tropical", "si", 60.0),  # real 120: kept
+                (2015, 1.0, "Ciclón tropical", "si", 90.0),  # real 90: dropped
+            ],
+        )
+        deflator = {2002: 50.0, 2015: 100.0}
+        events = load_climate_events(path, min_damage_mdp=100.0, deflator=deflator)
+        assert list(events["anio"]) == [2002]
+        assert events["danio_mdp"].iloc[0] == pytest.approx(120.0)
+
+    def test_deflator_missing_year_raises(self, tmp_path):
+        path = _events_csv(tmp_path, [(2002, 1.0, "Ciclón tropical", "si", 1.0)])
+        with pytest.raises(ValueError, match="deflator missing years"):
+            load_climate_events(path, deflator={2015: 100.0})
 
     def test_missing_column_raises(self, tmp_path):
         path = tmp_path / "malo.csv"
@@ -147,26 +169,25 @@ class TestSeverity:
         fit = fit_severity(_frame([2002, 2003, 2004, 2005], [1.0, 2.0, 0.0, np.nan]))
         assert fit.n_events == 2 and fit.n_dropped == 2
 
-    def test_severity_trend_and_deflator(self):
+    def test_severity_trend_and_deflator(self, tmp_path):
         years = np.repeat(np.arange(2002, 2016), 30)
         base = np.tile(np.exp(np.linspace(-1, 1, 30)), 14)  # fixed shape, no trend
         losses = base * np.exp(0.10 * (years - 2002))  # 10%/yr nominal growth
-        nominal = fit_severity(_frame(years, losses))
+        path = tmp_path / "eventos.csv"
+        _frame(years, losses).to_csv(path, index=False)
+        nominal = fit_severity(load_climate_events(path))
         assert nominal.trend_growth == pytest.approx(0.10, abs=0.01)
         assert nominal.trend_p_value < 0.01
+        assert not nominal.deflated
 
         # A deflator matching the growth removes the trend entirely.
         deflator = pd.Series(
             np.exp(0.10 * (np.arange(2002, 2016) - 2002)), index=pd.RangeIndex(2002, 2016)
         )
-        real = fit_severity(_frame(years, losses), deflator=deflator)
+        real = fit_severity(load_climate_events(path, deflator=deflator), deflated=True)
         assert real.deflated
         assert real.trend_growth == pytest.approx(0.0, abs=0.01)
         assert real.sigma == pytest.approx(nominal.sigma, rel=0.2)
-
-    def test_deflator_missing_year_raises(self):
-        with pytest.raises(ValueError, match="deflator missing years"):
-            fit_severity(_frame([2002, 2003], [1.0, 2.0]), deflator=pd.Series({2002: 100.0}))
 
     def test_to_mark_sampler_rescales_median_only(self):
         fit = fit_severity(_frame([2002, 2003, 2004], [10.0, 20.0, 40.0]))
@@ -177,6 +198,40 @@ class TestSeverity:
         assert sampler.sign == -1.0
         with pytest.raises(ValueError, match="loss_to_mark_scale"):
             fit.to_mark_sampler(0.0)
+
+
+class TestLossToMarkScale:
+    def test_annual_real_amounts_sums_and_deflates(self, tmp_path):
+        path = tmp_path / "consolidado.csv"
+        # CNSF-style header with an embedded newline; amounts in pesos.
+        pd.DataFrame({"anio": [2014, 2014, 2015], "MONTO\nPAGADO": [2e6, 1e6, 4e6]}).to_csv(
+            path, index=False
+        )
+        real = annual_real_amounts(path, "MONTO PAGADO", {2014: 50.0, 2015: 100.0})
+        assert real.loc[2014] == pytest.approx(6.0)  # (2+1) MDP restated x2
+        assert real.loc[2015] == pytest.approx(4.0)
+
+    def test_derives_beta_k_and_k_eff(self):
+        years = pd.RangeIndex(2008, 2016)
+        paid = pd.Series(10.0, index=years)
+        damage = pd.Series(100.0, index=years)
+        premium = pd.Series({2024: 50.0})
+        scale = derive_loss_to_mark_scale(
+            paid, premium, damage, beta_window=(2008, 2015), k_year=2024
+        )
+        assert scale.beta == pytest.approx(0.10)
+        assert scale.k_mdp == pytest.approx(50.0)
+        assert scale.k_eff_mdp == pytest.approx(500.0)
+        assert scale.yearly_ratio_min == pytest.approx(0.10)
+        assert scale.yearly_ratio_max == pytest.approx(0.10)
+
+    def test_missing_window_years_raise(self):
+        years = pd.RangeIndex(2010, 2016)  # 2008-2009 missing
+        series = pd.Series(1.0, index=years)
+        with pytest.raises(ValueError, match="missing beta-window years"):
+            derive_loss_to_mark_scale(
+                series, pd.Series({2024: 1.0}), series, beta_window=(2008, 2015), k_year=2024
+            )
 
 
 @pytest.mark.skipif(not EVENTS_CSV.exists(), reason="data/hazard_mx not present (GEN-24)")

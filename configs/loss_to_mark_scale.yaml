@@ -1,0 +1,33 @@
+# Loss->mark scale derivation (OQ-INT-04 / OQ-INT-07a; DC-XWALK-4 producer side).
+#
+# Drives pipelines/04_loss_to_mark_scale.py: mark = beta * L / K = L / K_eff.
+# The target book is the climate-exposed Mexican insurance book — the CNSF
+# hidrometeorologico + agricola lines (emision = premium volume, siniestros =
+# payouts; the agro files are the DQ-corrected copies, DC-HAZ-CNSF-6). Amounts
+# are pesos regardless of MONEDA (SESA reports MXN; the foreign-currency-units
+# reading fails the Odile 2014 cross-check by ~4x — evidence for OQ-HAZ-03).
+#
+# beta = insured payouts / CENAPRED discrete real damage over the overlap of
+# the two panels (CNSF starts 2008, the CENAPRED event base ends 2015).
+# K = the book's annual real premium in k_year (latest complete CNSF year).
+# Everything is restated to the deflator's latest year (2025 pesos, GEN-13).
+
+events_csv: data/hazard_mx/datos_CENAPRED/consolidados/eventos_cenapred_climada.csv
+deflator: configs/inpc_anual.yaml
+
+beta_window:
+  start: 2008 # first CNSF consolidado year
+  end: 2015 # end of the CENAPRED event-level base (DC-HAZ-CENAPRED-1)
+k_year: 2024 # latest complete CNSF year
+
+cnsf:
+  paid:
+    - file: data/hazard_mx/datos_CNSF/consolidados/riesgos_hidrometereologicos/siniestros.csv.gz
+      column: MONTO PAGADO
+    - file: data/hazard_mx/datos_CNSF/consolidados/agricola_y_animales/siniestros_corregida.csv
+      column: MONTO PAGADO
+  premium:
+    - file: data/hazard_mx/datos_CNSF/consolidados/riesgos_hidrometereologicos/emision.csv.gz
+      column: PRIMA EMITIDA
+    - file: data/hazard_mx/datos_CNSF/consolidados/agricola_y_animales/emision_corregida.csv
+      column: PRIMA EMITIDA
