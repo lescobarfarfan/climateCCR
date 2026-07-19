@@ -37,8 +37,10 @@ the intensity `λ` and the per-event **impact/jump-mark** that drive the climate
 - Reading: [[2026-07-11_cnsf_harness_data_consolidation]] — housekeeping read-log, no analytical decisions (CNSF harness + `GEN-24` data consolidation; `notes/reading/`, `GEN-21`).
 - Reading: [[2026-07-16_hazard_jump_calibration]] — `λ` + lognormal severity estimated from CENAPRED (`INT-16`, `HAZ-STOCH-04`; the `DC-XWALK-4` producer side).
 - Reading: [[2026-07-18_cnsf_agro_dq_inspeccion]] — robust median/MAD outlier detection + the Banxico FIX factors behind the agro magnitude corrections (`HAZ-CLEAN-CNSF-12/13`, `GEN-27`).
+- Reading: [[2026-07-18_k_scale_deflation]] — deflate-before-threshold, Poisson thinning/rarity matching, and the exposure-base convention behind the loss→mark scale (`INT-17`, `HAZ-STOCH-05`).
 - Explanation (`notes/summary_explanations/`, `GEN-26`): [[2026-07-16_hazard_jump_calibration_explained]] — what `λ`, the trend, the lognormal `median`/`σ`, and the scale `K` mean; how to read the first estimates (thinning, `mayores_100mdp` as a financial-materiality trigger, arrival vs severity trends).
 - Explanation: [[2026-07-18_cnsf_agro_dq_inspeccion_explained]] — the agro ÷1000 and ÷FIX corrections (thresholds, audit columns, the ±5–10% FIX caveat) and the inspector's robust-$z$ + triage semantics; how to read the corrected series and the 323-finding triage queue.
+- Explanation: [[2026-07-18_k_scale_deflation_explained]] — the deflator in detail (the falling-real-bar artifact, +9.6 → +8.4 %/yr), what `β`/`K`/`K_eff` mean and where 0.174 / 22,964 / 131,932 come from, the MXN-units call on `MONEDA`, and how to read the first all-estimated EE/PE run.
 - Review: [[PONYTAIL_AUDIT_2026-07-11]] — over-engineering sweep; the CNSF normalizer dedup + the two deliberately rejected HAZ cuts (`HAZ-SCRAPER-CNSF-10`).
 
 ## Wires to the other arms

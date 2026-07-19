@@ -1,0 +1,16 @@
+# 2026-07-18 — The loss→mark scale $K$ and the real-terms refit (read-log)
+
+> Session: `OQ-INT-07` (a)/(b)/(d) closed (`INT-17`, `HAZ-STOCH-05`) — INPC deflation wired at load time (real 2025 pesos, threshold applied to real losses), leading variant `mayores_200mdp` rarity-matched to the old nominal set, and the loss→mark scale fixed from data: $\beta = 0.174$, $K = 22{,}964$ MDP-2025, $K_{\text{eff}} = K/\beta = 131{,}932$. First all-estimated EE/PE run (`configs/climate_jump_real.yaml`); the missing loss→rate translation is now the binding gap (`OQ-INT-09`).
+
+1. **Klugman, Panjer & Willmot — *Loss Models: From Data to Decisions*** (`[Klugman]`, §99): the severity chapters' *trend and deflate losses before fitting* discipline, and the frequency chapters' treatment of exposure bases. **Why:** `HAZ-STOCH-05` is exactly that discipline executed (restate to constant pesos, then fit), and `INT-17`'s $K$ = annual premium volume is the actuarial exposure-base convention behind reading a mark as a loss-ratio contribution; without it the premium-normalized mark looks ad hoc.
+2. **Pielke & Landsea — *Normalized hurricane damages in the United States: 1925–95*, Weather and Forecasting 13(3)** (`[PielkeLandsea1998]`, §99, new): the canonical loss-normalization method — inflation, wealth, and population adjustment. **Why:** deflation removes only the price component; the surviving $+8.4\,\%$/yr major-event arrival growth still conflates exposure growth with climate signal, and this paper defines the standard further controls the manuscript caveat must engage (`OQ-INT-07` attribution residual).
+3. **Cont & Tankov — *Financial Modelling with Jump Processes*** (`[ContTankov2004]`): the Poisson thinning results in the compound-Poisson chapters. **Why:** `mayores_200mdp` is an exceedance-thinned process like its predecessor; thinning justifies both the rarity-matching argument (same $\lambda$-level ⇒ comparable trigger set) and why a real-pesos threshold is the only bar whose thinning probability $1 - F(u)$ is time-consistent under inflation.
+4. **INEGI — INPC methodology / World Bank `FP.CPI.TOTL`** (`[INEGI_INPC]`, §99): the index construction and base conventions behind `configs/inpc_anual.yaml`. **Why:** the wired deflator is the World Bank mirror of the national CPI (checked against published INEGI annual inflation for 2017/2020/2022); confirming the INEGI BIE series verbatim (API token required) is the open `OQ-INT-07` (b) residual — the read is what makes the mirror-equivalence argument (deflators only use index ratios) rigorous.
+
+Open decisions these readings feed: the loss→rate translation for the HW1F channel (`OQ-INT-09`, the binding gap), the step-aware `MarkSampler` (`OQ-INT-07` c), exposure-vs-climate attribution of the surviving trends (manuscript caveat), and the Mexican asset-universe swap (`OQ-INT-04`).
+
+## Related
+
+Backs: [[DECISIONS]] (`INT-17`, `HAZ-STOCH-05`, `HAZ-CLEAN-CNSF-14`) · gates: [[OPEN_QUESTIONS]] (`OQ-INT-07`, `OQ-INT-09`, `OQ-HAZ-03`) · contract: [[DATA_CONTRACTS]] (`DC-XWALK-4`) · keys: [[REFERENCES]] §99 · explanation: [[2026-07-18_k_scale_deflation_explained]] (`GEN-26`). Arm MOCs: [[HAZ_MOC]] · [[CCR_MOC]] · Home: [[_INDEX]]
+
+#arm/haz #arm/int #type/reading
