@@ -94,6 +94,11 @@ When editing or creating notes, **maintain the graph**:
 - Specialised scripts (R, Stan, …) integrated from Python where they earn it.
 - Version control (`GEN-09`): small descriptive commits; **separate behaviour
   changes from packaging/move changes**.
+- Branching (`GEN-16`): **commit directly to `main` by default** — a branch/worktree
+  (+ PR) only when the task genuinely risks the mainline: baseline-touching refactors
+  (`CCR-MIG-03`), large moves/migrations, discardable experiments, parallel sessions.
+  Background jobs enforce worktree isolation; there, skip the PR and hand back a local
+  `git merge --ff-only` one-liner instead.
 
 ### Common commands
 ```bash
