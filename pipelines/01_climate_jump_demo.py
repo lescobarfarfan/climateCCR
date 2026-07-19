@@ -64,13 +64,20 @@ def main() -> None:
         default="largo",
         help="analysis horizon: a key of the config's `horizons` block (largo | corto)",
     )
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=DEMO_CONFIG,
+        help="climate-jump config (default: the placeholder demo; "
+        "configs/climate_jump_real.yaml = the estimated parameters)",
+    )
     args = parser.parse_args()
 
     from climateCCR.infra import RunManifest, get_logger, load_config
     from climateCCR.processes.jumps import ClimateJumpProcess
     from climateCCR.risk.ccr.config import build_global_parameters
 
-    config = load_config(DEMO_CONFIG)
+    config = load_config(args.config)
     config.paths.ensure()
     logger = get_logger("climateCCR.climate_jump_demo", log_dir=config.paths.logs)
 
@@ -80,7 +87,7 @@ def main() -> None:
     b3_grid = horizons[args.horizonte]["b3_grid"]  # None = the fixture's long default grid
 
     run_name = (
-        "climate_jump_demo" if args.horizonte == "largo" else f"climate_jump_demo_{args.horizonte}"
+        args.config.stem if args.horizonte == "largo" else f"{args.config.stem}_{args.horizonte}"
     )
     out_dir = config.paths.results / run_name
     out_csv = out_dir / "ee_pe_climate_shift.csv"

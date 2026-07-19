@@ -1,0 +1,44 @@
+# Climate jump injection with ESTIMATED parameters (DC-XWALK-4 closed loop).
+#
+# Same harness as configs/climate_jump_demo.yaml (pipelines/01_climate_jump_demo.py
+# --config configs/climate_jump_real.yaml), but every climate_jumps value is an
+# estimate, not a placeholder:
+#
+# - intensity + equity-mark severity: the mayores_200mdp variant of
+#   results/hazard_jump_calibration/parameters.csv (pipelines/03, INT-16 refit in
+#   real 2025 pesos — CENAPRED discrete climate events 2002-2015, damage >= 200
+#   MDP-2025, lambda = 270 events / 14 yr).
+# - loss->mark scale: results/loss_to_mark_scale/scale.csv (pipelines/04):
+#   mark = beta * L / K = L / K_eff with beta = 0.1741 (insured share of national
+#   climate damage, CNSF hydro+agro payouts / CENAPRED damage 2008-2015) and
+#   K = 22,964 MDP-2025 (the book's 2024 real premium volume), K_eff = 131,932.
+#
+# The GBM price targets REPRESENT the climate-exposed Mexican insurance book
+# (OQ-INT-04 interpretation); a mark is a per-event loss-ratio contribution in
+# log-return form. The rate channel has no estimated loss->rate translation yet
+# (OQ-INT-07) and is deliberately omitted — rate marks remain demo placeholders.
+
+seed: 233423        # master seed; jumps draw from a derived substream (GEN-07)
+n_paths: 10000      # matches the locked baseline (CCR-MIG-03)
+
+valuation_date: "2020-01-01"   # the fixture's locked as-of date (CCR-MIG-05)
+
+horizons:
+  largo:
+    b3_grid: null
+    max_step_days: null
+  corto:
+    b3_grid: ["0D", "1D", "1W", "2W", "1M", "2M", "3M", "6M", "9M", "1Y", "18M", "2Y", "3Y"]
+    max_step_days: 1
+  medio:
+    b3_grid: ["0D", "1D", "1W", "2W", "1M", "2M", "3M", "6M", "9M", "1Y", "18M", "2Y", "3Y", "4Y", "5Y"]
+    max_step_days: 1
+
+climate_jumps:
+  intensity: 19.2857 # events/year: mayores_200mdp lambda (270 / 14; CI [17.1, 21.7])
+  equity_marks:
+    median: 0.006864 # sev_median 905.53 MDP-2025 / K_eff 131,932 MDP-2025 -> -0.69% median
+    sigma: 1.2106    # transfers exactly from the lognormal severity fit (to_mark_sampler)
+    sign: -1.0
+    targets:
+      [CREDIT_SUISSE_SHARE, CREDIT_SUISSE_PREFERRED_SHARE, UBS_SHARE, JULIUS_BAER_SHARE]

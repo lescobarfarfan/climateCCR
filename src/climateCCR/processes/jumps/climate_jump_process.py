@@ -101,15 +101,21 @@ class ClimateJumpProcess:
 
         Schema: ``configs/climate_jump_demo.yaml`` — an ``intensity`` plus the
         ``rate_marks``/``equity_marks`` channels, each mapping its ``targets``
-        to one lognormal mark sampler; both channels share the event stream.
+        to one lognormal mark sampler; present channels share the event stream
+        (a config may run one channel only, e.g. the estimated price channel
+        while the rate translation stays open — OQ-INT-07).
         """
         targets: dict[str, MarkSampler] = {}
         for channel in ("rate_marks", "equity_marks"):
-            block = jump_config[channel]
+            block = jump_config.get(channel)
+            if block is None:
+                continue
             sampler = LognormalMark(
                 median=block["median"], sigma=block["sigma"], sign=block["sign"]
             )
             targets.update(dict.fromkeys(block["targets"], sampler))
+        if not targets:
+            raise ValueError("climate_jumps needs at least one of rate_marks/equity_marks")
         return cls(jump_config["intensity"], targets)
 
     def _step_intensities(self, n_paths: int, step_sizes: np.ndarray) -> np.ndarray:
