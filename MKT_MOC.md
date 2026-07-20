@@ -28,7 +28,7 @@ in on (`INT-12`).
 - `OQ-MKT-01` compounding check · `OQ-MKT-02` λ estimation · `OQ-MKT-03` long-end densification.
 - `OQ-MKT-04` NGFS vintage splice · `OQ-MKT-05` shock baseline · `OQ-MKT-06` stripping scope.
 - `OQ-MKT-07` weather-deriv scope · `OQ-MKT-08` R1–R4 bands · `OQ-MKT-09` municipal hazard source.
-- `OQ-MKT-10` `industria`↔GICS/SCIAN · `OQ-MKT-11` credit overlay in scope?
+- `OQ-MKT-10` `industria`↔GICS/SCIAN · `OQ-MKT-11` credit overlay in scope? · `OQ-MKT-12` **execute the Mexican calibration** (rates `a`/`σ`/curve on the downloaded SIE data; Mexican stocks source; then the `INT-18` α-recompute + book swap).
 
 ## Notes (under `notes/`)
 - Theory — Hull–White (`notes/theory/hull_white_1f/`): [[Hull_White_Comprehensive]], [[HWModel_Theory]],
@@ -43,6 +43,8 @@ in on (`INT-12`).
 - Pipelines (`notes/pipelines/`): [[dashboard_riesgo_excel]].
 - Sources (`notes/sources/`): [[mexican_data_sources]].
 - Writeup (`literature/`): [[climate_integrated_investment_analysis]], `refs.bib` (BibTeX).
+- Reading (`notes/reading/`, `GEN-21`): [[2026-07-19_rate_leg_event_study]] — event-study design, the ECB fallback source, and the HW1F yield loading behind the rate leg (`INT-18`, `MKT-SIE-06/07`).
+- Explanation (`notes/summary_explanations/`, `GEN-26`): [[2026-07-19_rate_leg_event_study_explained]] — what β(T)/CAR/`S_rate_eff` mean, how to read the pre-registered null (a bound, not a failure), and which parts of the wired rate channel are estimate vs scenario.
 
 ## Wires to the other arms
 - Supplies **diffusion calibration** (HW/GBM) to [[CCR_MOC]] via `DC-CCR-CAL-1`.

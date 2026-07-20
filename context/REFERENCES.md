@@ -77,12 +77,24 @@ Load-bearing keys (give author/year here; **exact DOIs in `literature/refs.bib`*
 `[Carney2015]` ("Tragedy of the Horizon") · `[Campiglio2023]` · `[Monasterolo2020]` ·
 `[Giglio2021]` (climate finance review) · `[Kotz2024]` (macroeconomic damage) ·
 `[Nordhaus2017]` (DICE) · `[TCFD2017]` · `[NGFS2024]` (also §5) · `[Semieniuk2022]` (stranded assets) ·
-`[Gorgen2024]` (carbon risk factor) · `[Klusak2023]` (climate sovereign ratings) ·
+`[Gorgen2024]` (carbon risk factor) · `[Klusak2023]` (climate sovereign ratings; full entry §10) ·
 `[Dietz2018]` (climate value-at-risk) · `[Acharya2023]` · `[Stock2025]` · plus standard asset-pricing
 anchors `[Sharpe1964]`, `[Fama1995]`, `[Carhart1997]`, `[Engle2002]`.
 
 > Treat `literature/refs.bib` as authoritative for these — it is the BibTeX the thesis writeup
 > compiles against. Do not hand-transcribe their DOIs into the manuscript; cite from the `.bib`.
+
+## 10. Disaster → sovereign-rate channel (INT-18 / OQ-INT-09)
+
+Verified 2026-07-19 (web pass for the rate-leg fallback; per-paper caveats inline).
+
+- **`[Anyfantaki2025]`** — Anyfantaki, S., Blix Grimaldi, M., Madeira, C., Malovaná, S., & Papadopoulos, G. (2025). *Decoding climate-related risks in sovereign bond pricing: a global perspective.* ECB Working Paper No. 3135 (= BIS WP No. 1275). https://www.ecb.europa.eu/pub/pdf/scpwps/ecb.wp3135~024090a8b9.en.pdf — **Backs `INT-18`** (the fallback β: Figure 8, EMDE log-10Y local-currency yield response to EM-DAT climate-disaster damage in % of GDP; ~0.015 log-points per 1 pp-of-GDP at years 2–5). *Caveats: coefficients chart-read from published IRFs (68 % bands, ≈0 impact in year 0–1); regressor-unit reading documented in `configs/loss_to_rate_scale.yaml`.*
+- **`[Klusak2023]`** — Klusak, P., Agarwala, M., Burke, M., Kraemer, M., & Mohaddes, K. (2023). *Rising Temperatures, Falling Ratings: The Effect of Climate Change on Sovereign Creditworthiness.* Management Science, 69(12), 7468–7491. DOI: 10.1287/mnsc.2023.4869 — Backs `INT-18` (scenario context: Mexico −5.55 notches under RCP 8.5 by 2100, Table D.2; ratings→spread 8–12 bp/notch, §6) — a century-scenario level shift, **not** a per-event elasticity.
+- **`[Klomp2020]`** — Klomp, J. (2020). *Do natural disasters affect monetary policy? A quasi-experiment of earthquakes.* Journal of Macroeconomics, 64, 103164. DOI: 10.1016/j.jmacro.2019.103164 — Backs `INT-18` (sign caveat: flexible central banks *ease* post-disaster, so the short-end response can oppose the credit-premium leg). *Coefficient magnitudes paywalled/unverified; sample is earthquakes (geophysical).*
+- **`[Klomp2015]`** — Klomp, J. (2015). *Sovereign Risk and Natural Disasters in Emerging Markets.* Emerging Markets Finance and Trade, 51(6), 1326–1341. DOI: 10.1080/1540496X.2015.1011530 — Context for `INT-18` (EM default premia rise after meteorological disasters). *Closed access: direction verified, magnitude NOT — cite no number from it.*
+- **`[CevikJalles2022]`** — Cevik, S., & Jalles, J. T. (2022). *This changes everything: Climate shocks and sovereign bonds.* Energy Economics, 107, 105856. DOI: 10.1016/j.eneco.2022.105856 (working paper: IMF WP/20/79). — Context for `INT-18` (spreads price climate *vulnerability* — ND-GAIN index, Mexico in sample; **not** a damage elasticity).
+- **`[Mallucci2022]`** — Mallucci, E. (2022). *Natural disasters, climate change, and sovereign risk.* Journal of International Economics, 139, 103672. DOI: 10.1016/j.jinteco.2022.103672 — Context for `INT-18` (structural hurricane-risk premium, 74–126 bp, seven Caribbean small islands — external-validity contrast for Mexico).
+- **`[INEGI_PIB2025]`** — INEGI. Nominal GDP anchors for the `INT-18` bridge: annual 2024 = 33,506,847 M MXN (Comunicado 156/25, https://www.inegi.org.mx/contenidos/saladeprensa/boletines/2025/pibent/PIBE2024_CP.pdf); Q4-2025 = 36,309,928 M MXN (Boletín 94/26, https://www.inegi.org.mx/contenidos/saladeprensa/boletines/2026/pibt/pib_Pcorr2026_02.pdf). — Backs the β→per-bn-MDP conversion (1 % of GDP = 363.1 bn MDP-2025); the two vintages differ ~8 % (annual-accounts revision), noted in the config.
 
 ---
 
@@ -104,6 +116,7 @@ anchors `[Sharpe1964]`, `[Fama1995]`, `[Carhart1997]`, `[Engle2002]`.
 - **`[BanxicoFIX2024]`** — Banco de México. FIX MXN/USD representative exchange rate, annual averages (Informe Anual compilation 2024, cuadro "Tipos de cambio representativos"; also derivable from SIE series SF43718). — Confirm the exact publication/URL (or re-anchor to the SIE series). Backs `HAZ-CLEAN-CNSF-13` (the ÷FIX factors 2022 = 20.1274, 2023 = 17.7587, 2024 = 18.3049).
 - **`[Leys2013]`** — Leys, C., Ley, C., Klein, O., Bernard, P., & Licata, L. (2013). *Detecting outliers: Do not use standard deviation around the mean, use absolute deviation around the median.* Journal of Experimental Social Psychology 49(4), 764–766. — Confirm DOI. Backs `GEN-27` (median/MAD robust $z$; the 0.6745 consistency constant).
 - **`[Iglewicz1993]`** — Iglewicz, B., & Hoaglin, D. C. (1993). *How to Detect and Handle Outliers.* ASQC Quality Press (Basic References in Quality Control, vol. 16). — Confirm ISBN. Backs `GEN-27` (modified z-score labeling rules; detect-then-triage, never silent deletion).
+- **`[MacKinlay1997]`** — MacKinlay, A. C. (1997). *Event Studies in Economics and Finance.* Journal of Economic Literature, 35(1), 13–39. — Confirm pages/stable URL on access. Backs `INT-18` (the market-model event-study design: estimation window, abnormal returns, CAR).
 - **Climate-finance `.bib` (47 entries)** — verify each DOI in `literature/refs.bib` before the literature review hardens.
 
 
