@@ -21,7 +21,8 @@ venv/
 data/raw/*
 data/interim/*
 data/processed/*
-data/hazard_mx/*
+data/hazard_mx
+data/market_mx
 !data/**/.gitkeep
 
 # Results (generated): figures, logs, run manifests
