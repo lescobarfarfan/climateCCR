@@ -114,9 +114,10 @@ def main() -> None:
             for s in bonos_panel.columns
         },
     )
+    controls = {spec["control"] for spec in config.extra["pillars"].values()}
     fred = {
         sid: _fred_series(fred_dir / f"{sid}.csv")
-        for sid in config.extra["fred"]
+        for sid in sorted(controls)
         if (fred_dir / f"{sid}.csv").exists()
     }
 
