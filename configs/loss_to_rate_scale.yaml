@@ -1,0 +1,87 @@
+# Loss->rate scale via event study (OQ-INT-09; DC-XWALK-4 rate leg).
+#
+# Drives pipelines/06_loss_to_rate_scale.py: the cumulative abnormal change of
+# Mexican sovereign yield pillars around major CENAPRED climate episodes is
+# regressed on the episode's real loss; the slope beta (decimal yield per bn
+# MDP-2025) converts through the HW1F yield loading into an equivalent
+# short-rate jump per MDP and its reciprocal S_rate_eff — the scale
+# LognormalSeverityFit.to_mark_sampler(S_rate_eff, sign=+1.0) takes.
+#
+# PRE-REGISTERED CRITERION (fixed 2026-07-19, BEFORE any estimation run —
+# OQ-CCR-05 ethos; this text is the gate, the pipeline only mechanizes it):
+#
+#   Lead specification: episodes from the >=200 MDP-2025 discrete-event set
+#   (duration <= 30 d, 5-business-day merge), event window [0,+5] BD,
+#   market-model control per the pillar map below, cross-sectional OLS of CAR
+#   on L (bn MDP-2025) with HC1 errors. Lead pillar: the longest-maturity
+#   Bonos M bucket with >= 30 usable episodes over its own data window,
+#   evaluated in order [BonosM_20_30, BonosM_10_20, BonosM_7_10]. The estimate
+#   is adopted iff beta > 0 and one-sided HC1 p < 0.05 at the lead
+#   specification. Otherwise the literature fallback is used. All other
+#   pillar x window cells, the >=1000 MDP cut, and the GFC-exclusion re-run
+#   (episode dates in [2008-09-01, 2009-06-30] dropped; MKT-CALIB-03
+#   precedent) are reported as the beta(T) term structure and robustness —
+#   they never override the gate.
+#
+# A null beta is a legitimate outcome (FONDEN-era fiscal absorption): the
+# reported bound is itself a thesis result, and the rate channel then carries
+# the literature-calibrated scenario flavor (INT-12 Path B).
+
+seed: 233423
+
+events_csv: data/hazard_mx/datos_CENAPRED/consolidados/eventos_cenapred_climada.csv
+deflator: configs/inpc_anual.yaml
+sie_dir: data/market_mx/sie
+fred_dir: data/market_mx/fred
+
+event_set:
+  start: 2002
+  end: 2015
+  min_damage_mdp: 200.0 # real 2025 pesos, deflated at load (HAZ-STOCH-05)
+
+episode:
+  max_duration_days: 30 # droughts carry no date-localized news
+  merge_window_bd: 5
+
+study:
+  estimation_window_bd: [-120, -10]
+  min_estimation_obs: 60
+  event_windows_bd: [1, 5, 10]
+  max_missing_frac: 0.4
+  n_bootstrap: 10000
+
+# Pillar -> where its daily series lives and its US market-model control.
+# t_dias fixes the pillar maturity for short instruments; Bonos M buckets take
+# their median residual Plazo from the downloaded panel.
+pillars:
+  TIIE28: { grupo: tiies, columna: TIIE28, control: DGS3MO, t_dias: 28 }
+  CETES364: { grupo: cetes364, columna: TasaRendimiento, control: DGS3MO, t_dias: 364 }
+  BonosM_0_3: { grupo: bonos_m, control: DGS2 }
+  BonosM_3_5: { grupo: bonos_m, control: DGS2 }
+  BonosM_5_7: { grupo: bonos_m, control: DGS5 }
+  BonosM_7_10: { grupo: bonos_m, control: DGS10 }
+  BonosM_10_20: { grupo: bonos_m, control: DGS10 }
+  BonosM_20_30: { grupo: bonos_m, control: DGS30 }
+
+lead:
+  pillar_order: [BonosM_20_30, BonosM_10_20, BonosM_7_10]
+  window_bd: 5
+  min_episodes: 30
+  p_threshold: 0.05 # one-sided, beta > 0, HC1
+
+hw1f_alpha: 0.05 # the ENGINE's mean reversion (fixture USD_ZERO_YIELD_CURVE,
+# RFE_HW1F_Calibration.csv) — deliberate: the injected jump
+# reproduces the observed pillar move inside engine dynamics.
+
+robustness:
+  gfc_exclusion: ["2008-09-01", "2009-06-30"]
+  min_damage_alt: 1000.0
+
+# Literature fallback (used only if the gate FAILS; INT-12 Path B flavor).
+# beta_per_bn_mdp MUST be filled from a verified source with the unit
+# conversion documented here (GDP-share bridge) before any wiring — an
+# unverified number never enters climate_jump_real.yaml (GEN-01).
+fallback:
+  beta_per_bn_mdp: null
+  t_years: 25.0
+  source: "Klomp2020/Klusak2023 — pending verification"
