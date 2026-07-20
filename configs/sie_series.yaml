@@ -1,0 +1,58 @@
+# Banxico SIE + FRED daily-series download (DC-MKT-SIE-1; seeds DC-XWALK-5).
+#
+# Drives pipelines/05_download_sie_series.py — the Python port of the legacy R
+# downloader (src/climateCCR/data/market/Actualiza_FTIIE.R), with three
+# deliberate differences: stable output filenames (no date stamps — GEN-05
+# idempotency; the pull date lives in _procedencia.json), values stored AS
+# PUBLISHED (rates in percent, prices per 100 face — raw is verbatim, the /100
+# happens downstream), and the FIX USD/MXN series added (SF43718 — the
+# OQ-HAZ-03 / DC-XWALK-5 FX normalization input; today's HAZ correctors carry
+# three hardcoded annual averages, HAZ-CLEAN-CNSF-13).
+#
+# start pushed back to 2001-06-01 (R used 2006): the OQ-INT-09 event study
+# needs a [-120, -10] business-day estimation window before the first 2002
+# CENAPRED events. Series that begin later (F-TIIE, BonosM_20_30, Bonos MS)
+# simply return data from their inception.
+#
+# The token is read from the SIEBANXICO_TOKEN environment variable only.
+
+start: "2001-06-01"
+end: null # null -> today at run time
+
+sie_dir: data/market_mx/sie
+fred_dir: data/market_mx/fred
+
+# Each group -> one wide CSV (Fecha + one column per name) at <sie_dir>/<group>.csv.
+sie:
+  tiies:
+    TObjetivo: SF61745
+    FTIIE: SF331451
+    TIIE28: SF43783
+    TIIE91: SF43878
+    TIIE182: SF111916
+  cetes364:
+    Plazo: SF45425
+    PrecioSucio: SF45445
+    TasaRendimiento: SF45473
+  fix:
+    FIX: SF43718
+  bonos_ms: # sustainability-linked, port completeness only (starts 2023-07-24)
+    Plazo: SF355417
+    PrecioLimpio: SF355418
+    PrecioSucio: SF355419
+    CuponVigente: SF355420
+
+# On-the-run Bonos M buckets -> one long CSV (Fecha, Serie, Plazo, Cupon, Valor)
+# at <sie_dir>/bonos_m.csv, mirroring the R output shape. Valor = dirty price
+# per 100 face; Cupon = annual coupon rate in percent; Plazo = residual days.
+bonos_m:
+  BonosM_0_3: { Plazo: SF45427, Valor: SF45449, Cupon: SF45475 }
+  BonosM_3_5: { Plazo: SF45428, Valor: SF45451, Cupon: SF45476 }
+  BonosM_5_7: { Plazo: SF45429, Valor: SF45453, Cupon: SF45477 }
+  BonosM_7_10: { Plazo: SF45430, Valor: SF45455, Cupon: SF45478 }
+  BonosM_10_20: { Plazo: SF45431, Valor: SF45457, Cupon: SF45479 }
+  BonosM_20_30: { Plazo: SF60720, Valor: SF60722, Cupon: SF60723 }
+
+# US Treasury constant-maturity controls for the event study's market model
+# (one raw CSV per id at <fred_dir>/<id>.csv; fredgraph endpoint, no key).
+fred: [DGS3MO, DGS2, DGS5, DGS10, DGS30]
