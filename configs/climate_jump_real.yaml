@@ -15,8 +15,21 @@
 #
 # The GBM price targets REPRESENT the climate-exposed Mexican insurance book
 # (OQ-INT-04 interpretation); a mark is a per-event loss-ratio contribution in
-# log-return form. The rate channel has no estimated loss->rate translation yet
-# (OQ-INT-07) and is deliberately omitted — rate marks remain demo placeholders.
+# log-return form.
+#
+# - rate channel (OQ-INT-09, wired 2026-07-19): the pre-registered event study
+#   (pipelines/06, configs/loss_to_rate_scale.yaml) returned FALLA — the
+#   beta(T) table over TIIE28/CETES364/6 Bonos M pillars around 94 CENAPRED
+#   episodes 2002-2015 is statistically null (lead cell BonosM_20_30 [0,+5]:
+#   beta = -1.5e-5 per bn MDP-2025, one-sided p = 0.946, n = 69) — Mexican
+#   yields bound the per-event response near zero. Per the gate, rate_marks
+#   below carry the LITERATURE fallback (INT-12 Path B scenario, NOT a Mexican
+#   estimate): beta = 4e-6 decimal 10Y yield per bn MDP-2025 (Anyfantaki et
+#   al. 2025, ECB WP 3135, EMDE panel; INEGI Q4-2025 GDP bridge), inverted
+#   through the engine's HW1F loading (alpha 0.05, T = 10y) ->
+#   S_rate_eff = 196,734,670 MDP-2025 (results/loss_to_rate_scale/scale.csv).
+#   Manuscript caveat: this scenario value is ~12x Mexico's own estimated
+#   upper bound at the long end — report the bound as the empirical result.
 
 seed: 233423        # master seed; jumps draw from a derived substream (GEN-07)
 n_paths: 10000      # matches the locked baseline (CCR-MIG-03)
@@ -36,6 +49,11 @@ horizons:
 
 climate_jumps:
   intensity: 19.2857 # events/year: mayores_200mdp lambda (270 / 14; CI [17.1, 21.7])
+  rate_marks:
+    median: 4.6028e-6 # sev_median 905.53 MDP-2025 / S_rate_eff 196,734,670 -> +0.046 bp median
+    sigma: 1.2106     # transfers exactly from the lognormal severity fit (to_mark_sampler)
+    sign: 1.0         # adverse event -> yields UP (decays through HW1F mean reversion)
+    targets: [USD_ZERO_YIELD_CURVE]
   equity_marks:
     median: 0.006864 # sev_median 905.53 MDP-2025 / K_eff 131,932 MDP-2025 -> -0.69% median
     sigma: 1.2106    # transfers exactly from the lognormal severity fit (to_mark_sampler)
