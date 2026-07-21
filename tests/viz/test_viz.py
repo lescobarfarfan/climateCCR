@@ -118,3 +118,41 @@ def test_fan_comparison_and_event_arrivals_build(path_data):
     assert len(fig.axes[0].collections) == 2  # one band per scenario
     fig = viz.plot_event_arrivals(dates, events, intensity=0.6)
     assert len(fig.axes[0].lines) == 2  # observed + expected
+
+
+def test_rate_path_fan_draws_all_paths_and_overlays(path_data):
+    dates, baseline, _, _ = path_data
+    mean = baseline.mean(axis=0)
+    sd = baseline.std(axis=0)
+    fig = viz.plot_rate_path_fan(dates, baseline, mean, sd)
+    (ax,) = fig.axes
+    # N_PATHS trajectories + MC mean + analytic mean + two sd bounds.
+    assert len(ax.lines) == N_PATHS + 4
+
+
+def test_estimator_fan_comparison_one_ribbon_per_series(path_data):
+    dates, baseline, climate, _ = path_data
+    means = [baseline.mean(axis=0), climate.mean(axis=0)]
+    sds = [baseline.std(axis=0), climate.std(axis=0)]
+    fig = viz.plot_estimator_fan_comparison(dates, means, sds, ["AR(1)", "MLE"])
+    (ax,) = fig.axes
+    assert len(ax.collections) == 2  # one band per estimator
+    assert len(ax.lines) == 2
+    with pytest.raises(ValueError, match="same length"):
+        viz.plot_estimator_fan_comparison(dates, means, sds, ["only-one"])
+
+
+def test_jump_decay_halves_at_half_life():
+    alphas = {"a=0.10": 0.10, "a=0.05": 0.05}
+    fig = viz.plot_jump_decay(alphas, jump_bp=100.0)
+    (ax,) = fig.axes
+    curves = [ln for ln in ax.lines if len(ln.get_xdata()) > 10]
+    assert len(curves) == len(alphas)
+    t = curves[0].get_xdata()
+    y = curves[0].get_ydata()
+    import numpy as _np
+
+    half_life = _np.log(2.0) / 0.10
+    assert _np.interp(half_life, t, y) == pytest.approx(50.0, rel=1e-3)
+    with pytest.raises(ValueError, match="empty"):
+        viz.plot_jump_decay({})

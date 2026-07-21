@@ -1,0 +1,24 @@
+# HW1F estimator-disagreement diagnostics (the MKT-CALIB-02 cross-check,
+# visualized). Drives pipelines/08_hw1f_diagnostics_figures.py: simulate the
+# calibrated engine HW1F under BOTH parameter sets fitted to the same F-TIIE
+# sample (AR(1) and exact MLE, from results/market_calibration/
+# hw1f_by_window.csv), with the SAME Gaussian increments, and compare the
+# trajectories against the model's own expectation E[r(t)] and marginal sd(t).
+# Also renders the climate-channel implication: a rate jump's decay
+# exp(-alpha*t) under each fitted alpha vs the engine fixture's (DC-CCR-SIM-2).
+
+seed: 233423
+n_paths: 1000
+
+horizon_years: 10.0
+step_days: 7 # weekly grid; HW1F transitions are exact at any spacing (CCR-SIM-01)
+
+calibration_dir: results/market_calibration
+
+# Which hw1f_by_window.csv cell to compare (both methods of it).
+compare: { proxy: FTIIE, window: full_2006, crisis_excluded: true }
+
+# Context for the jump-decay panel: the engine fixture's mean reversion, the
+# value INT-18's S_rate_eff conversion used (configs/loss_to_rate_scale.yaml).
+engine_alpha: 0.05
+jump_bp: 100.0
