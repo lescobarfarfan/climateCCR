@@ -43,7 +43,7 @@ in on (`INT-12`).
 - Pipelines (`notes/pipelines/`): [[dashboard_riesgo_excel]].
 - Sources (`notes/sources/`): [[mexican_data_sources]].
 - Writeup (`literature/`): [[climate_integrated_investment_analysis]], `refs.bib` (BibTeX).
-- Reading (`notes/reading/`, `GEN-21`): [[2026-07-19_rate_leg_event_study]] — event-study design, the ECB fallback source, and the HW1F yield loading behind the rate leg (`INT-18`, `MKT-SIE-06/07`).
+- Reading (`notes/reading/`, `GEN-21`): [[2026-07-19_rate_leg_event_study]] — event-study design, the ECB fallback source, and the HW1F yield loading behind the rate leg (`INT-18`, `MKT-SIE-06/07`). [[2026-07-20_mkt_calibration]] — the HW1F two-stage design, the AR(1)/MLE estimator pair and the specification-test reading of their divergence, NS profiling, exact-transition simulation (`MKT-CALIB-05/06/07`, `MKT-CURVE-05`).
 - Explanation (`notes/summary_explanations/`, `GEN-26`): [[2026-07-19_rate_leg_event_study_explained]] — what β(T)/CAR/`S_rate_eff` mean, how to read the pre-registered null (a bound, not a failure), and which parts of the wired rate channel are estimate vs scenario. [[2026-07-20_hw1f_estimator_disagreement_explained]] — the Mexican HW1F/GBM parameters, why the `MKT-CALIB-02` AR(1)-vs-MLE check fails on F-TIIE (weakly identified `a` on a step-like series), what stays robust (σ²/2a dispersion) vs fragile (jump persistence), with the `pipelines/08` diagnostic figures.
 
 ## Wires to the other arms
