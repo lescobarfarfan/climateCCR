@@ -24,12 +24,12 @@ from scipy import optimize
 COUPON_PERIOD_DAYS = 182
 
 
-def bono_dirty_price(y: float, plazo_dias: float, cupon: float) -> float:
-    """Dirty price per 100 face of a Bonos M with ``plazo_dias`` to maturity.
+def bono_cashflows(plazo_dias: float, cupon: float) -> tuple[np.ndarray, np.ndarray]:
+    """Remaining cashflow times (days) and amounts per 100 face of a Bonos M.
 
-    ``y`` and ``cupon`` are decimal annual rates (e.g. ``0.075``). Explicit
-    cashflow sum over the remaining ``ceil(plazo/182)`` coupons — N <= 60,
-    clarity over the closed form.
+    ``cupon`` is a decimal annual rate (e.g. ``0.075``); the last amount carries
+    the 100 principal. Shared by the yield solve below and the zero-curve strip
+    (``calibration.financial.yield_curve``, MKT-CURVE-02).
     """
     if plazo_dias <= 0:
         raise ValueError(f"plazo_dias must be > 0, got {plazo_dias}")
@@ -37,11 +37,23 @@ def bono_dirty_price(y: float, plazo_dias: float, cupon: float) -> float:
         raise ValueError(f"cupon must be >= 0, got {cupon}")
     n = math.ceil(plazo_dias / COUPON_PERIOD_DAYS)
     d1 = plazo_dias - (n - 1) * COUPON_PERIOD_DAYS  # days to the next coupon
-    coupon_payment = cupon * COUPON_PERIOD_DAYS / 360 * 100
+    times = d1 + COUPON_PERIOD_DAYS * np.arange(n, dtype=float)
+    amounts = np.full(n, cupon * COUPON_PERIOD_DAYS / 360 * 100)
+    amounts[-1] += 100.0
+    return times, amounts
+
+
+def bono_dirty_price(y: float, plazo_dias: float, cupon: float) -> float:
+    """Dirty price per 100 face of a Bonos M with ``plazo_dias`` to maturity.
+
+    ``y`` and ``cupon`` are decimal annual rates (e.g. ``0.075``). Explicit
+    cashflow sum over the remaining ``ceil(plazo/182)`` coupons — N <= 60,
+    clarity over the closed form.
+    """
+    times, amounts = bono_cashflows(plazo_dias, cupon)
     v = 1.0 / (1.0 + y * COUPON_PERIOD_DAYS / 360)
-    times = d1 / COUPON_PERIOD_DAYS + np.arange(n)  # in coupon periods
-    discounts = v**times
-    return float(coupon_payment * discounts.sum() + 100.0 * discounts[-1])
+    discounts = v ** (times / COUPON_PERIOD_DAYS)
+    return float(amounts @ discounts)
 
 
 def solve_bono_yield(dirty_price: float, plazo_dias: float, cupon: float) -> float:
