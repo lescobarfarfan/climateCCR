@@ -1,0 +1,65 @@
+# Mexican market calibration — HW1F a/sigma + curve + GBM (OQ-MKT-12 a/b).
+#
+# Drives pipelines/07_market_calibration.py: (a) Vasicek AR(1) + exact-MLE
+# estimates of the HW1F mean reversion and volatility from the F-TIIE
+# overnight series (MKT-CALIB-01/02), reported across estimation windows
+# (MKT-CALIB-04) with TIIE 28 as the cross-check / pre-2006 extension; the
+# MXN zero curve stripped from the short block + Cetes 364 + all six Bonos M
+# buckets (MKT-CURVE-01/02), Nelson-Siegel fitted (MKT-CURVE-03), theta(t) by
+# the HW formula (MKT-IR-02); (b) GBM drift/vol MLE on the S&P/BMV IPC
+# (^MXX — the index proxy until the insurance-book swap, OQ-INT-04).
+# Everything lands in results/market_calibration/, including the
+# 'direct_input'-compatible rows (DC-CCR-CAL-1) — the engine stays untouched.
+#
+# Deterministic: no RNG is drawn; the seed below only stamps the manifest.
+
+seed: 233423
+
+sie_dir: data/market_mx/sie
+ipc_csv: data/market_mx/yahoo/ipc_mxx.csv
+
+# Downloaded once by the pipeline if missing (delete the file to refresh).
+ipc:
+  symbol: "^MXX"
+  start: "2001-06-01" # matches the SIE root (MKT-SIE-06)
+  price_column: Close # the IPC is a price index; AdjClose == Close
+
+# Crisis windows excluded from estimation, closed [start, end] (MKT-CALIB-03:
+# explicit exclusion, regulator-friendly; robust-sensitivity = the con/sin
+# rows in the output tables). gfc matches the INT-18 robustness window;
+# peso_2016 = the post-US-election peso shock + Banxico emergency hikes [eng].
+crisis_windows:
+  gfc: ["2008-09-01", "2009-06-30"]
+  peso_2016: ["2016-11-01", "2017-03-31"]
+  covid: ["2020-03-01", "2021-06-30"]
+
+# Estimation windows (start, end; null end = through the latest data).
+# a is weakly identified — every window x method x exclusion lands in
+# hw1f_by_window.csv; the headline picks one row for the direct_input emission.
+windows:
+  full_2001: ["2001-06-01", null]
+  full_2006: ["2006-01-02", null]
+  post_gfc_2010: ["2010-01-01", null]
+  last10y_2016: ["2016-01-01", null]
+
+hw1f:
+  proxies:
+    FTIIE: { tenor_days: 1, windows: [full_2006, post_gfc_2010, last10y_2016] }
+    TIIE28: { tenor_days: 28, windows: [full_2001, full_2006] } # cross-check (MKT-CALIB-01)
+  headline: { proxy: FTIIE, window: full_2006, method: mle, crisis_excluded: true }
+
+curve:
+  valuation_date: null # null = latest date with a full short block + bonos quotes
+  lookback_bd: 10 # how far back to search for that date
+  min_bonos_buckets: 4 # Bonos_5_7 died 2007-01; 5 buckets quote today
+  canonical_tenors: [2Y, 3Y, 5Y, 7Y, 10Y, 20Y, 30Y] # read off the NS fit (MKT-CURVE-03)
+  theta_grid_years: 30.0
+  theta_grid_step_years: 0.08333333333333333 # monthly
+
+gbm:
+  windows: [full_2001, last10y_2016]
+  headline: { window: full_2001, crisis_excluded: true }
+
+direct_input:
+  hw1f_name: MXN_ZERO_YIELD_CURVE
+  gbm_name: IPC_EQUITY_INDEX
