@@ -45,6 +45,7 @@ def main() -> None:
     parser.add_argument(
         "--forzar", "--force", action="store_true", help="recompute even if the output exists"
     )
+    parser.add_argument("--config", type=Path, default=SCALE_CONFIG, help="event-study config YAML")
     args = parser.parse_args()
 
     from climateCCR.calibration.financial.bond_yield import bono_yield_panel
@@ -56,11 +57,11 @@ def main() -> None:
     )
     from climateCCR.infra import RunManifest, get_logger, get_rng, load_config
 
-    config = load_config(SCALE_CONFIG)
+    config = load_config(args.config)
     config.paths.ensure()
     logger = get_logger("climateCCR.loss_to_rate_scale", log_dir=config.paths.logs)
 
-    out_dir = config.paths.results / "loss_to_rate_scale"
+    out_dir = config.paths.results / config.extra.get("output_dir", "loss_to_rate_scale")
     out_scale = out_dir / "scale.csv"
     if out_scale.exists() and not args.forzar:
         logger.info("Output exists, nothing to do (rerun with --forzar): %s", out_scale)

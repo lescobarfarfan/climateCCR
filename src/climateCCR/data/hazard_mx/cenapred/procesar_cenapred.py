@@ -590,5 +590,6 @@ if __name__ == "__main__":
 
     p = argparse.ArgumentParser()
     p.add_argument("--crudo", default=str(ARCHIVO_CSV))
+    p.add_argument("--cons", default=str(DIR_CONS), help="directorio de salida de los consolidados")
     a = p.parse_args()
-    procesar(Path(a.crudo))
+    procesar(Path(a.crudo), Path(a.cons))

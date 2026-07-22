@@ -36,6 +36,7 @@ def main() -> None:
     parser.add_argument(
         "--forzar", "--force", action="store_true", help="recompute even if the output exists"
     )
+    parser.add_argument("--config", type=Path, default=CALIB_CONFIG, help="calibration config YAML")
     args = parser.parse_args()
 
     from climateCCR.calibration.impact import (
@@ -47,11 +48,11 @@ def main() -> None:
     )
     from climateCCR.infra import RunManifest, get_logger, load_config
 
-    config = load_config(CALIB_CONFIG)
+    config = load_config(args.config)
     config.paths.ensure()
     logger = get_logger("climateCCR.hazard_jump_calibration", log_dir=config.paths.logs)
 
-    out_dir = config.paths.results / "hazard_jump_calibration"
+    out_dir = config.paths.results / config.extra.get("output_dir", "hazard_jump_calibration")
     out_csv = out_dir / "parameters.csv"
     if out_csv.exists() and not args.forzar:
         logger.info("Output exists, nothing to do (rerun with --forzar): %s", out_csv)
@@ -79,10 +80,11 @@ def main() -> None:
 
     rows = []
     for name, spec in config.extra["variants"].items():
+        v_window = spec.get("window", window)
         events = load_climate_events(
             events_csv,
-            start_year=int(window["start"]),
-            end_year=int(window["end"]),
+            start_year=int(v_window["start"]),
+            end_year=int(v_window["end"]),
             perils=spec.get("perils"),
             min_damage_mdp=spec.get("min_damage_mdp"),
             deflator=deflator,
@@ -109,6 +111,8 @@ def main() -> None:
         rows.append(
             {
                 "variant": name,
+                "window_start": int(v_window["start"]),
+                "window_end": int(v_window["end"]),
                 "n_events": intensity.n_events,
                 "n_years": intensity.n_years,
                 "intensity_per_yr": intensity.intensity,

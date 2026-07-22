@@ -1,0 +1,79 @@
+# Loss->rate event study on the EXTENDED CENAPRED base 2002-2024 (OQ-HAZ-18 —
+# the INT-18 re-run with the 2016-2024 episodes, Otis 2023 above all).
+#
+# This config differs from configs/loss_to_rate_scale.yaml (the INT-18 run,
+# kept verbatim for reproducibility) ONLY in: events_csv (extended consolidado),
+# event_set.end (2024) and output_dir. Everything else — episode construction,
+# study parameters, pillar map, lead order, thresholds, fallback — is the
+# PRE-REGISTERED gate of 2026-07-19 re-applied VERBATIM to the extended window,
+# exactly as OQ-HAZ-18 requires ("the pre-registered gate re-applies verbatim;
+# a PASA on the extended window would replace the INT-18 literature scenario
+# with a Mexican estimate").
+#
+# PRE-REGISTERED CRITERION (fixed 2026-07-19, BEFORE any estimation run):
+#
+#   Lead specification: episodes from the >=200 MDP-2025 discrete-event set
+#   (duration <= 30 d, 5-business-day merge), event window [0,+5] BD,
+#   market-model control per the pillar map below, cross-sectional OLS of CAR
+#   on L (bn MDP-2025) with HC1 errors. Lead pillar: the longest-maturity
+#   Bonos M bucket with >= 30 usable episodes over its own data window,
+#   evaluated in order [BonosM_20_30, BonosM_10_20, BonosM_7_10]. The estimate
+#   is adopted iff beta > 0 and one-sided HC1 p < 0.05 at the lead
+#   specification. Otherwise the literature fallback is used. All other
+#   pillar x window cells, the >=1000 MDP cut, and the GFC-exclusion re-run
+#   are reported as the beta(T) term structure and robustness — they never
+#   override the gate.
+
+seed: 233423
+
+events_csv: data/hazard_mx/datos_CENAPRED/consolidados_2000_2024/eventos_cenapred_climada.csv
+deflator: configs/inpc_anual.yaml
+sie_dir: data/market_mx/sie
+fred_dir: data/market_mx/fred
+output_dir: loss_to_rate_scale_2000_2024
+
+event_set:
+  start: 2002
+  end: 2024 # the extension; 2016+ episodes are the dated event rows of the reports
+  min_damage_mdp: 200.0
+
+episode:
+  max_duration_days: 30
+  merge_window_bd: 5
+
+study:
+  estimation_window_bd: [-120, -10]
+  min_estimation_obs: 60
+  event_windows_bd: [1, 5, 10]
+  max_missing_frac: 0.4
+  n_bootstrap: 10000
+
+pillars:
+  TIIE28: { grupo: tiies, columna: TIIE28, control: DGS3MO, t_dias: 28 }
+  CETES364: { grupo: cetes364, columna: TasaRendimiento, control: DGS3MO, t_dias: 364 }
+  BonosM_0_3: { grupo: bonos_m, control: DGS2 }
+  BonosM_3_5: { grupo: bonos_m, control: DGS2 }
+  BonosM_5_7: { grupo: bonos_m, control: DGS5 }
+  BonosM_7_10: { grupo: bonos_m, control: DGS10 }
+  BonosM_10_20: { grupo: bonos_m, control: DGS10 }
+  BonosM_20_30: { grupo: bonos_m, control: DGS30 }
+
+lead:
+  pillar_order: [BonosM_20_30, BonosM_10_20, BonosM_7_10]
+  window_bd: 5
+  min_episodes: 30
+  p_threshold: 0.05
+
+hw1f_alpha: 0.05 # engine mean reversion (fixture) — the Mexican-a recompute is
+# the separate OQ-MKT-12(c) sensitivity, not this run's knob.
+
+robustness:
+  gfc_exclusion: ["2008-09-01", "2009-06-30"]
+  min_damage_alt: 1000.0
+
+# Literature fallback — identical to configs/loss_to_rate_scale.yaml (blind-fixed
+# 2026-07-19; Anyfantaki et al. 2025, ECB WP 3135, + INEGI Q4-2025 GDP bridge).
+fallback:
+  beta_per_bn_mdp: 4.0e-6
+  t_years: 10.0
+  source: "Anyfantaki2025 (ECB WP 3135) fig. 8 + INEGI Q4-2025 GDP bridge"
