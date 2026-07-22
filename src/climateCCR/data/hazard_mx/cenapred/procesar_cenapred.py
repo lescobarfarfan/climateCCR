@@ -30,6 +30,7 @@ empata, el script FALLA RUIDOSAMENTE con un reporte de columnas (no procesa a ci
 """
 
 from __future__ import annotations
+
 import logging
 import re
 import sys
@@ -42,10 +43,12 @@ import pandas as pd
 # limpieza_cnsf vive en la raíz del repo o junto a src/
 sys.path.extend([".", "..", str(Path(__file__).resolve().parent.parent)])
 try:
-    from limpieza_cnsf import clasificar_entidad, CAT_ESTADO # type: ignore
+    from limpieza_cnsf import CAT_ESTADO, clasificar_entidad  # type: ignore
 except ImportError:  # fallback mínimo para no romper si se corre aislado
+
     def clasificar_entidad(x):  # type: ignore
         return ("estado", str(x).strip())
+
     CAT_ESTADO = "estado"
 
 DIR_BASE = Path("datos/datos_CENAPRED")
@@ -62,8 +65,11 @@ def configurar_log():
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[logging.FileHandler(ARCHIVO_LOG, encoding="utf-8"),
-                  logging.StreamHandler(sys.stdout)])
+        handlers=[
+            logging.FileHandler(ARCHIVO_LOG, encoding="utf-8"),
+            logging.StreamHandler(sys.stdout),
+        ],
+    )
 
 
 # ----------------------------------------------------------------------------- #
@@ -71,8 +77,7 @@ def configurar_log():
 # ----------------------------------------------------------------------------- #
 def _norm(s: str) -> str:
     s = str(s).strip().lower()
-    s = "".join(c for c in unicodedata.normalize("NFD", s)
-                if unicodedata.category(c) != "Mn")
+    s = "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
     return " ".join(s.split())
 
 
@@ -90,34 +95,45 @@ def _norm(s: str) -> str:
 # OJO: 'Clasificacion del fenomeno' es el NIVEL 1 (Geológico/Hidrometeorológico/...)
 #      y 'Tipo de fenomeno' es el SUBTIPO (Ciclón tropical, Lluvias, Sequía, ...).
 CONCEPTOS = {
-    "fecha_inicio":       ["fecha de inicio", "fecha", "fecha del evento"],
-    "fecha_fin":          ["fecha de fin", "fecha fin"],
-    "anio":               ["ano", "año", "anio", "year"],
-    "mes":                ["mes"],
-    "tipo":               ["clasificacion del fenomeno", "clasificacion"],
-    "subtipo":            ["tipo de fenomeno", "subtipo", "subtipo de fenomeno"],
-    "clave_estado":       ["clave del estado", "clave", "cve ent", "cve_ent"],
-    "estado":             ["estado", "entidad", "entidad federativa", "estados"],
-    "municipio":          ["municipios afectados", "municipio", "municipios"],
-    "descripcion":        ["descripcion general de los danos", "descripcion",
-                           "descripcion del evento"],
-    "defunciones":        ["defunciones", "muertos", "decesos"],
-    "pob_afectada":       ["poblacion afectada", "personas afectadas", "afectados"],
-    "viviendas":          ["viviendas danadas", "viviendas"],
-    "escuelas":           ["escuelas", "escuelas danadas"],
-    "hospitales":         ["hospitales", "unidades medicas"],
-    "ha_cultivo":         ["area de cultivo danada / pastizales (h)",
-                           "area de cultivo", "hectareas", "superficie danada"],
-    "km_carretera":       ["caminos afectados (km)", "carreteras", "caminos"],
-    "danio_mdp":          ["total de danos (millones de pesos)", "danos totales",
-                           "monto de danos", "total de danos", "costo total"],
-    "danio_mdd":          ["total danos (millones de dolares)",
-                           "danos millones de dolares", "millones de dolares"],
-    "tipo_declaratoria":  ["tipo de declaratoria", "declaratoria emitida"],
-    "sustancia":          ["sustancia involucrada"],
-    "fuente":             ["fuente", "fuentes"],
-    "observaciones":      ["observaciones"],
-    "documentado":        ["documentado"],
+    "fecha_inicio": ["fecha de inicio", "fecha", "fecha del evento"],
+    "fecha_fin": ["fecha de fin", "fecha fin"],
+    "anio": ["ano", "año", "anio", "year"],
+    "mes": ["mes"],
+    "tipo": ["clasificacion del fenomeno", "clasificacion"],
+    "subtipo": ["tipo de fenomeno", "subtipo", "subtipo de fenomeno"],
+    "clave_estado": ["clave del estado", "clave", "cve ent", "cve_ent"],
+    "estado": ["estado", "entidad", "entidad federativa", "estados"],
+    "municipio": ["municipios afectados", "municipio", "municipios"],
+    "descripcion": ["descripcion general de los danos", "descripcion", "descripcion del evento"],
+    "defunciones": ["defunciones", "muertos", "decesos"],
+    "pob_afectada": ["poblacion afectada", "personas afectadas", "afectados"],
+    "viviendas": ["viviendas danadas", "viviendas"],
+    "escuelas": ["escuelas", "escuelas danadas"],
+    "hospitales": ["hospitales", "unidades medicas"],
+    "ha_cultivo": [
+        "area de cultivo danada / pastizales (h)",
+        "area de cultivo",
+        "hectareas",
+        "superficie danada",
+    ],
+    "km_carretera": ["caminos afectados (km)", "carreteras", "caminos"],
+    "danio_mdp": [
+        "total de danos (millones de pesos)",
+        "danos totales",
+        "monto de danos",
+        "total de danos",
+        "costo total",
+    ],
+    "danio_mdd": [
+        "total danos (millones de dolares)",
+        "danos millones de dolares",
+        "millones de dolares",
+    ],
+    "tipo_declaratoria": ["tipo de declaratoria", "declaratoria emitida"],
+    "sustancia": ["sustancia involucrada"],
+    "fuente": ["fuente", "fuentes"],
+    "observaciones": ["observaciones"],
+    "documentado": ["documentado"],
 }
 REQUERIDOS = ["anio", "tipo", "subtipo", "estado", "danio_mdp"]
 
@@ -137,7 +153,8 @@ def mapear_columnas(df: pd.DataFrame) -> dict:
         raise RuntimeError(
             f"Conceptos requeridos sin columna en el crudo: {faltan}. "
             "Actualizar CONCEPTOS en procesar_cenapred.py con el encabezado real "
-            "(ver reporte en el log). NO se procesa a ciegas.")
+            "(ver reporte en el log). NO se procesa a ciegas."
+        )
     log.info("mapa de columnas: %s", res)
     return res
 
@@ -149,33 +166,51 @@ def mapear_columnas(df: pd.DataFrame) -> dict:
 # subtipo (normalizado) -> (peril_canonico, en_alcance_climatico)
 PERILS_CENAPRED = {
     # --- HIDRO (clima = sí) ---
-    "ct": ("Ciclón tropical", "si"), "ciclon tropical": ("Ciclón tropical", "si"),
+    "ct": ("Ciclón tropical", "si"),
+    "ciclon tropical": ("Ciclón tropical", "si"),
     "huracan": ("Ciclón tropical", "si"),
-    "lluv": ("Daños por lluvia", "si"), "lluvias": ("Daños por lluvia", "si"),
-    "inun": ("Inundación", "si"), "inund": ("Inundación", "si"),
+    "lluv": ("Daños por lluvia", "si"),
+    "lluvias": ("Daños por lluvia", "si"),
+    "inun": ("Inundación", "si"),
+    "inund": ("Inundación", "si"),
     "inundacion": ("Inundación", "si"),
-    "seq": ("Sequía", "si"), "sequia": ("Sequía", "si"),
-    "helada": ("Helada", "si"), "heladas": ("Helada", "si"),
-    "bt": ("Baja temperatura", "si"),       # bajas temperaturas / frente frío
-    "gran": ("Granizo", "si"), "granizo": ("Granizo", "si"), "granizada": ("Granizo", "si"),
-    "nev": ("Nevada", "si"), "nevada": ("Nevada", "si"), "nevadas": ("Nevada", "si"),
-    "torn": ("Vientos/Tornado", "si"), "tornado": ("Vientos/Tornado", "si"),
-    "fv": ("Vientos/Tornado", "si"),        # fuertes vientos
-    "vientos": ("Vientos/Tornado", "si"), "viento": ("Vientos/Tornado", "si"),
-    "ts": ("Tormenta severa", "si"),        # [confirmar etiqueta exacta vs descripciones]
-    "te": ("Tormenta eléctrica", "si"),     # [confirmar etiqueta exacta vs descripciones]
-    "mt": ("Marejada", "si"),               # marea de tormenta [confirmar]
-    "mf": ("Marejada", "si"),               # mar de fondo
+    "seq": ("Sequía", "si"),
+    "sequia": ("Sequía", "si"),
+    "helada": ("Helada", "si"),
+    "heladas": ("Helada", "si"),
+    "bt": ("Baja temperatura", "si"),  # bajas temperaturas / frente frío
+    "gran": ("Granizo", "si"),
+    "granizo": ("Granizo", "si"),
+    "granizada": ("Granizo", "si"),
+    "nev": ("Nevada", "si"),
+    "nevada": ("Nevada", "si"),
+    "nevadas": ("Nevada", "si"),
+    "torn": ("Vientos/Tornado", "si"),
+    "tornado": ("Vientos/Tornado", "si"),
+    "fv": ("Vientos/Tornado", "si"),  # fuertes vientos
+    "vientos": ("Vientos/Tornado", "si"),
+    "viento": ("Vientos/Tornado", "si"),
+    "ts": ("Tormenta severa", "si"),  # [confirmar etiqueta exacta vs descripciones]
+    "te": ("Tormenta eléctrica", "si"),  # [confirmar etiqueta exacta vs descripciones]
+    "mt": ("Marejada", "si"),  # marea de tormenta [confirmar]
+    "mf": ("Marejada", "si"),  # mar de fondo
     "marejada": ("Marejada", "si"),
-    "ola de calor": ("Onda cálida", "si"), "onda calida": ("Onda cálida", "si"),
+    "ola de calor": ("Onda cálida", "si"),
+    "onda calida": ("Onda cálida", "si"),
     "oc": ("Onda cálida", "si"),
     # --- GEO: deslizamiento es clima=sí (detonado por lluvia); resto no ---
-    "desliz": ("Deslizamiento", "si"), "deslizamiento": ("Deslizamiento", "si"),
-    "sismo": ("Sismo", "no"), "sis": ("Sismo", "no"),
-    "volc": ("Actividad volcánica", "no"), "volcan": ("Actividad volcánica", "no"),
-    "tsu": ("Tsunami", "no"), "tsunami": ("Tsunami", "no"), "maremoto": ("Tsunami", "no"),
+    "desliz": ("Deslizamiento", "si"),
+    "deslizamiento": ("Deslizamiento", "si"),
+    "sismo": ("Sismo", "no"),
+    "sis": ("Sismo", "no"),
+    "volc": ("Actividad volcánica", "no"),
+    "volcan": ("Actividad volcánica", "no"),
+    "tsu": ("Tsunami", "no"),
+    "tsunami": ("Tsunami", "no"),
+    "maremoto": ("Tsunami", "no"),
     # --- QUIM: incendio forestal es clima=sí; resto no ---
-    "if": ("Incendio forestal", "si"), "incf": ("Incendio forestal", "si"),
+    "if": ("Incendio forestal", "si"),
+    "incf": ("Incendio forestal", "si"),
     "incendio forestal": ("Incendio forestal", "si"),
     "iu": ("Incendio urbano", "no"),
     "fug": ("Fuga química", "no"),
@@ -188,15 +223,21 @@ PERILS_CENAPRED = {
     "atrab": ("Accidente de trabajo", "no"),
     "derrs": ("Derrumbe (estructural)", "no"),
     # --- SAN ---
-    "epi": ("Epidemia", "no"), "plag": ("Plaga", "no"), "tox": ("Toxicidad", "no"),
+    "epi": ("Epidemia", "no"),
+    "plag": ("Plaga", "no"),
+    "tox": ("Toxicidad", "no"),
 }
 
 # Clasificaciones (nivel 1) cuyo contenido NO es climático: si el subtipo no está
 # en el dict, se mapea automáticamente a fuera-de-alcance con etiqueta genérica
 # (silencioso a nivel debug) — el AVISO ruidoso se reserva para HIDRO/GEO
 # desconocidos, que sí exigen revisión manual por ser potencialmente climáticos.
-CLASIF_NO_CLIMA = {"quim": "Químico-tecnológico", "socio": "Socio-organizativo",
-                   "san": "Sanitario-ecológico", "sani": "Sanitario-ecológico"}
+CLASIF_NO_CLIMA = {
+    "quim": "Químico-tecnológico",
+    "socio": "Socio-organizativo",
+    "san": "Sanitario-ecológico",
+    "sani": "Sanitario-ecológico",
+}
 
 
 def mapear_peril(subtipo, tipo) -> tuple[str, str]:
@@ -208,11 +249,16 @@ def mapear_peril(subtipo, tipo) -> tuple[str, str]:
         return (str(subtipo).strip() or "GEO", "no")
     for pref, etiqueta in CLASIF_NO_CLIMA.items():
         if t.startswith(pref):
-            log.debug("subtipo %r de clasificación no-climática %r -> fuera de alcance",
-                      subtipo, tipo)
+            log.debug(
+                "subtipo %r de clasificación no-climática %r -> fuera de alcance", subtipo, tipo
+            )
             return (f"{etiqueta} ({str(subtipo).strip()})", "no")
-    log.warning("subtipo sin mapeo: %r (tipo=%r) -> __SIN_MAPEO__ (revisión manual; "
-                "potencialmente climático)", subtipo, tipo)
+    log.warning(
+        "subtipo sin mapeo: %r (tipo=%r) -> __SIN_MAPEO__ (revisión manual; "
+        "potencialmente climático)",
+        subtipo,
+        tipo,
+    )
     return ("__SIN_MAPEO__", "revisar")
 
 
@@ -250,8 +296,11 @@ def separar_estados(celda) -> list[str]:
         if cat == CAT_ESTADO:
             canonicos.append(canon)
         elif cat == "desconocido":
-            log.warning("entidad no-estado en CENAPRED: %r (cat=%s) — se omite del panel",
-                        parte.strip(), cat)
+            log.warning(
+                "entidad no-estado en CENAPRED: %r (cat=%s) — se omite del panel",
+                parte.strip(),
+                cat,
+            )
     # dedup conservando orden
     vistos, res = set(), []
     for c in canonicos:
@@ -270,6 +319,7 @@ def limpiar_fecha(serie: pd.Series) -> pd.Series:
     s = serie.astype(str).str.strip()
     s = s.mask(s.str.lower().isin(SENTINELAS_FECHA))
     import warnings
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)  # formatos mixtos -> dateutil
         return pd.to_datetime(s, dayfirst=True, errors="coerce")
@@ -280,7 +330,8 @@ def limpiar_fecha(serie: pd.Series) -> pd.Series:
 # sus vientos hasta el 24-Jun"). Se extrae la PRIMERA mención tipo+Nombre propio.
 RE_NOMBRE_CICLON = re.compile(
     r"\b([Cc]icl[oó]n|[Hh]urac[aá]n|[Tt]ormenta\s+[Tt]ropical|[Dd]epresi[oó]n\s+[Tt]ropical)"
-    r"\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:-[A-Z]\w*)?)")
+    r"\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:-[A-Z]\w*)?)"
+)
 
 
 def extraer_nombre_evento(observaciones) -> str:
@@ -293,9 +344,12 @@ def extraer_nombre_evento(observaciones) -> str:
     if not m:
         return ""
     tipo = _norm(m.group(1))
-    tipo = {"ciclon": "Ciclón", "huracan": "Huracán",
-            "tormenta tropical": "Tormenta tropical",
-            "depresion tropical": "Depresión tropical"}.get(tipo, m.group(1))
+    tipo = {
+        "ciclon": "Ciclón",
+        "huracan": "Huracán",
+        "tormenta tropical": "Tormenta tropical",
+        "depresion tropical": "Depresión tropical",
+    }.get(tipo, m.group(1))
     return f"{tipo} {m.group(2)}"
 
 
@@ -326,14 +380,14 @@ def procesar(path_csv: Path = ARCHIVO_CSV, dir_cons: Path = DIR_CONS):
     ev = pd.DataFrame()
     ev["anio"] = pd.to_numeric(df[cols["anio"]], errors="coerce")
     ev["mes"] = pd.to_numeric(df[cols["mes"]], errors="coerce") if "mes" in cols else np.nan
-    ev["tipo"] = df[cols["tipo"]].astype(str).str.strip()          # nivel 1 (clasificación)
-    ev["subtipo"] = df[cols["subtipo"]].astype(str).str.strip()    # fenómeno
-    perils = [mapear_peril(s, t) for s, t in zip(ev["subtipo"], ev["tipo"])]
+    ev["tipo"] = df[cols["tipo"]].astype(str).str.strip()  # nivel 1 (clasificación)
+    ev["subtipo"] = df[cols["subtipo"]].astype(str).str.strip()  # fenómeno
+    perils = [mapear_peril(s, t) for s, t in zip(ev["subtipo"], ev["tipo"], strict=False)]
     ev["peril_canonico"] = [p for p, _ in perils]
     ev["en_alcance_climatico"] = [a for _, a in perils]
     ev["estados_lista"] = df[cols["estado"]].map(separar_estados)
     ev["n_estados"] = ev["estados_lista"].map(len)
-    ev["estados"] = ev["estados_lista"].map(lambda xs: "|".join(xs)) # type: ignore
+    ev["estados"] = ev["estados_lista"].map(lambda xs: "|".join(xs))  # type: ignore
 
     # fechas de inicio/fin (d-m-aa; 'SD' = sin dato -> NA) + duración; texto crudo conservado
     for c in ["fecha_inicio", "fecha_fin"]:
@@ -345,17 +399,34 @@ def procesar(path_csv: Path = ARCHIVO_CSV, dir_cons: Path = DIR_CONS):
     ev["duracion_dias"] = (ev["fecha_fin"] - ev["fecha_inicio"]).dt.days
     n_fechas_malas = int(ev["fecha_inicio"].isna().sum())
     if n_fechas_malas:
-        log.info("%d filas sin fecha de inicio parseable ('SD' o rango textual; queda "
-                 "el texto crudo en fecha_inicio_raw)", n_fechas_malas)
+        log.info(
+            "%d filas sin fecha de inicio parseable ('SD' o rango textual; queda "
+            "el texto crudo en fecha_inicio_raw)",
+            n_fechas_malas,
+        )
 
-    for concepto in ["defunciones", "pob_afectada", "viviendas", "escuelas",
-                     "hospitales", "ha_cultivo", "km_carretera",
-                     "danio_mdp", "danio_mdd"]:
+    for concepto in [
+        "defunciones",
+        "pob_afectada",
+        "viviendas",
+        "escuelas",
+        "hospitales",
+        "ha_cultivo",
+        "km_carretera",
+        "danio_mdp",
+        "danio_mdd",
+    ]:
         ev[concepto] = df[cols[concepto]].map(a_numero) if concepto in cols else np.nan
-    for concepto in ["tipo_declaratoria", "fuente", "municipio", "descripcion",
-                     "observaciones", "sustancia", "documentado"]:
-        ev[concepto] = (df[cols[concepto]].astype(str).str.strip()
-                        if concepto in cols else "")
+    for concepto in [
+        "tipo_declaratoria",
+        "fuente",
+        "municipio",
+        "descripcion",
+        "observaciones",
+        "sustancia",
+        "documentado",
+    ]:
+        ev[concepto] = df[cols[concepto]].astype(str).str.strip() if concepto in cols else ""
 
     # nombre del evento: NO hay columna -> se busca en Observaciones y, si no,
     # en la Descripción (inconsistencia confirmada: no todos los CT lo traen).
@@ -363,54 +434,91 @@ def procesar(path_csv: Path = ARCHIVO_CSV, dir_cons: Path = DIR_CONS):
     nom_desc = ev["descripcion"].map(extraer_nombre_evento)
     ev["nombre_evento"] = nom_obs.where(nom_obs != "", nom_desc)
     ev["nombre_origen"] = np.select(
-        [nom_obs != "", nom_desc != ""], ["observaciones", "descripcion"], default="")
+        [nom_obs != "", nom_desc != ""], ["observaciones", "descripcion"], default=""
+    )
     es_ct = ev["peril_canonico"] == "Ciclón tropical"
     ct_sin_nombre = int((es_ct & (ev["nombre_evento"] == "")).sum())
-    log.info("nombres de ciclón extraídos: %d (obs: %d, desc: %d). CT SIN nombre: %d "
-             "-> empalmar con IBTrACS por fechas+estados",
-             int((ev["nombre_evento"] != "").sum()), int((nom_obs != "").sum()),
-             int(((nom_obs == "") & (nom_desc != "")).sum()), ct_sin_nombre)
+    log.info(
+        "nombres de ciclón extraídos: %d (obs: %d, desc: %d). CT SIN nombre: %d "
+        "-> empalmar con IBTrACS por fechas+estados",
+        int((ev["nombre_evento"] != "").sum()),
+        int((nom_obs != "").sum()),
+        int(((nom_obs == "") & (nom_desc != "")).sum()),
+        ct_sin_nombre,
+    )
 
-    ev["evento_id"] = [f"CEN-{a}-{i:05d}" for i, a in
-                       zip(range(1, len(ev) + 1), ev["anio"].fillna(0).astype(int))]
+    ev["evento_id"] = [
+        f"CEN-{a}-{i:05d}"
+        for i, a in zip(range(1, len(ev) + 1), ev["anio"].fillna(0).astype(int), strict=False)
+    ]
 
     sin_mapeo = (ev["peril_canonico"] == "__SIN_MAPEO__").sum()
     if sin_mapeo:
-        log.warning("%d eventos con subtipo SIN MAPEO (revisar PERILS_CENAPRED); "
-                    "valores: %s", sin_mapeo,
-                    sorted(ev.loc[ev["peril_canonico"] == "__SIN_MAPEO__", "subtipo"].unique())[:15])
+        log.warning(
+            "%d eventos con subtipo SIN MAPEO (revisar PERILS_CENAPRED); " "valores: %s",
+            sin_mapeo,
+            sorted(ev.loc[ev["peril_canonico"] == "__SIN_MAPEO__", "subtipo"].unique())[:15],
+        )
     sin_estado = (ev["n_estados"] == 0).sum()
     if sin_estado:
-        log.warning("%d eventos sin estado canónico (quedan fuera del panel, "
-                    "permanecen en eventos B)", sin_estado)
+        log.warning(
+            "%d eventos sin estado canónico (quedan fuera del panel, " "permanecen en eventos B)",
+            sin_estado,
+        )
 
     # ---- ESTRUCTURA B: eventos (calibración CLIMADA) — TODOS los eventos ----
-    cols_b = ["evento_id", "nombre_evento", "nombre_origen", "anio", "mes",
-              "fecha_inicio", "fecha_fin", "fecha_inicio_raw", "fecha_fin_raw",
-              "duracion_dias", "tipo", "subtipo", "peril_canonico",
-              "en_alcance_climatico", "estados", "n_estados", "municipio",
-              "danio_mdp", "danio_mdd", "defunciones", "pob_afectada",
-              "tipo_declaratoria", "sustancia", "fuente", "descripcion",
-              "observaciones", "documentado"]
+    cols_b = [
+        "evento_id",
+        "nombre_evento",
+        "nombre_origen",
+        "anio",
+        "mes",
+        "fecha_inicio",
+        "fecha_fin",
+        "fecha_inicio_raw",
+        "fecha_fin_raw",
+        "duracion_dias",
+        "tipo",
+        "subtipo",
+        "peril_canonico",
+        "en_alcance_climatico",
+        "estados",
+        "n_estados",
+        "municipio",
+        "danio_mdp",
+        "danio_mdd",
+        "defunciones",
+        "pob_afectada",
+        "tipo_declaratoria",
+        "sustancia",
+        "fuente",
+        "descripcion",
+        "observaciones",
+        "documentado",
+    ]
     eventos_b = ev[cols_b].copy()
     salida_b = dir_cons / "eventos_cenapred_climada.csv"
     eventos_b.to_csv(salida_b, index=False)
-    log.info("[B] eventos para calibración CLIMADA: %d filas -> %s",
-             len(eventos_b), salida_b)
+    log.info("[B] eventos para calibración CLIMADA: %d filas -> %s", len(eventos_b), salida_b)
 
     # ---- ESTRUCTURA A: panel estado×año×peril — SOLO eventos de un estado ----
     un_estado = ev[ev["n_estados"] == 1].copy()
-    un_estado["entidad"] = un_estado["estados_lista"].map(lambda xs: xs[0]) # type: ignore
-    panel = (un_estado.groupby(["entidad", "anio", "peril_canonico",
-                                "en_alcance_climatico"], dropna=False)
-             .agg(n_eventos=("evento_id", "size"),
-                  danio_mdp=("danio_mdp", "sum"),
-                  danio_mdd=("danio_mdd", "sum"),
-                  defunciones=("defunciones", "sum"),
-                  pob_afectada=("pob_afectada", "sum"),
-                  viviendas=("viviendas", "sum"))
-             .reset_index()
-             .sort_values(["entidad", "anio", "peril_canonico"]))
+    un_estado["entidad"] = un_estado["estados_lista"].map(lambda xs: xs[0])  # type: ignore
+    panel = (
+        un_estado.groupby(
+            ["entidad", "anio", "peril_canonico", "en_alcance_climatico"], dropna=False
+        )
+        .agg(
+            n_eventos=("evento_id", "size"),
+            danio_mdp=("danio_mdp", "sum"),
+            danio_mdd=("danio_mdd", "sum"),
+            defunciones=("defunciones", "sum"),
+            pob_afectada=("pob_afectada", "sum"),
+            viviendas=("viviendas", "sum"),
+        )
+        .reset_index()
+        .sort_values(["entidad", "anio", "peril_canonico"])
+    )
     salida_a = dir_cons / "impacto_estado_anio_peril.csv"
     panel.to_csv(salida_a, index=False)
     log.info("[A] panel estado×año×peril: %d filas -> %s", len(panel), salida_a)
@@ -420,8 +528,12 @@ def procesar(path_csv: Path = ARCHIVO_CSV, dir_cons: Path = DIR_CONS):
     salida_m = dir_cons / "impacto_multiestado.csv"
     multi[cols_b].to_csv(salida_m, index=False)
     pct = 100 * multi["danio_mdp"].sum() / max(ev["danio_mdp"].sum(), 1e-9)
-    log.info("[A'] eventos multi-estado (no repartidos): %d filas, %.1f%% del daño total "
-             "-> %s", len(multi), pct, salida_m)
+    log.info(
+        "[A'] eventos multi-estado (no repartidos): %d filas, %.1f%% del daño total " "-> %s",
+        len(multi),
+        pct,
+        salida_m,
+    )
 
     # ---- CATÁLOGO de fenómenos climáticos por año/mes/estado (ocurrencia) ----
     # Una fila por (evento × estado afectado), SOLO clima. Es un catálogo de
@@ -433,27 +545,41 @@ def procesar(path_csv: Path = ARCHIVO_CSV, dir_cons: Path = DIR_CONS):
     filas_cat = []
     for _, e in clima.iterrows():
         for entidad in e["estados_lista"]:
-            filas_cat.append({
-                "evento_id": e["evento_id"], "anio": e["anio"], "mes": e["mes"],
-                "fecha_inicio": e["fecha_inicio"], "fecha_fin": e["fecha_fin"],
-                "duracion_dias": e["duracion_dias"],
-                "peril_canonico": e["peril_canonico"], "subtipo": e["subtipo"],
-                "nombre_evento": e["nombre_evento"], "entidad": entidad,
-                "municipios": e["municipio"],
-                "n_estados_evento": e["n_estados"],
-                "multi_estado": e["n_estados"] >= 2,
-                "danio_mdp_evento_total": e["danio_mdp"],
-                "defunciones_evento_total": e["defunciones"],
-                "fuente": e["fuente"],
-            })
-    catalogo = (pd.DataFrame(filas_cat)
-                .sort_values(["anio", "mes", "entidad", "peril_canonico"])
-                .reset_index(drop=True))
+            filas_cat.append(
+                {
+                    "evento_id": e["evento_id"],
+                    "anio": e["anio"],
+                    "mes": e["mes"],
+                    "fecha_inicio": e["fecha_inicio"],
+                    "fecha_fin": e["fecha_fin"],
+                    "duracion_dias": e["duracion_dias"],
+                    "peril_canonico": e["peril_canonico"],
+                    "subtipo": e["subtipo"],
+                    "nombre_evento": e["nombre_evento"],
+                    "entidad": entidad,
+                    "municipios": e["municipio"],
+                    "n_estados_evento": e["n_estados"],
+                    "multi_estado": e["n_estados"] >= 2,
+                    "danio_mdp_evento_total": e["danio_mdp"],
+                    "defunciones_evento_total": e["defunciones"],
+                    "fuente": e["fuente"],
+                }
+            )
+    catalogo = (
+        pd.DataFrame(filas_cat)
+        .sort_values(["anio", "mes", "entidad", "peril_canonico"])
+        .reset_index(drop=True)
+    )
     salida_cat = dir_cons / "catalogo_fenomenos_climaticos.csv"
     catalogo.to_csv(salida_cat, index=False)
-    log.info("[CAT] catálogo de fenómenos climáticos (evento×estado): %d filas, "
-             "%d eventos, %d estados -> %s", len(catalogo),
-             catalogo["evento_id"].nunique(), catalogo["entidad"].nunique(), salida_cat)
+    log.info(
+        "[CAT] catálogo de fenómenos climáticos (evento×estado): %d filas, "
+        "%d eventos, %d estados -> %s",
+        len(catalogo),
+        catalogo["evento_id"].nunique(),
+        catalogo["entidad"].nunique(),
+        salida_cat,
+    )
 
     return panel, eventos_b, multi, catalogo
 
@@ -461,7 +587,9 @@ def procesar(path_csv: Path = ARCHIVO_CSV, dir_cons: Path = DIR_CONS):
 if __name__ == "__main__":
     configurar_log()
     import argparse
+
     p = argparse.ArgumentParser()
     p.add_argument("--crudo", default=str(ARCHIVO_CSV))
+    p.add_argument("--cons", default=str(DIR_CONS), help="directorio de salida de los consolidados")
     a = p.parse_args()
-    procesar(Path(a.crudo))
+    procesar(Path(a.crudo), Path(a.cons))

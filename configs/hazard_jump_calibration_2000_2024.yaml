@@ -1,0 +1,61 @@
+# Hazard jump-channel calibration on the EXTENDED CENAPRED base 2000-2024
+# (OQ-HAZ-18; DC-XWALK-4). Companion to configs/hazard_jump_calibration.yaml,
+# which stays the locked 2002-2015 event-level-base run.
+#
+# The 2016+ rows come from the annual Impacto Socioeconomico reports (PDF
+# extraction, data/hazard_mx/datos_CENAPRED/crudos/pdfs_procesados_2016-2024/),
+# NOT from the discontinued event x state registry. Inspection 2026-07-21:
+# the publication-regime change censors the non-cyclone discrete-event stream
+# (83% of 2016+ rows are undated state x year aggregates dropped by the
+# duracion_dias < 360 filter; mayores_200mdp falls 19.3 -> 7.2 events/yr while
+# ciclon_tropical is continuous, 10.3 vs 9.4/yr). Fits are therefore split by
+# REGIME WINDOW per variant: pooled 2002-2024 arrival trends conflate the
+# regime change with climate (the pooled row is kept only to document that
+# artifact); cross-regime trend statements ride on the ciclon_tropical bridge,
+# whose reporting grain is 1:1 comparable across the boundary.
+# 2024 is preliminary (resumen ejecutivo only) -> the 2016-2023 twin.
+
+events_csv: data/hazard_mx/datos_CENAPRED/consolidados_2000_2024/eventos_cenapred_climada.csv
+deflator: configs/inpc_anual.yaml
+output_dir: hazard_jump_calibration_2000_2024
+
+window: # default; each variant pins its own regime window below
+  start: 2002
+  end: 2024
+
+alpha: 0.05
+
+variants:
+  # -- leading set (INT-17): damage >= 200 M 2025-MXN --------------------------
+  mayores_200mdp_2002_2015: # continuity check vs the locked run (must reproduce)
+    min_damage_mdp: 200.0
+    window: { start: 2002, end: 2015 }
+  mayores_200mdp_2016_2024: # report-regime lambda (measurement-censored floor)
+    min_damage_mdp: 200.0
+    window: { start: 2016, end: 2024 }
+  mayores_200mdp_2016_2023: # ex the preliminary 2024 resumen ejecutivo
+    min_damage_mdp: 200.0
+    window: { start: 2016, end: 2023 }
+  mayores_200mdp_2002_2024: # pooled — DOCUMENTS the regime artifact, not climate
+    min_damage_mdp: 200.0
+  # -- the cross-regime bridge: cyclone rows are event x state in BOTH regimes --
+  ciclon_tropical_2002_2015:
+    perils: ["Ciclón tropical"]
+    window: { start: 2002, end: 2015 }
+  ciclon_tropical_2016_2024:
+    perils: ["Ciclón tropical"]
+    window: { start: 2016, end: 2024 }
+  ciclon_tropical_2002_2024: # the only variant whose pooled trend is meaningful
+    perils: ["Ciclón tropical"]
+  # -- robustness: higher bar attenuates (does not remove) the censoring --------
+  mayores_1000mdp_2002_2015:
+    min_damage_mdp: 1000.0
+    window: { start: 2002, end: 2015 }
+  mayores_1000mdp_2016_2024:
+    min_damage_mdp: 1000.0
+    window: { start: 2016, end: 2024 }
+  # -- unthresholded: unusable across the boundary (minor-event tail censored) --
+  todos_2002_2015:
+    window: { start: 2002, end: 2015 }
+  todos_2016_2024:
+    window: { start: 2016, end: 2024 }
