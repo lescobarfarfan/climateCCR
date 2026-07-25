@@ -1,0 +1,52 @@
+# Climate jump injection on the MEXICAN BOOK — report-regime FLOOR scenario (INT-20 band,
+# OQ-INT-04 / OQ-MKT-12c book swap).
+#
+# Same harness as configs/climate_jump_real.yaml, re-targeted at the Mexican
+# book (data/ccr_book_mx, built by pipelines/09_build_mexican_book.py):
+#
+#   python pipelines/01_climate_jump_demo.py --config configs/climate_jump_real_mexican.yaml \
+#       --book-config configs/mexican_book.yaml --data-root data/ccr_book_mx --horizonte largo
+#
+# Differences vs climate_jump_real.yaml (everything else transfers verbatim):
+# - valuation_date 2026-07-17 — the Mexican calibration anchor (MKT-CURVE-05
+#   curve date, MKT-CALIB-07 S0 date), not the fixture's 2020-01-01.
+# - rate_marks.median re-inverted with the MEXICAN HW1F alpha = 0.1221
+#   (MKT-CALIB-05): S_rate_eff_MX = 144,343,565 MDP-2025
+#   (results/loss_to_rate_scale_mx/scale.csv; -26.6% vs the engine-alpha
+#   196,734,670 -> larger rate marks, direction pinned by INT-20). The
+#   [Anyfantaki2025] literature-scenario status of the rate channel is
+#   unchanged (INT-18/19 null gate).
+# - targets renamed: the MXN curve and the 26 Mexican climate-book shares
+#   (uniform book-level equity marks per INT-17; sector-differentiated marks
+#   are an open question, not improvised here).
+
+seed: 233423        # master seed; jumps draw from a derived substream (GEN-07)
+n_paths: 10000      # matches the locked baseline discipline (CCR-MIG-03)
+
+valuation_date: "2026-07-17"   # Mexican calibration anchor (MKT-CURVE-05/CALIB-07)
+
+horizons:
+  largo:
+    b3_grid: null
+    max_step_days: null
+  corto:
+    b3_grid: ["0D", "1D", "1W", "2W", "1M", "2M", "3M", "6M", "9M", "1Y", "18M", "2Y", "3Y"]
+    max_step_days: 1
+
+climate_jumps:
+  intensity: 7.2222  # events/year: mayores_200mdp 2016-2024 report regime (INT-20 floor)
+  rate_marks:
+    median: 8.8267e-6 # sev_median 1,274.08 MDP-2025 / S_rate_eff_MX 144,343,565 -> +0.088 bp
+    sigma: 1.0358     # transfers exactly from the report-regime lognormal severity fit
+    sign: 1.0         # adverse event -> yields UP (decays through HW1F mean reversion)
+    targets: [MXN_ZERO_YIELD_CURVE]
+  equity_marks:
+    median: 0.009657 # sev_median 1,274.08 MDP-2025 / K_eff 131,932 MDP-2025 -> -0.97% median
+    sigma: 1.0358    # transfers exactly from the report-regime lognormal severity fit
+    sign: -1.0
+    targets:
+      [HCITY_SHARE, HOTEL_SHARE, FIHO12_SHARE, RLH_SHARE, POSADAS_SHARE, FINN13_SHARE,
+       ASUR_SHARE, GAP_SHARE, OMA_SHARE, VOLAR_SHARE, AGUA_SHARE, GRUMA_SHARE,
+       HERDEZ_SHARE, CULTIBA_SHARE, QUALITAS_SHARE, PENAVERDE_SHARE, FUNO_SHARE,
+       CEMEX_SHARE, GCC_SHARE, GMEXICO_SHARE, PENOLES_SHARE, VISTA_SHARE, AC_SHARE,
+       FEMSA_SHARE, WALMEX_SHARE, ALSEA_SHARE]
