@@ -38,6 +38,8 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 - Reading: [[2026-07-05_vault_formatting]] — housekeeping read-log, no analytical decisions (the `GEN-23` formatting convention; `notes/reading/`, `GEN-21`).
 - Reading: [[2026-07-11_ponytail_minimalism]] — ponytail-audit read-log, no analytical decisions (`GEN-25` grounding refs in §99; `notes/reading/`, `GEN-21`).
 - Reading: [[2026-07-16_summary_explanations_workflow]] — workflow read-log, no analytical decisions (`GEN-26` adds the summary-explanation note series to the ritual; `notes/reading/`, `GEN-21`).
+- Reading: [[2026-07-25_mexican_book_swap]] — the book-swap read-log: HW1F bond reconstruction behind the new DEBT desk, the S_rate_eff inversion, per-name GBM fits, PSD repair (`INT-21`/`INT-22`/`CCR-RISK-02`; `notes/reading/`, `GEN-21`).
+- Explanation: [[2026-07-25_mexican_book_swap_explained]] — the Mexican book's calibrated quantities, the bond desk, why `S_rate_eff` is an inverse sensitivity (≈4–5× GDP by construction), and how to read the re-baselined EE/PE band (`notes/summary_explanations/`, `GEN-26`).
 
 ## Literature
 - [[Compagnoni_2023_RandomizedSignatures]] — randomized signatures as a reservoir (`CCR-SIG-01`).
