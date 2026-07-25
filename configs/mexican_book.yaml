@@ -1,0 +1,299 @@
+# Mexican counterparty book (OQ-INT-04 / OQ-MKT-12c — the fixture-book swap).
+#
+# One config, two consumers:
+#   1. pipelines/09_build_mexican_book.py reads the universe + trade rules below
+#      and deterministically writes the book data-root (data/ccr_book_mx/) in the
+#      PIMPA fixture schemas (DC-CCR-RISK-2 layout).
+#   2. pipelines/01_climate_jump_demo.py --book-config configs/mexican_book.yaml
+#      --data-root data/ccr_book_mx consumes the same file as the book-layout
+#      config (build_global_parameters reads data_subdirs/file_names/... verbatim).
+#
+# Universe: BMV equities weighted toward climate-vulnerable sectors (coastal
+# tourism, airports on hurricane paths, water, agro-food, insurance) plus IPC
+# liquidity diversifiers; researched + Yahoo-verified 2026-07-25. Debt desk:
+# fixed-coupon cebures priced by FixedCouponBondPricer (additive engine
+# extension) off the stripped MXN curve + a static issuance spread.
+#
+# [eng] The bond rows carry REPRESENTATIVE issuance terms by credit tier
+# (coupon/maturity/spread plausible for each issuer's cebures program), pending
+# prospectus-verified terms from BMV/BIVA (logged as an open question at the
+# session digest). Everything else is estimated from data: per-name GBM fits
+# (Yahoo, crisis-excluded per MKT-CALIB-03), HW1F + curve from
+# results/market_calibration/direct_input/ (MKT-CALIB-05, MKT-CURVE-05),
+# MXN_USD_FX_RATE GBM from Banxico FIX (DC-XWALK-5), correlations from the
+# joint return panel.
+
+# --- typed Config fields (infra.Config) ---
+seed: 233423                 # matches the PIMPA golden baseline discipline
+n_paths: 10000
+settlement_currency: MXN
+date_format: "%Y-%m-%d"
+
+# --- book build parameters (consumed by pipelines/09 only) ---
+
+valuation_date: "2026-07-17"   # the MKT calibration anchor (curve + IPC S0 date)
+book_root: data/ccr_book_mx    # output data-root, relative to the repo root
+
+fetch:
+  start: "2001-01-01"          # Yahoo history window start (max available)
+  cache_subdir: data/market_mx/yahoo/book   # raw pulls + _procedencia.json (GEN-02/05)
+
+# Thin-ticker minimum-data rule (user decision 2026-07-25): names failing it are
+# dropped from the book (equity RF + option trades; the NAID keeps IRS/bond
+# trades) and logged in the build report + manifest.
+min_data:
+  min_years: 3.0               # >= 3y of usable history before the valuation date
+  max_gap_frac: 0.10           # <= 10% missing vs the panel's trading calendar
+
+# Crisis windows excluded from GBM fits — same values as
+# configs/market_calibration.yaml (MKT-CALIB-03).
+crisis_windows:
+  gfc: ["2008-09-01", "2009-06-30"]
+  peso_shock: ["2016-11-01", "2017-03-31"]
+  covid: ["2020-03-01", "2021-06-30"]
+
+# Inputs produced by earlier pipelines (05/07); paths relative to the repo root.
+inputs:
+  hw1f_direct_input: results/market_calibration/direct_input/RFE_HW1F_Calibration_MX.csv
+  sie_fix: data/market_mx/sie/fix.csv        # Banxico FIX (MXN per USD) -> MXN_USD_FX_RATE GBM
+  sie_tiies: data/market_mx/sie/tiies.csv    # F-TIIE O/N -> curve-factor correlation + fixings
+  scale_csv: results/loss_to_rate_scale_2000_2024/scale.csv  # INT-18/19 adopted beta
+
+# S_rate_eff recompute (OQ-MKT-12c): re-invert the adopted literature beta
+# through the engine HW1F loading with the MEXICAN alpha (read from
+# hw1f_direct_input), writing results/loss_to_rate_scale_mx/scale.csv.
+rate_scale_output_dir: results/loss_to_rate_scale_mx
+
+# --- equity universe (28 names; tickers verbatim, INT-07) ---
+# sector/climate tags are documentation + digest fodder; the builder only needs
+# ticker + rf. vm: whether the issuer's NAID gets the VM_1 collateral agreement.
+equities:
+  - {ticker: HCITY.MX,    rf: HCITY_SHARE,     issuer: HOTELES_CITY_EXPRESS,  sector: hoteles,        climate: coastal_tourism}
+  - {ticker: HOTEL.MX,    rf: HOTEL_SHARE,     issuer: GRUPO_HOTELERO_SANTA_FE, sector: hoteles,      climate: coastal_tourism}
+  - {ticker: FIHO12.MX,   rf: FIHO12_SHARE,    issuer: FIBRAHOTEL,            sector: fibra_hotelera, climate: coastal_tourism}
+  - {ticker: RLHA.MX,     rf: RLH_SHARE,       issuer: RLH_PROPERTIES,        sector: hoteles,        climate: coastal_tourism}
+  - {ticker: POSADASA.MX, rf: POSADAS_SHARE,   issuer: GRUPO_POSADAS,         sector: hoteles,        climate: coastal_tourism}
+  - {ticker: FINN13.MX,   rf: FINN13_SHARE,    issuer: FIBRA_INN,             sector: fibra_hotelera, climate: coastal_tourism}
+  - {ticker: ASURB.MX,    rf: ASUR_SHARE,      issuer: ASUR,                  sector: aeropuertos,    climate: hurricane_cancun}
+  - {ticker: GAPB.MX,     rf: GAP_SHARE,       issuer: GAP,                   sector: aeropuertos,    climate: hurricane_los_cabos}
+  - {ticker: OMAB.MX,     rf: OMA_SHARE,       issuer: OMA,                   sector: aeropuertos,    climate: hurricane_acapulco_otis}
+  - {ticker: VOLARA.MX,   rf: VOLAR_SHARE,     issuer: VOLARIS,               sector: aerolineas,     climate: weather_disruption}
+  - {ticker: AGUA.MX,     rf: AGUA_SHARE,      issuer: ROTOPLAS,              sector: agua,           climate: drought_adaptation}
+  - {ticker: GRUMAB.MX,   rf: GRUMA_SHARE,     issuer: GRUMA,                 sector: agroalimentos,  climate: drought_inputs}
+  - {ticker: HERDEZ.MX,   rf: HERDEZ_SHARE,    issuer: GRUPO_HERDEZ,          sector: agroalimentos,  climate: drought_inputs}
+  # BACHOCO (agro) and TERRA13 (Terrafina, fibra industrial) verified unfetchable on
+  # Yahoo 2026-07-25 (404): Bachoco's BMV line went dark after the 2022-23 tender;
+  # Terrafina was absorbed by FUNO in 2024. Their NAIDs (114, 119) keep IRS/bond trades.
+  - {ticker: CULTIBAB.MX, rf: CULTIBA_SHARE,   issuer: CULTIBA,               sector: bebidas,        climate: water_stress}
+  - {ticker: Q.MX,        rf: QUALITAS_SHARE,  issuer: QUALITAS,              sector: seguros,        climate: hail_flood_claims}
+  - {ticker: PV.MX,       rf: PENAVERDE_SHARE, issuer: PENA_VERDE,            sector: reaseguro,      climate: cat_reinsurance}
+  - {ticker: FUNO11.MX,   rf: FUNO_SHARE,      issuer: FIBRA_UNO,             sector: fibra,          climate: fixed_assets}
+  - {ticker: CEMEXCPO.MX, rf: CEMEX_SHARE,     issuer: CEMEX,                 sector: cemento,        climate: water_intensive}
+  - {ticker: GCC.MX,      rf: GCC_SHARE,       issuer: GCC,                   sector: cemento,        climate: water_intensive}
+  - {ticker: GMEXICOB.MX, rf: GMEXICO_SHARE,   issuer: GRUPO_MEXICO,          sector: mineria,        climate: water_intensive}
+  - {ticker: PE&OLES.MX,  rf: PENOLES_SHARE,   issuer: PENOLES,               sector: mineria,        climate: water_intensive}
+  - {ticker: VISTAA.MX,   rf: VISTA_SHARE,     issuer: VISTA_ENERGY,          sector: energia,        climate: transition_exposure}
+  - {ticker: AC.MX,       rf: AC_SHARE,        issuer: ARCA_CONTINENTAL,      sector: bebidas,        climate: water_stress}
+  - {ticker: FEMSAUBD.MX, rf: FEMSA_SHARE,     issuer: FEMSA,                 sector: bebidas,        climate: water_stress}
+  - {ticker: WALMEX.MX,   rf: WALMEX_SHARE,    issuer: WALMEX,                sector: comercio,       climate: logistics}
+  - {ticker: ALSEA.MX,    rf: ALSEA_SHARE,     issuer: ALSEA,                 sector: restaurantes,   climate: leisure_demand}
+
+fx:
+  rf: MXN_USD_FX_RATE          # required by the engine's settlement conversion
+  source: sie_fix              # FIX is MXN per USD — the engine's CCY_USD convention
+
+curve:
+  rf: MXN_ZERO_YIELD_CURVE
+
+# --- deterministic trade-generation rules (builder) ---
+trade_rules:
+  options:                     # per surviving listed issuer, on its own share
+    target_position_mxn: 50000 # notional (contract multiplier) = target / S0
+    legs:
+      - {type: call, long_short: long,  moneyness: 1.00, tenor_years: 2}
+      - {type: put,  long_short: short, moneyness: 0.95, tenor_years: 2}
+  irs:                         # one spot-starting quarterly TIIE swap per issuer
+    notional_mxn: 100000
+    settlement_lag_days: 2     # first payment = first fixing + 3M + lag (fixture pattern)
+    fixed_rate_by_tenor: {5: 0.0875, 7: 0.0900, 10: 0.0940}  # near-par vs the 2026-07-17 curve [eng]
+    tenor_cycle: [5, 7, 10]    # assigned round-robin in NAID order
+    direction_cycle: [payer, receiver]  # alternated in NAID order -> two-way book
+  bonds:
+    default_face: 100000       # notional column of BONDS.csv (per 100 face pricing)
+
+# --- counterparties: one NAID per issuer (+ 2 debt-only), NAID order = book order ---
+# bonds: [coupon (decimal), maturity, spread_bp] — representative terms [eng],
+# see header. Issuers without a bonds list have no debt desk entry.
+counterparties:
+  - {naid: 101, issuer: HOTELES_CITY_EXPRESS,    equity_rf: HCITY_SHARE,     vm: false}
+  - {naid: 102, issuer: GRUPO_HOTELERO_SANTA_FE, equity_rf: HOTEL_SHARE,     vm: false}
+  - {naid: 103, issuer: FIBRAHOTEL,              equity_rf: FIHO12_SHARE,    vm: false,
+     bonds: [[0.0980, "2031-06-15", 240]]}
+  - {naid: 104, issuer: RLH_PROPERTIES,          equity_rf: RLH_SHARE,       vm: false}
+  - {naid: 105, issuer: GRUPO_POSADAS,           equity_rf: POSADAS_SHARE,   vm: false,
+     bonds: [[0.1050, "2030-06-30", 320]]}
+  - {naid: 106, issuer: FIBRA_INN,               equity_rf: FINN13_SHARE,    vm: false}
+  - {naid: 107, issuer: ASUR,                    equity_rf: ASUR_SHARE,      vm: true,
+     bonds: [[0.0890, "2032-03-15", 90]]}
+  - {naid: 108, issuer: GAP,                     equity_rf: GAP_SHARE,       vm: true,
+     bonds: [[0.0910, "2031-02-15", 100]]}
+  - {naid: 109, issuer: OMA,                     equity_rf: OMA_SHARE,       vm: true,
+     bonds: [[0.0920, "2030-09-15", 110]]}
+  - {naid: 110, issuer: VOLARIS,                 equity_rf: VOLAR_SHARE,     vm: true}
+  - {naid: 111, issuer: ROTOPLAS,                equity_rf: AGUA_SHARE,      vm: false,
+     bonds: [[0.0960, "2029-06-15", 170]]}
+  - {naid: 112, issuer: GRUMA,                   equity_rf: GRUMA_SHARE,     vm: true,
+     bonds: [[0.0880, "2033-08-15", 85]]}
+  - {naid: 113, issuer: GRUPO_HERDEZ,            equity_rf: HERDEZ_SHARE,    vm: false,
+     bonds: [[0.0940, "2030-05-15", 140]]}
+  - {naid: 114, issuer: BACHOCO,                 equity_rf: BACHOCO_SHARE,   vm: false}
+  - {naid: 115, issuer: CULTIBA,                 equity_rf: CULTIBA_SHARE,   vm: false}
+  - {naid: 116, issuer: QUALITAS,                equity_rf: QUALITAS_SHARE,  vm: true}
+  - {naid: 117, issuer: PENA_VERDE,              equity_rf: PENAVERDE_SHARE, vm: false}
+  - {naid: 118, issuer: FIBRA_UNO,               equity_rf: FUNO_SHARE,      vm: true,
+     bonds: [[0.0975, "2031-01-15", 220], [0.1010, "2035-07-15", 250]]}
+  - {naid: 119, issuer: TERRAFINA,               equity_rf: TERRA_SHARE,     vm: true,
+     bonds: [[0.0930, "2030-11-15", 160]]}
+  - {naid: 120, issuer: CEMEX,                   equity_rf: CEMEX_SHARE,     vm: true,
+     bonds: [[0.0990, "2029-03-15", 250]]}
+  - {naid: 121, issuer: GCC,                     equity_rf: GCC_SHARE,       vm: true}
+  - {naid: 122, issuer: GRUPO_MEXICO,            equity_rf: GMEXICO_SHARE,   vm: true,
+     bonds: [[0.0900, "2032-05-15", 120]]}
+  - {naid: 123, issuer: PENOLES,                 equity_rf: PENOLES_SHARE,   vm: true,
+     bonds: [[0.0915, "2031-08-15", 130]]}
+  - {naid: 124, issuer: VISTA_ENERGY,            equity_rf: VISTA_SHARE,     vm: true}
+  - {naid: 125, issuer: ARCA_CONTINENTAL,        equity_rf: AC_SHARE,        vm: true,
+     bonds: [[0.0865, "2033-05-15", 70]]}
+  - {naid: 126, issuer: FEMSA,                   equity_rf: FEMSA_SHARE,     vm: true,
+     bonds: [[0.0860, "2032-11-15", 65]]}
+  - {naid: 127, issuer: WALMEX,                  equity_rf: WALMEX_SHARE,    vm: true}
+  - {naid: 128, issuer: ALSEA,                   equity_rf: ALSEA_SHARE,     vm: false,
+     bonds: [[0.1020, "2029-09-15", 280]]}
+  # Debt-only counterparties — the largest cebures issuers (unlisted).
+  - {naid: 201, issuer: PEMEX, vm: false,
+     bonds: [[0.1120, "2029-02-15", 380], [0.1180, "2033-02-15", 430]]}
+  - {naid: 202, issuer: CFE,   vm: false,
+     bonds: [[0.0960, "2030-08-15", 160], [0.0990, "2034-08-15", 185]]}
+
+# VM_1 contractual terms for vm: true NAIDs (fixture NAID-23 values, USD units) [eng].
+vm_terms: {WE_POST_P: "YES", WE_RECEIVE_R: "YES", T_P: 2, T_R: 1.5, MTA_P: 0.5, MTA_R: 0.3}
+
+# IV-surface proxy grid: flat at each name's fitted GBM sigma (no free MXN
+# single-name surfaces exist — realized-vol proxy [eng]); fixture grid shape.
+iv_surface:
+  tenors: ["1W", "1M", "3M", "1Y", "5Y"]
+  moneyness: [0.7, 0.9, 1.0, 1.1, 1.3]
+
+# --- book layout (consumed by build_global_parameters, fixture shape) ---
+
+b3_grid: ['0D', '1D', '1W', '2W', '1M', '6M', '1Y', '2Y', '5Y', '10Y', '20Y', '50Y']
+# Mexican curve pillars in years (1D..30Y); informational (see risk/ccr/config.py).
+ir_curves_tenors: ['0.00273973', '0.07671233', '0.24931507', '0.49863014', '0.93698630',
+                   '2', '3', '5', '7', '10', '20', '30']
+
+data_subdirs:
+  backtesting_data: backtesting_Data/
+  collateral_models: calibration_data/collateral_models/
+  counterparties: portfolio_data/counterparties/
+  market_data: market_data/
+  position_keeping_system: portfolio_data/positions_keeping_system/
+  pricing: calibration_data/pricing_models/
+  RFE: calibration_data/RFE_models/
+  RFs_attributes: RFs_attributes/
+
+trades_subdirs:
+  EQ: portfolio_data/desks/EQ/
+  IR: portfolio_data/desks/IR/
+  DEBT: portfolio_data/desks/DEBT/
+
+file_names:
+  backtesting_data:
+    sample_set: ''
+  collateral_models:
+    OE_haircuts: OE_haircuts.csv
+  market_data:
+    historical_fixings: Historical_Fixings.csv
+    spread_to_discount_curve: Spread_to_Discount_Curve.csv
+    equity_implied_volatility_surface: Equity_Implied_Volatility_Surface.csv
+    equity_spot: Equity_Spot.csv
+  position_keeping_system: master_ledger.csv
+  counterparty_properties: counterparty_properties.csv
+  pricing:
+    pricing_BM_calibration: ''
+    pricing_GBM_calibration: Pricing_GBM_Calibration.csv
+    pricing_FactorGBM_calibration: ''
+    pricing_HW1F_calibration: Pricing_HW1F_Calibration.csv
+    pricing_HW2F_calibration: ''
+  RFE:
+    RFE_BM_calibration: ''
+    RFE_GBM_calibration: RFE_GBM_Calibration.csv
+    RFE_FactorGBM_calibration: ''
+    RFE_HW1F_calibration: RFE_HW1F_Calibration.csv
+    RFE_HW2F_calibration: ''
+    RFE_correlation_matrix: RFE_Correlation_Matrix.csv
+  RFs_attributes:
+    all_RFs_mapping: All_RFs_Mapping.csv
+  trades:
+    IR:
+      IRS: IRS.csv
+    EQ:
+      EQ_EUR_OPT: EQ_EUROPEAN_OPTIONS.csv
+    DEBT:
+      BOND_FIXED: BONDS.csv
+
+market_data_services:
+  - {service: RFE_GBM_calibration,               dir: RFE,         group: RFE,         file: RFE_GBM_calibration}
+  - {service: RFE_HW1F_calibration,              dir: RFE,         group: RFE,         file: RFE_HW1F_calibration}
+  - {service: Pricing_GBM_calibration,           dir: pricing,     group: pricing,     file: pricing_GBM_calibration}
+  - {service: Pricing_HW1F_calibration,          dir: pricing,     group: pricing,     file: pricing_HW1F_calibration}
+  - {service: historical_fixings,                dir: market_data, group: market_data, file: historical_fixings}
+  - {service: spread_to_discount_curve,          dir: market_data, group: market_data, file: spread_to_discount_curve}
+  - {service: equity_implied_volatility_surface, dir: market_data, group: market_data, file: equity_implied_volatility_surface}
+  - {service: equity_spot,                       dir: market_data, group: market_data, file: equity_spot}
+
+calibration_parameters:
+  Pricing_HW1F_calibration:
+    IRS_Pricer:
+      calibration_method: direct_input
+    EQ_EUR_OPT_Pricer:
+      calibration_method: direct_input
+    BOND_FIXED_Pricer:
+      calibration_method: direct_input
+  RFE_HW1F_calibration:
+    MXN_ZERO_YIELD_CURVE:
+      calibration_method: direct_input
+  RFE_GBM_calibration:
+    MXN_USD_FX_RATE: {calibration_method: direct_input}
+    HCITY_SHARE: {calibration_method: direct_input}
+    HOTEL_SHARE: {calibration_method: direct_input}
+    FIHO12_SHARE: {calibration_method: direct_input}
+    RLH_SHARE: {calibration_method: direct_input}
+    POSADAS_SHARE: {calibration_method: direct_input}
+    FINN13_SHARE: {calibration_method: direct_input}
+    ASUR_SHARE: {calibration_method: direct_input}
+    GAP_SHARE: {calibration_method: direct_input}
+    OMA_SHARE: {calibration_method: direct_input}
+    VOLAR_SHARE: {calibration_method: direct_input}
+    AGUA_SHARE: {calibration_method: direct_input}
+    GRUMA_SHARE: {calibration_method: direct_input}
+    HERDEZ_SHARE: {calibration_method: direct_input}
+    BACHOCO_SHARE: {calibration_method: direct_input}
+    CULTIBA_SHARE: {calibration_method: direct_input}
+    QUALITAS_SHARE: {calibration_method: direct_input}
+    PENAVERDE_SHARE: {calibration_method: direct_input}
+    FUNO_SHARE: {calibration_method: direct_input}
+    TERRA_SHARE: {calibration_method: direct_input}
+    CEMEX_SHARE: {calibration_method: direct_input}
+    GCC_SHARE: {calibration_method: direct_input}
+    GMEXICO_SHARE: {calibration_method: direct_input}
+    PENOLES_SHARE: {calibration_method: direct_input}
+    VISTA_SHARE: {calibration_method: direct_input}
+    AC_SHARE: {calibration_method: direct_input}
+    FEMSA_SHARE: {calibration_method: direct_input}
+    WALMEX_SHARE: {calibration_method: direct_input}
+    ALSEA_SHARE: {calibration_method: direct_input}
+
+pricer_mapping:
+  IRS: InterestRateSwapPricer
+  EQ_EUR_OPT: EquityEuropeanOptionPricer
+  BOND_FIXED: FixedCouponBondPricer

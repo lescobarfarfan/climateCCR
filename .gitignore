@@ -23,6 +23,7 @@ data/interim/*
 data/processed/*
 data/hazard_mx
 data/market_mx
+data/ccr_book_mx
 !data/**/.gitkeep
 
 # Results (generated): figures, logs, run manifests
