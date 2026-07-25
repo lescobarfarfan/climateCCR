@@ -1,0 +1,53 @@
+# Climate jump injection — CT-ANCHORED scenario (OQ-HAZ-19a band; NOT the headline).
+#
+# Same harness as configs/climate_jump_real.yaml (pipelines/01_climate_jump_demo.py
+# --config configs/climate_jump_real_ct_anchor.yaml). Robustness scenario of the
+# regime band around the headline lambda: the arrival intensity is anchored on
+# the CROSS-REGIME ciclon tropical bridge — the only event set at event x state
+# grain in BOTH publication regimes (HAZ-CENAPRED-10) — pooled 2002-2024:
+# the ciclon_tropical_2002_2024 row of
+# results/hazard_jump_calibration_2000_2024/parameters.csv (pipelines/03,
+# HAZ-STOCH-06: 229 events / 23 yr, level-continuous 10.3 vs 9.4 /yr across
+# the break, pooled trend flat +1.4%/yr p=.17).
+#
+# The bridge anchors the arrival LEVEL only — it is NOT a cyclone-only loss
+# model. Severity (and both mark scales) stay the registry mayores_200mdp fit
+# of the headline config: the marks represent the full climate-exposed book
+# (INT-17), and the CT severity fit (median 291.6, sigma 2.944) describes a
+# peril subset, not the jump-triggering event set. Only `intensity` differs
+# from configs/climate_jump_real.yaml.
+#
+# Loss->mark scales unchanged: K_eff = 131,932 MDP-2025 (INT-17),
+# S_rate_eff = 196,734,670 MDP-2025 (INT-18/19 literature scenario, engine
+# alpha 0.05 — the Mexican-alpha recompute is deferred to the book swap,
+# OQ-MKT-12c).
+
+seed: 233423        # master seed; jumps draw from a derived substream (GEN-07)
+n_paths: 10000      # matches the locked baseline (CCR-MIG-03)
+
+valuation_date: "2020-01-01"   # the fixture's locked as-of date (CCR-MIG-05)
+
+horizons:
+  largo:
+    b3_grid: null
+    max_step_days: null
+  corto:
+    b3_grid: ["0D", "1D", "1W", "2W", "1M", "2M", "3M", "6M", "9M", "1Y", "18M", "2Y", "3Y"]
+    max_step_days: 1
+  medio:
+    b3_grid: ["0D", "1D", "1W", "2W", "1M", "2M", "3M", "6M", "9M", "1Y", "18M", "2Y", "3Y", "4Y", "5Y"]
+    max_step_days: 1
+
+climate_jumps:
+  intensity: 9.9565  # events/year: ciclon_tropical 2002-2024 pooled bridge (229 / 23; CI [8.71, 11.33])
+  rate_marks:
+    median: 4.6028e-6 # sev_median 905.53 MDP-2025 / S_rate_eff 196,734,670 -> +0.046 bp median
+    sigma: 1.2106     # transfers exactly from the registry lognormal severity fit (to_mark_sampler)
+    sign: 1.0         # adverse event -> yields UP (decays through HW1F mean reversion)
+    targets: [USD_ZERO_YIELD_CURVE]
+  equity_marks:
+    median: 0.006864 # sev_median 905.53 MDP-2025 / K_eff 131,932 MDP-2025 -> -0.69% median
+    sigma: 1.2106    # transfers exactly from the registry lognormal severity fit (to_mark_sampler)
+    sign: -1.0
+    targets:
+      [CREDIT_SUISSE_SHARE, CREDIT_SUISSE_PREFERRED_SHARE, UBS_SHARE, JULIUS_BAER_SHARE]

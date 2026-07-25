@@ -1,0 +1,58 @@
+# Climate jump injection — REPORT-REGIME FLOOR scenario (OQ-HAZ-19a band; NOT the headline).
+#
+# Same harness as configs/climate_jump_real.yaml (pipelines/01_climate_jump_demo.py
+# --config configs/climate_jump_real_floor.yaml). Robustness scenario of the
+# regime band around the headline lambda: arrivals and severity come from the
+# 2016-2024 REPORT regime — the mayores_200mdp_2016_2024 row of
+# results/hazard_jump_calibration_2000_2024/parameters.csv (pipelines/03,
+# HAZ-STOCH-06: 65 events / 9 yr).
+#
+# Regime-consistent pairing: this scenario carries the report-regime severity
+# fit (median 1,274.08 MDP-2025, sigma 1.0358) with its lambda — the 2016
+# publication break shifted mass from measured frequency to measured severity
+# (granularity censoring, HAZ-CENAPRED-10: CENAPRED dropped the event x state
+# registry; only aggregates + large events remain reportable), so mixing this
+# floor lambda with registry severity would understate the compound loss rate
+# for a mechanical reason.
+#
+# Caveat (why this is the FLOOR, not the headline): the lambda level drop
+# 19.3 -> 7.2 /yr is measurement, not climate (HAZ-CENAPRED-10/HAZ-STOCH-06 —
+# the ciclon tropical bridge, the only series at event x state grain in both
+# regimes, is continuous in level); and the loss->mark scale (beta, K_eff) was
+# estimated on registry-era data (INT-17, 2008-2015 overlap). Headline stays
+# configs/climate_jump_real.yaml (lambda = 19.2857, registry fit).
+#
+# Loss->mark scales unchanged from the headline config: K_eff = 131,932
+# MDP-2025 (INT-17), S_rate_eff = 196,734,670 MDP-2025 (INT-18/19 literature
+# scenario, engine alpha 0.05 — the Mexican-alpha recompute is deferred to the
+# book swap, OQ-MKT-12c).
+
+seed: 233423        # master seed; jumps draw from a derived substream (GEN-07)
+n_paths: 10000      # matches the locked baseline (CCR-MIG-03)
+
+valuation_date: "2020-01-01"   # the fixture's locked as-of date (CCR-MIG-05)
+
+horizons:
+  largo:
+    b3_grid: null
+    max_step_days: null
+  corto:
+    b3_grid: ["0D", "1D", "1W", "2W", "1M", "2M", "3M", "6M", "9M", "1Y", "18M", "2Y", "3Y"]
+    max_step_days: 1
+  medio:
+    b3_grid: ["0D", "1D", "1W", "2W", "1M", "2M", "3M", "6M", "9M", "1Y", "18M", "2Y", "3Y", "4Y", "5Y"]
+    max_step_days: 1
+
+climate_jumps:
+  intensity: 7.2222  # events/year: mayores_200mdp 2016-2024 (65 / 9; CI [5.57, 9.21])
+  rate_marks:
+    median: 6.4761e-6 # sev_median 1,274.08 MDP-2025 / S_rate_eff 196,734,670 -> +0.065 bp median
+    sigma: 1.0358     # transfers exactly from the report-regime lognormal severity fit
+    sign: 1.0         # adverse event -> yields UP (decays through HW1F mean reversion)
+    targets: [USD_ZERO_YIELD_CURVE]
+  equity_marks:
+    median: 0.009657 # sev_median 1,274.08 MDP-2025 / K_eff 131,932 MDP-2025 -> -0.97% median
+    sigma: 1.0358    # transfers exactly from the report-regime lognormal severity fit
+    sign: -1.0
+    targets:
+      [CREDIT_SUISSE_SHARE, CREDIT_SUISSE_PREFERRED_SHARE, UBS_SHARE, JULIUS_BAER_SHARE]
