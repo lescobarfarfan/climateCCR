@@ -1,0 +1,15 @@
+# 2026-07-25 — The headline λ, the regime band, and compound-rate scaling (read-log)
+
+> Session: `OQ-HAZ-19`(a) resolved (`INT-20`) — the headline `climate_jump_real` EE/PE run keeps the registry $\lambda = 19.2857$/yr, flanked by two regime-consistent robustness scenarios (report floor $7.2222$, CT anchor $9.9565$); band runs executed and reproduced bit-identically on `main`; the Mexican-$a$ recompute of $S_{\text{rate,eff}}$ explicitly deferred to the fixture-book swap (direction pinned: $a=0.122 \Rightarrow S_{\text{rate,eff}} \approx -27\% \Rightarrow$ larger rate marks).
+
+1. **Cont & Tankov — *Financial Modelling with Jump Processes*, ch. 3 (compound Poisson processes) and ch. 6 (simulation of jump processes)** (`[ContTankov2004]`): the aggregate loss rate of a compound Poisson process is $\lambda\,\mathbb{E}[L]$ — intensity and mark distribution enter multiplicatively and separately. **Why:** `INT-20`'s internal-consistency check rides on this — the floor and CT-anchor EE shifts land at 43% and 52% of the headline, exactly the ratios of the scenarios' compound rates (floor) and of the bare intensities (CT anchor, same marks); without this reading the scaling looks like coincidence instead of confirmation that the pairing was implemented correctly.
+2. **Klugman, Panjer & Willmot — *Loss Models*, the frequency/severity and compound-distribution chapters** (`[Klugman]`, §99): frequency and severity are two components of one observation process, jointly shaped by thresholds and reporting. **Why:** the regime-consistent pairing rule of `INT-20` — the 2016 CENAPRED publication break moved measured mass from frequency (fewer countable events) to severity (higher medians via left-censoring near the bar, `HAZ-STOCH-06`), so pairing a report-regime $\lambda$ with registry severity misstates $\lambda\,\mathbb{E}[L]$ for a purely mechanical reason.
+3. **Pielke Jr. & Landsea — *Normalized hurricane damages in the United States: 1925–95*, §2–3** (`[PielkeLandsea1998]`, §99): recorded loss series reflect what is recorded and how, not only what happens. **Why:** defends the headline choice against a cherry-picking reading — the 19.3 vs 7.2 gap is publication grain (`HAZ-CENAPRED-10`), so choosing the registry $\lambda$ is a measurement-consistency argument (same regime as the `INT-17` scale estimation), and the honest response to the regime break is the explicit band, not a pooled fit.
+
+Open decisions these readings feed: which metric leads the results chapter (`OQ-INT-02`, now unblocked by the headline + band numbers), the fixture-book swap and the Mexican-$a$ recompute it carries (`OQ-INT-04`, `OQ-MKT-12` c), and the 2024-extenso refit (`OQ-HAZ-19` b).
+
+## Related
+
+Backs: [[DECISIONS]] (`INT-20`) · gates: [[OPEN_QUESTIONS]] (`OQ-INT-02`, `OQ-INT-04`, `OQ-MKT-12`, `OQ-HAZ-19`) · keys: [[REFERENCES]] · explanation: [[2026-07-25_lambda_band_readout_explained]] (`GEN-26`) · predecessors: [[2026-07-21_cenapred_extension_regime_runs]] · [[2026-07-18_k_scale_deflation]]. Arm MOCs: [[HAZ_MOC]] · Home: [[_INDEX]]
+
+#arm/haz #arm/int #type/reading

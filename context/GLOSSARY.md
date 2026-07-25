@@ -157,6 +157,7 @@ J. Content-word retrieval index
 | The CDMX discretization artifact | **CDMX wind-field panel 0.5 degree cell discretization** |
 | The CLIMADA calibration design | **subnational impact function v_thresh v_half LitPop PyMC partial pooling** |
 | The compound-Poisson/Cox plan | **compound Poisson Cox doubly stochastic aggregated tail CENAPRED** |
+| The headline-λ regime band | **headline lambda regime band floor CT anchor regime-consistent severity pairing scenario** |
 
 
 ---
