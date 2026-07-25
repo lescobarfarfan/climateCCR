@@ -33,13 +33,13 @@ FIXTURE_CONFIG = REPO_ROOT / "configs" / "pimpa_fixture.yaml"
 VALUE_COLS = ["uncollateralized_ee", "uncollateralized_pe_0.99"]
 
 
-def run_book(global_parameters: dict, today_date: str) -> pd.DataFrame:
-    """EE/PE profiles for every counterparty in the fixture ledger."""
+def run_book(global_parameters: dict, today_date: str, data_root: Path = FIXTURE) -> pd.DataFrame:
+    """EE/PE profiles for every counterparty in the book's ledger."""
     from climateCCR.risk.ccr.evaluators.ccr_valuation_session import CCR_Valuation_Session
     from climateCCR.risk.ccr.trade_models.portfolio import Portfolio
 
     ledger = pd.read_csv(
-        FIXTURE / "portfolio_data" / "positions_keeping_system" / "master_ledger.csv"
+        data_root / "portfolio_data" / "positions_keeping_system" / "master_ledger.csv"
     )
     frames = []
     for naid in sorted(ledger["netting_agreement_id"].unique()):
@@ -70,6 +70,19 @@ def main() -> None:
         default=DEMO_CONFIG,
         help="climate-jump config (default: the placeholder demo; "
         "configs/climate_jump_real.yaml = the estimated parameters)",
+    )
+    parser.add_argument(
+        "--data-root",
+        type=Path,
+        default=FIXTURE,
+        help="book data root (default: the PIMPA fixture; "
+        "data/ccr_book_mx = the Mexican book, OQ-INT-04)",
+    )
+    parser.add_argument(
+        "--book-config",
+        type=Path,
+        default=FIXTURE_CONFIG,
+        help="book layout config (default: configs/pimpa_fixture.yaml)",
     )
     args = parser.parse_args()
 
@@ -103,8 +116,8 @@ def main() -> None:
         sorted(jump_process.targets),
     )
 
-    fixture_config = load_config(FIXTURE_CONFIG)
-    gp = build_global_parameters(fixture_config, data_root=FIXTURE)
+    fixture_config = load_config(args.book_config)
+    gp = build_global_parameters(fixture_config, data_root=args.data_root)
     gp["n_paths"] = config.n_paths
     gp["random_state"] = config.seed
     if b3_grid is not None:
@@ -120,10 +133,10 @@ def main() -> None:
     )
 
     logger.info("Running jump-OFF (baseline) ...")
-    baseline = run_book(gp, today_date)
+    baseline = run_book(gp, today_date, data_root=args.data_root)
     logger.info("Running jump-ON (climate) ...")
     gp["climate_jumps"] = jump_process
-    jumped = run_book(gp, today_date)
+    jumped = run_book(gp, today_date, data_root=args.data_root)
 
     comparison = baseline[["netting_agreement_id", "default_times"]].copy()
     for col in VALUE_COLS:
