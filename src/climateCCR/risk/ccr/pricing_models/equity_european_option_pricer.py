@@ -67,6 +67,17 @@ class EquityEuropeanOptionPricer(PricingModel):
                 trade_mtms[:, i] = 0
             else:
                 t = T - transform_dates_to_time_differences(valuation_dates[0], valuation_date)
+                if t <= 0:
+                    # At expiry Black-Scholes degenerates (d1 = log(S/K)/0): the
+                    # limit is the intrinsic value, so price it explicitly instead
+                    # of riding cdf(+/-inf) through a divide-by-zero warning.
+                    intrinsic = (
+                        np.maximum(S_scenarios[:, i] - K, 0)
+                        if trade.get_attribute("put/call") == "call"
+                        else np.maximum(K - S_scenarios[:, i], 0)
+                    )
+                    trade_mtms[:, i] = ls_factor * trade.get_attribute("notional") * intrinsic
+                    continue
                 sigma = S_implied_vol_values[valuation_date]
                 if trade.get_attribute("put/call") == "call":
                     trade_mtms[:, i] = (
