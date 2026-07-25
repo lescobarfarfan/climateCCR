@@ -14,7 +14,12 @@ diagnostics), ``market`` (rate-path fans, calibration diagnostics). Planned:
 (Phase 5, PROJECT_PLAN).
 """
 
-from .ccr import plot_exposure_profiles, plot_exposure_shift, plot_mean_shift_summary
+from .ccr import (
+    plot_exposure_profiles,
+    plot_exposure_shift,
+    plot_mean_shift_summary,
+    plot_scenario_band,
+)
 from .market import plot_estimator_fan_comparison, plot_jump_decay, plot_rate_path_fan
 from .processes import plot_event_arrivals, plot_fan_comparison, plot_sample_paths
 from .style import apply_style, save_figure
@@ -25,6 +30,7 @@ __all__ = [
     "plot_exposure_profiles",
     "plot_exposure_shift",
     "plot_mean_shift_summary",
+    "plot_scenario_band",
     "plot_sample_paths",
     "plot_fan_comparison",
     "plot_event_arrivals",

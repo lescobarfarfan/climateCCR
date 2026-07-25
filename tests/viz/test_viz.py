@@ -95,6 +95,42 @@ def test_exposure_shift_and_summary_build(comparison):
     assert len(fig.axes) == 2  # EE + PE99 panels
 
 
+def test_exposure_panels_cap_a_large_book_at_the_most_shifted(comparison):
+    """A 30-counterparty book (INT-21) shows the MAX_PANELS largest |mean shift|."""
+    from climateCCR.viz.ccr import MAX_PANELS
+
+    book = pd.concat(
+        [
+            comparison.assign(netting_agreement_id=100 + i, uncollateralized_ee_shift=float(i))
+            for i in range(30)
+        ],
+        ignore_index=True,
+    )
+    fig = viz.plot_exposure_profiles(book)
+    visible = [ax for ax in fig.axes if ax.get_visible()]
+    assert len(visible) == MAX_PANELS
+    shown = {ax.get_title(loc="left") for ax in visible}  # the thesis style titles left
+    assert shown == {f"Counterparty {100 + i}" for i in range(30 - MAX_PANELS, 30)}
+    assert "of 30 counterparties" in fig._suptitle.get_text()
+
+
+def test_scenario_band_one_line_per_scenario(comparison):
+    band = {
+        "headline": comparison,
+        "floor": comparison.assign(
+            uncollateralized_ee_shift=comparison["uncollateralized_ee_shift"] / 2
+        ),
+    }
+    fig = viz.plot_scenario_band(band)
+    (ax,) = fig.axes
+    lines = [ln for ln in ax.lines if not ln.get_label().startswith("_")]  # excl. the zero rule
+    assert len(lines) == 2
+    # The legend carries each scenario's mean shift — the reported number.
+    assert "headline (mean " in ax.get_legend().get_texts()[0].get_text()
+    with pytest.raises(ValueError, match="empty"):
+        viz.plot_scenario_band({})
+
+
 def test_sample_paths_marks_events_only_on_climate_paths(path_data):
     dates, baseline, climate, events = path_data
     fig = viz.plot_sample_paths(dates, baseline, climate, event_counts=events, n_show=3)
