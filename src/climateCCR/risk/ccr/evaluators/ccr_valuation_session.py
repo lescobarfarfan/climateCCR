@@ -8,6 +8,7 @@ from climateCCR.calibration.financial.market_data_builder import MarketDataBuild
 from climateCCR.simulation.multi_risk_factor_simulation import MultiRiskFactorSimulation
 
 from ..pricing_models.equity_european_option_pricer import EquityEuropeanOptionPricer
+from ..pricing_models.fixed_coupon_bond_pricer import FixedCouponBondPricer
 from ..pricing_models.interest_rate_swap_pricer import InterestRateSwapPricer
 
 
@@ -89,6 +90,11 @@ class CCR_Valuation_Session:
                 elif pricer_mapping[trade.trade_type] == "EquityEuropeanOptionPricer":
                     self.trade_pricer_mapping[trade.trade_type] = [
                         EquityEuropeanOptionPricer("EQ_EUR_OPT_Pricer"),
+                        [],
+                    ]
+                elif pricer_mapping[trade.trade_type] == "FixedCouponBondPricer":
+                    self.trade_pricer_mapping[trade.trade_type] = [
+                        FixedCouponBondPricer("BOND_FIXED_Pricer"),
                         [],
                     ]
 

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from .equity_european_option import EquityEuropeanOption
+from .fixed_coupon_bond import FixedCouponBond
 from .interest_rate_swap import InterestRateSwap
 
 
@@ -62,6 +63,8 @@ class Portfolio:
                     trade = InterestRateSwap(row["trade_id"])
                 elif trade_type == "EQ_EUR_OPT":
                     trade = EquityEuropeanOption(row["trade_id"])
+                elif trade_type == "BOND_FIXED":
+                    trade = FixedCouponBond(row["trade_id"])
                 else:
                     raise ValueError(f"Trade type {trade_type} is not implemented.")
 
