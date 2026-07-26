@@ -46,6 +46,8 @@ the intensity `λ` and the per-event **impact/jump-mark** that drive the climate
 - Explanation: [[2026-07-21_cenapred_regime_break_and_otis_explained]] — what the regime break does to `λ` (7.2 / ~10 / 19.3 as regime bounds), why the pooled trend is an artifact, and why the 2016–2024 event-study "pass" is one Otis observation (+23 bp reverting in two weeks).
 - Reading: [[2026-07-25_lambda_band_readout]] — the headline-`λ` decision (`INT-20`): compound-rate scaling, the frequency↔severity pairing rule, and the measurement-consistency defence of the registry choice.
 - Explanation: [[2026-07-25_lambda_band_readout_explained]] — what the three intensities measure, why severity travels with its own `λ`, how to read the EE/PE band table (52%/43% scaling, the NAID 26 PE nonlinearity), and why the Mexican-`a` recompute waits for the book swap.
+- Reading: [[2026-07-26_sector_marks]] — the sector-marks read-log (`INT-24`): CENAPRED state×peril damage as the D layer, CNSF USO×evento evidence for the S ordering, and the per-capita intensity normalization (`notes/reading/`, `GEN-21`).
+- Explanation: [[2026-07-26_sector_marks_explained]] — the `γ_i` composition on the HAZ data layers and its honest limits (national-proxy tier, ordinal S tiers, shared arrivals pending peril-typing) (`notes/summary_explanations/`, `GEN-26`).
 - Review: [[PONYTAIL_AUDIT_2026-07-11]] — over-engineering sweep; the CNSF normalizer dedup + the two deliberately rejected HAZ cuts (`HAZ-SCRAPER-CNSF-10`).
 
 ## Wires to the other arms

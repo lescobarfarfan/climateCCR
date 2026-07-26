@@ -117,8 +117,20 @@ Verified 2026-07-25 (web pass for the headline-metric decision; URLs checked on 
 
 ---
 
+## 12. Sector/asset-level physical-risk attribution (INT-24 / OQ-INT-11)
+
+Verified 2026-07-26 (method pass for the sector-differentiated marks; full text read via the PMC mirror).
+
+- **`[Bressan2024]`** — Bressan, G., Đuranović, A., Monasterolo, I., & Battiston, S. (2024). *Asset-level assessment of climate physical risk matters for adaptation finance.* Nature Communications, 15, 5371. DOI: 10.1038/s41467-024-48820-1 (open access: https://pmc.ncbi.nlm.nih.gov/articles/PMC11217445/) — **Backs `INT-24`**: the Mexico application (1,820 physical assets, 177 listed firms; CLIMADA tropical-cyclone damages aggregated to firms via business-line revenue shares) is the method template for the G layer, and its headquarters/coarse-proxy fallback — under-estimating acute-risk portfolio VaR by 67–92% — is the citable caveat for the national-proxy tier used on non-geo-resolved names.
+
+---
+
 ## 99. To confirm (do not cite in the manuscript until verified)
 
+- **`[ECB2021EconomyWide]`** — Alogoskoufis, S., et al. (2021). *ECB economy-wide climate stress test.* ECB Occasional Paper No. 281. https://www.ecb.europa.eu/pub/pdf/scpops/ecb.op281~05a7735b1c.en.pdf — Confirm author list/pages on access. Backs `INT-24` (sector × geography exposure disaggregation as supervisory practice; agriculture/construction/tourism as the vulnerable sectors informing the S-matrix tiers).
+- **`[Kruttli2025]`** — Kruttli, M. S., Roth Tran, B., & Watugala, S. W. (2025). *Pricing Poseidon: Extreme Weather Uncertainty and Firm Return Dynamics.* Journal of Finance. DOI: 10.1111/jofi.13416 — Confirm volume/pages. Backs `INT-24` (firm-level hurricane-exposed-asset shares drive return responses — the exposure-share weighting rationale; also the reconstruction-demand upside for materials, deliberately ignored in the adverse-marks S matrix).
+- **`[INEGICenso2020]`** — INEGI (2021). *Censo de Población y Vivienda 2020* — total population by entidad federativa. https://www.inegi.org.mx/programas/ccpv/2020/ — Confirm the tabulado + a few state values verbatim. Backs `INT-24` (the per-capita normalization of CENAPRED state damage and the population-share national-proxy G tier in `configs/equity_mark_scales.yaml`).
+- **`[Hallegatte2008]`** — Hallegatte, S. (2008). *An adaptive regional input-output model and its application to the assessment of the economic cost of Katrina.* Risk Analysis, 28(3), 779–799. — Confirm DOI. Backs the `OQ-INT-11` deferred-residual framing (indirect/I-O losses ≈30% of direct for Katrina — out of scope of the direct-damage marks; future work).
 - **`[Baryshnikov2001]`** — Baryshnikov, Yu., Mayo, A., & Taylor, D. R. (2001). *Pricing of CAT bonds.* — Confirm full citation + URL. Backs `HAZ-STOCH-02`. (→ `OQ-HAZ-07`)
 - **`[Burnecki2005]`** — Burnecki, K., et al. (2005). Compound-Poisson / catastrophe-bond modelling (likely a chapter in *Statistical Tools for Finance and Insurance*). — Confirm exact reference + URL. Backs `HAZ-STOCH-02`. (→ `OQ-HAZ-07`)
 - **`[Garwood1936]`** — Garwood, F. (1936). *Fiducial limits for the Poisson distribution.* Biometrika 28(3/4). — Confirm pages + DOI. Backs `INT-16` (the exact χ² confidence interval on the arrival intensity in `calibration.impact`).

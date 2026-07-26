@@ -43,6 +43,8 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 - Reading: [[2026-07-25_viz_mexican_book_render]] — rendering the book: exposure-profile convention behind the tenor axis, the λ·E[L] reading of the scenario band, and the bit-for-bit figure-refactor check (`INT-15`/`GEN-28`; no methodological decisions; `notes/reading/`, `GEN-21`).
 - Reading: [[2026-07-25_headline_metric]] — the headline-metric read-log: the EE/PFE/CVA role split, Basel CRE definitions, the climate-supervision scenario-analysis mandate, and quantile non-coherence (`INT-23`/`CCR-RISK-03`; `notes/reading/`, `GEN-21`).
 - Explanation: [[2026-07-25_headline_metric_explained]] — what EE/EPE/PFE mean, how to read the book-EPE delta band (−11.0/−6.5/−5.6%) and its sign, the wrong-way-risk caveat, and why the floor-at-reporting convention is supervisory-exact without touching the golden baselines (`notes/summary_explanations/`, `GEN-26`).
+- Reading: [[2026-07-26_sector_marks]] — the sector-marks read-log: the Bressan asset-level template + proxy caveat, DaLA sector decomposition, exposure-share→return evidence, the supervisory sector×geography frame, and the lognormal median-scaling algebra behind `target_scales` (`INT-24`; `notes/reading/`, `GEN-21`).
+- Explanation: [[2026-07-26_sector_marks_explained]] — what `γ_i` is, the G×S×D/pob layers, the Σwγ=1 redistribution anchor, the Jensen reading of the re-based EPE band (−8.74/−5.35/−4.68%) and the hotel/airport concentration, and the residual limits (`notes/summary_explanations/`, `GEN-26`).
 
 ## Literature
 - [[Compagnoni_2023_RandomizedSignatures]] — randomized signatures as a reservoir (`CCR-SIG-01`).
