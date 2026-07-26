@@ -1,0 +1,228 @@
+# Sector-differentiated equity mark scales — the OQ-INT-11 distribution rule.
+#
+# Derives per-name relative sensitivities gamma_i for the 26 Mexican book
+# equities (configs/mexican_book.yaml), redistributing the INT-17 book-level
+# mark (median L/K_eff) across names WITHOUT re-estimating it:
+#
+#   gamma_raw_i = sum_s sum_p  G[i,s] * S[sector_i, p] * D[s,p] / pob[s]
+#   gamma_i     = gamma_raw_i / sum_j w_j gamma_raw_j        (sum_j w_j = 1)
+#
+# - G[i,s]  per-name state asset shares (exposicion_geografica below; names
+#   without a block fall back to population shares — the national-proxy tier,
+#   [Bressan2024]'s HQ/coarse-proxy fallback, documented to UNDERSTATE
+#   concentrated exposure).
+# - S[sector,p] sector x peril-group susceptibility in [0,1] (tiers below).
+# - D[s,p]  cumulative CENAPRED climate-scope damage 2000-2024, deflated to
+#   MDP-2025 with configs/inpc_anual.yaml (same source + deflator discipline as
+#   the INT-17/INT-20 calibration — measurement-consistent).
+# - pob[s]  INEGI Censo 2020 state population — converts absolute state damage
+#   into per-unit-exposure intensity (a small state hit often, e.g. BCS, is
+#   more hazardous PER ASSET than a large state with equal total damage).
+# - w_j     book equity MXN exposure (EQ-desk notional x ATM strike,
+#   data/ccr_book_mx) — the renormalization makes the book-notional-weighted
+#   mean gamma exactly 1, preserving the INT-17 anchor by construction.
+#
+# Consumed by pipelines/10_equity_mark_scales.py, which emits the
+# `target_scales:` block pasted into configs/climate_jump_real_mexican*.yaml.
+# Evidence table for the S ordering (CNSF hidro USO x TIPO DE EVENTO paid-loss
+# shares) is written to results/equity_mark_scales/ by the same pipeline.
+
+cenapred_panel: data/hazard_mx/datos_CENAPRED/consolidados_2000_2024/impacto_estado_anio_peril.csv
+deflator: configs/inpc_anual.yaml
+book_config: configs/mexican_book.yaml
+eq_desk: data/ccr_book_mx/portfolio_data/desks/EQ/EQ_EUROPEAN_OPTIONS.csv
+cnsf_hidro_siniestros: data/hazard_mx/datos_CNSF/consolidados/riesgos_hidrometereologicos/siniestros.csv.gz
+
+window: {start_year: 2000, end_year: 2024}   # full panel: D is a climatology, not a rate fit,
+                                             # so the 2016 regime break (HAZ-CENAPRED-10) only
+                                             # shifts grain, not the state x peril damage mix.
+
+# CENAPRED peril_canonico -> peril group (climate scope only, GEN-12; groups keep
+# the S matrix at 6 columns; 'otros' pools perils totalling ~2% of damage).
+peril_groups:
+  ciclon_tropical: ["Ciclón tropical"]
+  lluvia: ["Daños por lluvia"]
+  inundacion: ["Inundación", "Marejada"]
+  sequia: ["Sequía"]
+  incendio_forestal: ["Incendio forestal"]
+  otros: ["Deslizamiento", "Baja temperatura", "Tormenta severa", "Vientos/Tornado", "Tormenta eléctrica"]
+
+# Susceptibility tiers (ordinal, [0,1]): alta 1.0 / media-alta 0.7 / media 0.4 /
+# baja 0.2 / minima 0.1 / nula 0.0. Hybrid basis per OQ-INT-11 decision:
+# ordering of building-sector rows in the hidro column is pinned by the CNSF
+# USO x TIPO DE EVENTO paid-loss evidence (HOTEL is the largest identified
+# commercial use, ~9.4bn MXN; see results/equity_mark_scales/
+# cnsf_uso_peril_shares.csv); levels are literature tiers: [CEPAL2014DaLA]
+# sector decomposition, [ECB2021EconomyWide] vulnerable sectors,
+# [Bressan2024] Mexico TC asset risk, [Kruttli2025] exposure->return.
+# Upsides deliberately ignored (adverse-marks channel only): reconstruction
+# demand for cemento [Kruttli2025 positive disaster sensitivities], AGUA
+# (Rotoplas) drought-adaptation demand.
+susceptibility:                # ciclon, lluvia, inundacion, sequia, incendio_forestal, otros
+  hoteles:         {ciclon_tropical: 1.0, lluvia: 0.4, inundacion: 0.4, sequia: 0.1, incendio_forestal: 0.05, otros: 0.2}   # coastal tourism: direct TC asset+business interruption [Bressan2024][CNSF USO=HOTEL]
+  fibra_hotelera:  {ciclon_tropical: 1.0, lluvia: 0.4, inundacion: 0.4, sequia: 0.1, incendio_forestal: 0.05, otros: 0.2}   # same physical assets as hoteles
+  aeropuertos:     {ciclon_tropical: 1.0, lluvia: 0.3, inundacion: 0.3, sequia: 0.0, incendio_forestal: 0.0,  otros: 0.1}   # fixed coastal infra; Otis/Odile closures (INT-21 anchors)
+  aerolineas:      {ciclon_tropical: 0.7, lluvia: 0.3, inundacion: 0.2, sequia: 0.0, incendio_forestal: 0.0,  otros: 0.1}   # route disruption; fleet is mobile -> below fixed infra [eng]
+  agua:            {ciclon_tropical: 0.3, lluvia: 0.2, inundacion: 0.3, sequia: 0.3, incendio_forestal: 0.0,  otros: 0.1}   # manufacturer's plant/logistics risk; drought DEMAND upside not modeled [eng]
+  agroalimentos:   {ciclon_tropical: 0.5, lluvia: 0.5, inundacion: 0.7, sequia: 1.0, incendio_forestal: 0.2,  otros: 0.5}   # crops/inputs: drought-led [ECB2021EconomyWide][CNSF agro line]; freezes in otros
+  bebidas:         {ciclon_tropical: 0.3, lluvia: 0.2, inundacion: 0.3, sequia: 0.7, incendio_forestal: 0.0,  otros: 0.1}   # water stress on production [ECB2021EconomyWide]
+  seguros:         {ciclon_tropical: 0.6, lluvia: 0.5, inundacion: 0.7, sequia: 0.0, incendio_forestal: 0.05, otros: 0.5}   # Qualitas auto claims: flood/hail-led (otros pools granizo) [CNSF autos]
+  reaseguro:       {ciclon_tropical: 1.0, lluvia: 0.5, inundacion: 0.7, sequia: 0.2, incendio_forestal: 0.2,  otros: 0.3}   # cat underwriting: TC-led tail [CNSF hidro TIPO DE EVENTO mix]
+  fibra:           {ciclon_tropical: 0.5, lluvia: 0.4, inundacion: 0.5, sequia: 0.05, incendio_forestal: 0.05, otros: 0.2}  # diversified fixed assets [eng]
+  cemento:         {ciclon_tropical: 0.2, lluvia: 0.2, inundacion: 0.3, sequia: 0.5, incendio_forestal: 0.05, otros: 0.1}   # water-intensive process; reconstruction upside ignored [Kruttli2025]
+  mineria:         {ciclon_tropical: 0.3, lluvia: 0.4, inundacion: 0.4, sequia: 0.6, incendio_forestal: 0.1,  otros: 0.2}   # water use, pit/tailings flooding [ECB2021EconomyWide]
+  energia:         {ciclon_tropical: 0.1, lluvia: 0.1, inundacion: 0.1, sequia: 0.1, incendio_forestal: 0.0,  otros: 0.1}   # VISTA producing assets are in Vaca Muerta (Argentina) -> minimal Mexican physical exposure [eng]
+  comercio:        {ciclon_tropical: 0.4, lluvia: 0.3, inundacion: 0.5, sequia: 0.1, incendio_forestal: 0.05, otros: 0.15}  # store/DC network + logistics [CNSF USO=TIENDA]
+  restaurantes:    {ciclon_tropical: 0.3, lluvia: 0.2, inundacion: 0.3, sequia: 0.1, incendio_forestal: 0.0,  otros: 0.1}   # leisure demand + urban premises [eng]
+
+# INEGI Censo de Población y Vivienda 2020 — total population by entidad
+# (https://www.inegi.org.mx/programas/ccpv/2020/ -> tabulados básicos).
+# Used (a) to normalize D to per-unit-exposure intensity and (b) as the
+# national-fallback G (population shares as the asset-distribution proxy [eng]).
+# Keys verbatim vs the CENAPRED `entidad` spellings (INT-07).
+poblacion_2020:
+  Aguascalientes: 1425607
+  Baja California: 3769020
+  Baja California Sur: 798447
+  Campeche: 928363
+  Chiapas: 5543828
+  Chihuahua: 3741869
+  Ciudad de México: 9209944
+  Coahuila: 3146771
+  Colima: 731391
+  Durango: 1832650
+  Estado de México: 16992418
+  Guanajuato: 6166934
+  Guerrero: 3540685
+  Hidalgo: 3082841
+  Jalisco: 8348151
+  Michoacán: 4748846
+  Morelos: 1971520
+  Nayarit: 1235456
+  Nuevo León: 5784442
+  Oaxaca: 4132148
+  Puebla: 6583278
+  Querétaro: 2368467
+  Quintana Roo: 1857985
+  San Luis Potosí: 2822255
+  Sinaloa: 3026943
+  Sonora: 2944840
+  Tabasco: 2402598
+  Tamaulipas: 3527735
+  Tlaxcala: 1342977
+  Veracruz: 8062579
+  Yucatán: 2320898
+  Zacatecas: 1622138
+
+# Per-name state asset exposure (G). Hand-collected from public disclosures —
+# provenance per block; [eng] representative-terms discipline (the OQ-INT-10
+# cebures precedent). `estados` carries RAW magnitudes (passengers, property
+# counts) — the pipeline normalizes; optional `resto_nacional` is a magnitude
+# spread over population shares (for "top states named, rest aggregate"
+# disclosures). Names without a block use population shares (the national-proxy
+# tier, [Bressan2024] coarse fallback): HCITY (152 hotels / 75 cities,
+# dispersed business portfolio), FIHO12 (87 hotels / 26 states, no public state
+# table), FUNO, and all non-hotel/airport names. Industrials
+# (CEMEX/GCC/GMEXICO/PENOLES/GRUMA/HERDEZ) are a deferred later-session
+# extension (OQ-INT-11 residual) — config-only edits.
+exposicion_geografica:
+  ASUR_SHARE:
+    method: pasajeros_2024
+    fuente: "https://www.asur.com.mx/trafico-de-pasajeros-2 via https://www.elsureste.com.mx/trafico-aereo-disminuye-en-aeropuertos-operados-por-asur-durante-2024/"
+    nota: "2024 terminal passengers, Mexican airports only (San Juan PR + Colombia excluded).
+      Villahermosa = residual vs the published Mexico total 41,420,330 [eng]. Cancún+Cozumel
+      -> Quintana Roo 75.1%."
+    estados:            # passengers 2024
+      Quintana Roo: 31124478     # Cancún 30,411,520 + Cozumel 712,958
+      Yucatán: 3699877           # Mérida
+      Oaxaca: 2634606            # Oaxaca 1,787,428 + Huatulco 847,178
+      Veracruz: 1865366          # Veracruz 1,712,821 + Minatitlán 152,545
+      Tabasco: 1481067           # Villahermosa (residual)
+      Chiapas: 614936            # Tapachula
+  GAP_SHARE:
+    method: pasajeros_2024
+    fuente: "https://www.globenewswire.com/news-release/2025/01/06/3005044/0/en/Grupo-Aeroportuario-del-Pacifico-Reports-in-December-2024-a-Passenger-Traffic-Increase-of-2-9-Compared-to-2023.html"
+    nota: "Accumulated Jan-Dec 2024 terminal passengers (thousands), Mexican airports only
+      (Montego Bay + Kingston Jamaica excluded)."
+    estados:            # passengers 2024, thousands
+      Jalisco: 24652.2           # Guadalajara 17,848.7 + Puerto Vallarta 6,803.5
+      Baja California: 13579.9   # Tijuana 12,545.8 + Mexicali 1,034.1
+      Baja California Sur: 8694.2 # Los Cabos 7,488.2 + La Paz 1,206.0
+      Guanajuato: 3169.0         # Bajío/León
+      Sonora: 2156.9             # Hermosillo
+      Michoacán: 1304.6          # Morelia
+      Aguascalientes: 961.8
+      Sinaloa: 585.2             # Los Mochis
+      Colima: 218.4              # Manzanillo
+  OMA_SHARE:
+    method: composicion_trafico_2024
+    fuente: "https://ir.oma.aero/en/annual-reports/ (2024: 26.5M passengers; Monterrey 51%,
+      regional 27%, tourist 12%, border 10%)"
+    nota: "Disclosed 2024 traffic composition mapped to states: Monterrey -> Nuevo León;
+      tourist (Acapulco/Zihuatanejo -> Guerrero, Mazatlán -> Sinaloa); regional/border
+      airports split across their states [eng]."
+    estados:            # traffic shares
+      Nuevo León: 0.510
+      Chihuahua: 0.120           # Chihuahua + Ciudad Juárez
+      Sinaloa: 0.055             # Mazatlán + Culiacán
+      Guerrero: 0.045            # Acapulco + Zihuatanejo
+      Durango: 0.050
+      San Luis Potosí: 0.050
+      Tamaulipas: 0.050          # Tampico + Reynosa
+      Coahuila: 0.050            # Torreón
+      Zacatecas: 0.020
+  HOTEL_SHARE:
+    method: enumeracion_propiedades
+    fuente: "https://www.ad-hoc-news.de/boerse/news/ueberblick/grupo-hotelero-santa-fe-stock-mxp495211007-mexican-hotel-operator-reports-solid-2024-results (27 hotels / 16 cities)"
+    nota: "Property enumeration from the disclosed portfolio (Krystal Grand Cancún/Los
+      Cabos/Acapulco/PV, Secrets Tulum, Hyatt Regency CDMX, Krystal Urban) [eng]."
+    estados:            # property counts (27)
+      Quintana Roo: 8
+      Jalisco: 4
+      Guerrero: 4
+      Ciudad de México: 4
+      Baja California Sur: 3
+      Nuevo León: 2
+      Nayarit: 2
+  RLH_SHARE:
+    method: enumeracion_propiedades
+    fuente: "https://rlhproperties.com/wp-content/uploads/2025/03/Press-Release-4Q-2024-ENG.pdf"
+    nota: "Luxury portfolio enumeration: Mayakoba complex (Quintana Roo), Mandarina complex
+      (Nayarit), Rosewood San Miguel de Allende (Guanajuato), Four Seasons CDMX; Madrid
+      asset excluded (non-Mexico) [eng]."
+    estados:            # property counts
+      Quintana Roo: 7
+      Nayarit: 5
+      Guanajuato: 1
+      Ciudad de México: 1
+  POSADAS_SHARE:
+    method: propiedades_2024_parcial
+    fuente: "https://cms.posadas.com/documents/3110971/3167666/ESG_Annual_Report_2024.pdf (202 hotels)"
+    nota: "Sourced state counts: Jalisco 14, Quintana Roo 13, Guerrero 4, Nayarit 1; the
+      remaining 170 hotels carry no public state table -> spread over population shares
+      via resto_nacional [eng]."
+    estados:            # property counts (sourced states only)
+      Jalisco: 14
+      Quintana Roo: 13
+      Guerrero: 4
+      Nayarit: 1
+    resto_nacional: 170
+  FINN13_SHARE:
+    method: estados_cobertura_2024
+    fuente: "https://fibrainn.mx/assets/docs/4td-2024-vf_681a9d726cd8f.pdf (35 hotels / 13 states)"
+    nota: "North/central business-hotel coverage; the 4T-2024 report names 13 states without
+      per-state counts -> equal weight per covered state [eng]."
+    estados:            # covered states, equal weight
+      Nuevo León: 1
+      Coahuila: 1
+      Chihuahua: 1
+      Durango: 1
+      Zacatecas: 1
+      San Luis Potosí: 1
+      Guanajuato: 1
+      Aguascalientes: 1
+      Jalisco: 1
+      Nayarit: 1
+      Sinaloa: 1
+      Sonora: 1
+      Tamaulipas: 1
