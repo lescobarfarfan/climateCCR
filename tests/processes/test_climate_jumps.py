@@ -123,6 +123,45 @@ def test_trajectory_and_cox_intensity_shapes():
         )
 
 
+def _jump_config(target_scales: dict | None) -> dict:
+    block = {
+        "median": 0.006864,
+        "sigma": 1.2106,
+        "sign": -1.0,
+        "targets": ["A_SHARE", "B_SHARE", "C_SHARE"],
+    }
+    if target_scales is not None:
+        block["target_scales"] = target_scales
+    return {"intensity": 3.0, "equity_marks": block}
+
+
+def test_target_scales_rescale_marks_exactly():
+    # OQ-INT-11 mechanism proof: scaling a lognormal median by gamma multiplies
+    # every mark by gamma under the same seed — event counts and the draws of
+    # every other target are untouched.
+    gammas = {"A_SHARE": 2.5, "C_SHARE": 0.25}
+    uniform = ClimateJumpProcess.from_config(_jump_config(None)).generate(DATES, 64, SEED)
+    scaled = ClimateJumpProcess.from_config(_jump_config(gammas)).generate(DATES, 64, SEED)
+    np.testing.assert_array_equal(uniform.event_counts, scaled.event_counts)
+    np.testing.assert_allclose(scaled.step_marks["A_SHARE"], 2.5 * uniform.step_marks["A_SHARE"])
+    np.testing.assert_allclose(scaled.step_marks["C_SHARE"], 0.25 * uniform.step_marks["C_SHARE"])
+    np.testing.assert_array_equal(scaled.step_marks["B_SHARE"], uniform.step_marks["B_SHARE"])
+
+
+def test_target_scales_absent_or_unity_is_uniform():
+    uniform = ClimateJumpProcess.from_config(_jump_config(None)).generate(DATES, 32, SEED)
+    unity = ClimateJumpProcess.from_config(
+        _jump_config({"A_SHARE": 1.0, "B_SHARE": 1.0, "C_SHARE": 1.0})
+    ).generate(DATES, 32, SEED)
+    for name in ("A_SHARE", "B_SHARE", "C_SHARE"):
+        np.testing.assert_array_equal(uniform.step_marks[name], unity.step_marks[name])
+
+
+def test_target_scales_unknown_target_raises():
+    with pytest.raises(ValueError, match="TYPO_SHARE"):
+        ClimateJumpProcess.from_config(_jump_config({"TYPO_SHARE": 1.5}))
+
+
 def test_non_independent_dependence_is_explicitly_unimplemented():
     with pytest.raises(NotImplementedError):
         ClimateJumpProcess(1.0, {"A": DeterministicMark(-0.1)}, diffusion_dependence="correlated")

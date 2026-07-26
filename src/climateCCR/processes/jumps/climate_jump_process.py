@@ -104,6 +104,13 @@ class ClimateJumpProcess:
         to one lognormal mark sampler; present channels share the event stream
         (a config may run one channel only, e.g. the estimated price channel
         while the rate translation stays open — OQ-INT-07).
+
+        A channel may carry an optional ``target_scales: {name: gamma}`` mapping
+        (OQ-INT-11, derived by ``pipelines/10_equity_mark_scales.py``): each named
+        target's median is rescaled to ``median * gamma`` with ``sigma``/``sign``
+        unchanged, so its marks are exactly ``gamma *`` the uniform marks under
+        the same seed (same draw count per target, stream untouched). Unnamed
+        targets keep ``gamma = 1``; absent block == today's uniform behaviour.
         """
         targets: dict[str, MarkSampler] = {}
         for channel in ("rate_marks", "equity_marks"):
@@ -113,7 +120,24 @@ class ClimateJumpProcess:
             sampler = LognormalMark(
                 median=block["median"], sigma=block["sigma"], sign=block["sign"]
             )
-            targets.update(dict.fromkeys(block["targets"], sampler))
+            scales = block.get("target_scales") or {}
+            unknown = sorted(set(scales) - set(block["targets"]))
+            if unknown:
+                raise ValueError(
+                    f"{channel}.target_scales names unknown targets {unknown} "
+                    f"(not in {channel}.targets)"
+                )
+            for name in block["targets"]:
+                gamma = float(scales.get(name, 1.0))
+                targets[name] = (
+                    sampler
+                    if gamma == 1.0
+                    else LognormalMark(
+                        median=block["median"] * gamma,
+                        sigma=block["sigma"],
+                        sign=block["sign"],
+                    )
+                )
         if not targets:
             raise ValueError("climate_jumps needs at least one of rate_marks/equity_marks")
         return cls(jump_config["intensity"], targets)
