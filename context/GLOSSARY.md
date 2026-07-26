@@ -65,8 +65,8 @@ J. Content-word retrieval index
 
 ## D. Counterparty credit risk
 - **CCR** — counterparty credit risk. **MPOR** — margin period of risk (close-out horizon before collateral catches up).
-- **EE** — expected exposure (mean positive exposure at a future grid point). **EPE** — expected positive exposure (time-average of EE). **Effective EPE** — its Basel running-max version.
-- **PE / PFE** — potential (future) exposure: a high quantile of the exposure distribution (PIMPA default 99%).
+- **EE** — expected exposure (mean positive exposure at a future grid point; the engine floors at path level, $\mathrm{mean}(\max(V,0))$). **EPE** — expected positive exposure: the time-average of the EE profile (trapezoid, year fractions — `viz.epe_summary`); the `INT-23` headline readout (book EPE delta band −11.0/−6.5/−5.6%). **Effective EPE** — its Basel running-max version (not built; IMM capital is EAD = α·EEPE, `[BaselCRE]`).
+- **PE / PFE** — potential (future) exposure: a high quantile at a future grid point (PIMPA default 99%). **Project convention (`CCR-RISK-03`):** the engine stores the *raw* portfolio-value quantile (negative on a net-liability set — a DVA-territory diagnostic); everything *reported* uses supervisory **PFE** $= \max(\text{quantile}, 0)$, derived at the reporting seam (`viz.with_supervisory_pfe`). PFE is a limit-setting quantile — non-subadditive (`[Artzner1999]`), not a capital/pricing aggregate.
 - **CVA** — credit valuation adjustment; market value of counterparty default risk; the natural home for a climate-conditioned credit spread. **xVA** — the family (CVA, DVA, FVA, …).
 - **VM / MTA** — variation margin / minimum transfer amount. **netting set** — trades whose mark-to-market legally offsets on default. **LGD** — loss given default.
 
