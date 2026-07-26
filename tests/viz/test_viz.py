@@ -95,6 +95,48 @@ def test_exposure_shift_and_summary_build(comparison):
     assert len(fig.axes) == 2  # EE + PE99 panels
 
 
+def test_with_supervisory_pfe_floors_only_at_reporting():
+    """PFE = max(quantile, 0) derived per side; raw PE kept verbatim (CCR-RISK-03)."""
+    frame = pd.DataFrame(
+        {
+            "netting_agreement_id": [1, 1, 2],
+            "default_times": ["2020-01-01", "2021-01-01", "2020-01-01"],
+            "uncollateralized_pe_0.99_baseline": [10.0, -4.0, -7.0],
+            "uncollateralized_pe_0.99_climate": [6.0, 2.0, -9.0],
+            "uncollateralized_pe_0.99_shift": [-4.0, 6.0, -2.0],
+        }
+    )
+    out = viz.with_supervisory_pfe(frame)
+    # Positive both sides: passthrough. Straddling: floor bites the negative
+    # side only. Negative both sides: zero exposure, zero shift.
+    assert list(out["uncollateralized_pfe_0.99_baseline"]) == [10.0, 0.0, 0.0]
+    assert list(out["uncollateralized_pfe_0.99_climate"]) == [6.0, 2.0, 0.0]
+    assert list(out["uncollateralized_pfe_0.99_shift"]) == [-4.0, 2.0, 0.0]
+    assert list(out["uncollateralized_pe_0.99_shift"]) == [-4.0, 6.0, -2.0]
+    assert "uncollateralized_pfe_0.99_shift" not in frame.columns  # input not mutated
+
+
+def test_epe_summary_time_averages_and_totals_the_book():
+    dates = ["2020-01-01", "2020-07-01", "2022-01-01"]
+    frame = pd.DataFrame(
+        {
+            "netting_agreement_id": [1] * 3 + [2] * 3,
+            "default_times": dates * 2,
+            "uncollateralized_ee_baseline": [10.0] * 3 + [0.0, 4.0, 4.0],
+            "uncollateralized_ee_climate": [5.0] * 3 + [0.0, 2.0, 2.0],
+        }
+    )
+    out = viz.epe_summary(frame)
+    row1 = out[out["netting_agreement_id"] == "1"].iloc[0]
+    assert row1["epe_baseline"] == pytest.approx(10.0)  # constant profile -> its level
+    assert row1["epe_climate"] == pytest.approx(5.0)
+    assert row1["epe_shift_pct"] == pytest.approx(-50.0)
+    book = out[out["netting_agreement_id"] == "BOOK"].iloc[0]
+    counterparties = out[out["netting_agreement_id"] != "BOOK"]
+    assert book["epe_baseline"] == pytest.approx(counterparties["epe_baseline"].sum())
+    assert book["epe_shift"] == pytest.approx(counterparties["epe_shift"].sum())
+
+
 def test_exposure_panels_cap_a_large_book_at_the_most_shifted(comparison):
     """A 30-counterparty book (INT-21) shows the MAX_PANELS largest |mean shift|."""
     from climateCCR.viz.ccr import MAX_PANELS

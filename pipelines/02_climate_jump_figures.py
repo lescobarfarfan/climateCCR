@@ -1,7 +1,9 @@
 """Climate jump figures — visualize the DC-CCR-SIM-2 demo (Phase 5.1).
 
 Renders the climate-vs-baseline story behind pipelines/01_climate_jump_demo.py:
-EE/PE profiles and shifts per counterparty (from the demo's comparison CSV),
+EE profiles and shifts per counterparty, the supervisory-PFE tail view
+(PFE = max(quantile, 0), floored at reporting — CCR-RISK-03), and the EPE
+summary table (the INT-23 headline readout), all from the comparison CSV;
 plus process-level views — simulated HW1F short-rate and GBM share paths
 jump-off vs jump-on with the shared master seed, so each climate path deviates
 from its baseline twin only at the marked jump events (INT-09) — and the
@@ -177,36 +179,54 @@ def main() -> None:
     viz.apply_style()
     written: list[Path] = []
 
-    # -- CCR result figures, straight from the comparison-frame contract.
-    comparison = pd.read_csv(comparison_csv)
+    # -- CCR result figures, straight from the comparison-frame contract. The
+    #    reported tail metric is the supervisory PFE (floored at the reporting
+    #    seam, CCR-RISK-03); the stored frame keeps the raw PE quantile.
+    comparison = viz.with_supervisory_pfe(pd.read_csv(comparison_csv))
     written += viz.save_figure(viz.plot_exposure_profiles(comparison), out_dir / "ee_profiles")
     written += viz.save_figure(
-        viz.plot_exposure_profiles(comparison, metric="uncollateralized_pe_0.99"),
-        out_dir / "pe99_profiles",
+        viz.plot_exposure_profiles(comparison, metric="uncollateralized_pfe_0.99"),
+        out_dir / "pfe99_profiles",
     )
     written += viz.save_figure(viz.plot_exposure_shift(comparison), out_dir / "ee_shift")
     written += viz.save_figure(
-        viz.plot_mean_shift_summary(comparison), out_dir / "mean_shift_summary"
+        viz.plot_mean_shift_summary(
+            comparison, metrics=("uncollateralized_ee", "uncollateralized_pfe_0.99")
+        ),
+        out_dir / "mean_shift_summary",
     )
 
     # -- Arrival-intensity band: the same book and seed under the robustness
     #    scenarios, so the spread between the lines is the sensitivity to lambda
     #    alone (INT-20). The headline run leads; extras follow in the given order.
-    if args.escenarios:
-        base_stem = args.config.stem
-        band = {_scenario_label(config, args.config, base_stem): comparison}
-        for scenario_config in args.escenarios:
-            scenario = load_config(scenario_config)
-            csv = config.paths.results / scenario_config.stem / "ee_pe_climate_shift.csv"
-            if not csv.exists():
-                logger.error("Scenario output missing: %s — run pipeline 01 for it first.", csv)
-                sys.exit(1)
-            band[_scenario_label(scenario, scenario_config, base_stem)] = pd.read_csv(csv)
+    base_stem = args.config.stem
+    band = {_scenario_label(config, args.config, base_stem): comparison}
+    for scenario_config in args.escenarios:
+        scenario = load_config(scenario_config)
+        csv = config.paths.results / scenario_config.stem / "ee_pe_climate_shift.csv"
+        if not csv.exists():
+            logger.error("Scenario output missing: %s — run pipeline 01 for it first.", csv)
+            sys.exit(1)
+        band[_scenario_label(scenario, scenario_config, base_stem)] = viz.with_supervisory_pfe(
+            pd.read_csv(csv)
+        )
+    if len(band) > 1:
         written += viz.save_figure(viz.plot_scenario_band(band), out_dir / "scenario_band")
         written += viz.save_figure(
-            viz.plot_scenario_band(band, metric="uncollateralized_pe_0.99"),
-            out_dir / "scenario_band_pe99",
+            viz.plot_scenario_band(band, metric="uncollateralized_pfe_0.99"),
+            out_dir / "scenario_band_pfe99",
         )
+
+    # -- EPE summary: the time-averaged EE per counterparty and whole book, one
+    #    block per scenario — the headline single-number readout (INT-23).
+    epe = pd.concat(
+        [viz.epe_summary(frame).assign(scenario=label) for label, frame in band.items()],
+        ignore_index=True,
+    )
+    epe = epe[["scenario", *[c for c in epe.columns if c != "scenario"]]]
+    epe_csv = out_dir / "epe_summary.csv"
+    epe.to_csv(epe_csv, index=False)
+    logger.info("EPE summary -> %s", epe_csv)
 
     # -- Process-level figures: re-simulate under the demo config (same master
     #    seed as pipeline 01, so these paths are the ones behind the CSV).

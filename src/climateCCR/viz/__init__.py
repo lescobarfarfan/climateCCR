@@ -15,10 +15,12 @@ diagnostics), ``market`` (rate-path fans, calibration diagnostics). Planned:
 """
 
 from .ccr import (
+    epe_summary,
     plot_exposure_profiles,
     plot_exposure_shift,
     plot_mean_shift_summary,
     plot_scenario_band,
+    with_supervisory_pfe,
 )
 from .market import plot_estimator_fan_comparison, plot_jump_decay, plot_rate_path_fan
 from .processes import plot_event_arrivals, plot_fan_comparison, plot_sample_paths
@@ -27,6 +29,8 @@ from .style import apply_style, save_figure
 __all__ = [
     "apply_style",
     "save_figure",
+    "epe_summary",
+    "with_supervisory_pfe",
     "plot_exposure_profiles",
     "plot_exposure_shift",
     "plot_mean_shift_summary",

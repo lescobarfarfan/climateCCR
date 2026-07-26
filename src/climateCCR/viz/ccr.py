@@ -39,9 +39,78 @@ MAX_PANELS = 6
 METRIC_LABELS = {
     "uncollateralized_ee": "Uncollateralised EE",
     "uncollateralized_pe_0.99": "Uncollateralised PE 99%",
+    "uncollateralized_pfe_0.99": "Uncollateralised PFE 99%",
     "collateralized_ee": "Collateralised EE",
     "collateralized_pe_0.99": "Collateralised PE 99%",
 }
+
+PE_COLUMN = "uncollateralized_pe_0.99"
+PFE_COLUMN = "uncollateralized_pfe_0.99"
+
+
+def with_supervisory_pfe(comparison: pd.DataFrame) -> pd.DataFrame:
+    """Comparison frame plus derived supervisory-PFE columns (floored at zero).
+
+    The engine's PE is the raw path-value quantile — negative when the netting
+    set is a net liability at that date, which is information owed *to* the
+    counterparty (DVA territory), not credit exposure. Reported figures use the
+    supervisory convention PFE = max(quantile, 0), derived here at the
+    reporting seam so the engine output and its golden baselines stay raw
+    (CCR-RISK-03). Baseline and climate floor independently; the shift is the
+    difference of the floored profiles.
+    """
+    out = comparison.copy()
+    base = out[f"{PE_COLUMN}_baseline"].clip(lower=0.0)
+    climate = out[f"{PE_COLUMN}_climate"].clip(lower=0.0)
+    out[f"{PFE_COLUMN}_baseline"] = base
+    out[f"{PFE_COLUMN}_climate"] = climate
+    out[f"{PFE_COLUMN}_shift"] = climate - base
+    return out
+
+
+def epe_summary(comparison: pd.DataFrame, metric: str = "uncollateralized_ee") -> pd.DataFrame:
+    """Time-averaged exposure (EPE) per counterparty, plus a whole-book row.
+
+    Trapezoid average of the ``metric`` profile over the reporting grid in year
+    fractions — the single-number summary of a profile the results chapter
+    leads with (INT-23). Returns one row per counterparty and a final ``BOOK``
+    row (EPEs are means of sums, so the book row is the sum of the rows), with
+    ``epe_baseline`` / ``epe_climate`` / ``epe_shift`` / ``epe_shift_pct``.
+    """
+
+    def _epe(block: pd.DataFrame, column: str) -> float:
+        years = (
+            pd.to_datetime(block["default_times"]) - pd.to_datetime(block["default_times"].iloc[0])
+        ).dt.days.to_numpy() / 365.25
+        values = block[column].to_numpy(dtype=float)
+        if years[-1] == 0:
+            return float(values[0])
+        return float(np.trapezoid(values, years) / years[-1])
+
+    rows = [
+        {
+            "netting_agreement_id": str(naid),
+            "epe_baseline": _epe(block, f"{metric}_baseline"),
+            "epe_climate": _epe(block, f"{metric}_climate"),
+        }
+        for naid, block in comparison.sort_values("default_times").groupby("netting_agreement_id")
+    ]
+    out = pd.DataFrame(rows)
+    book = pd.DataFrame(
+        [
+            {
+                "netting_agreement_id": "BOOK",
+                "epe_baseline": out["epe_baseline"].sum(),
+                "epe_climate": out["epe_climate"].sum(),
+            }
+        ]
+    )
+    out = pd.concat([out, book], ignore_index=True)
+    out["epe_shift"] = out["epe_climate"] - out["epe_baseline"]
+    out["epe_shift_pct"] = (
+        100.0 * out["epe_shift"] / out["epe_baseline"].where(out["epe_baseline"] != 0)
+    )
+    return out
 
 
 def _grid_axis(ax, dates, max_ticks: int = 8) -> np.ndarray:
