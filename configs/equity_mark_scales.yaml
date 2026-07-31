@@ -36,6 +36,19 @@ cnsf_hidro_siniestros: data/hazard_mx/datos_CNSF/consolidados/riesgos_hidrometer
 window: {start_year: 2000, end_year: 2024}   # full panel: D is a climatology, not a rate fit,
                                              # so the 2016 regime break (HAZ-CENAPRED-10) only
                                              # shifts grain, not the state x peril damage mix.
+                                             # Known within-hidro caveat: INUND disappears as a
+                                             # subtipo from 2016 (fluvial under LLUV), so the
+                                             # lluvia/inundacion split of H is regime-dependent
+                                             # -> the fluvial_merged sensitivity variant.
+
+# Phase B event-label mix: the trigger set of the INT-20 headline lambda
+# (mayores_200mdp: registry window, real-terms threshold after INPC deflation).
+# pi = FREQUENCY shares of these arrivals — measurement-consistent with lambda;
+# the damage mix already lives inside the per-peril gamma components.
+peril_mix_events:
+  events_csv: data/hazard_mx/datos_CENAPRED/consolidados_2000_2024/eventos_cenapred_climada.csv
+  window: {start_year: 2002, end_year: 2015}
+  min_damage_mdp: 200.0   # MDP-2025, applied after deflation (INT-17 discipline)
 
 # CENAPRED peril_canonico -> peril group (climate scope only, GEN-12; groups keep
 # the S matrix at 6 columns; 'otros' pools perils totalling ~2% of damage).
@@ -122,9 +135,10 @@ poblacion_2020:
 # disclosures). Names without a block use population shares (the national-proxy
 # tier, [Bressan2024] coarse fallback): HCITY (152 hotels / 75 cities,
 # dispersed business portfolio), FIHO12 (87 hotels / 26 states, no public state
-# table), FUNO, and all non-hotel/airport names. Industrials
-# (CEMEX/GCC/GMEXICO/PENOLES/GRUMA/HERDEZ) are a deferred later-session
-# extension (OQ-INT-11 residual) — config-only edits.
+# table — re-checked 2026-07-30, still none), HERDEZ (16 plants, only 2
+# state-locatable from public disclosures — insufficient, GEN-03), FUNO, and
+# the remaining non-hotel/airport names. Industrials extension (OQ-INT-11 c)
+# executed 2026-07-30: CEMEX/GCC/GMEXICO/PENOLES/GRUMA below.
 exposicion_geografica:
   ASUR_SHARE:
     method: pasajeros_2024
@@ -226,3 +240,86 @@ exposicion_geografica:
       Sinaloa: 1
       Sonora: 1
       Tamaulipas: 1
+  CEMEX_SHARE:
+    method: conteo_plantas_cemento
+    fuente: "https://www.cemexmexico.com/donde-estamos-ubicados + SEC 20-F 2024
+      (https://www.sec.gov/Archives/edgar/data/1076378/000119312525097693/d905381d20f.htm)"
+    nota: "Cement plants by state from the company location page + 20-F (~15 wholly-owned
+      plants; 14 state-locatable from public sources, residual ambiguity documented,
+      GEN-03). Ready-mix/aggregates network not enumerated (follows the same footprint).
+      Consultado 2026-07-30 [eng]."
+    estados:            # cement plant counts (14 of ~15)
+      Nuevo León: 2              # Monterrey gris + blanco
+      Hidalgo: 3                 # Atotonilco, Huichapan, Tula region
+      Puebla: 1                  # Tepeaca
+      Jalisco: 2                 # Guadalajara, Zapotiltic
+      Estado de México: 1        # Barrientos
+      San Luis Potosí: 2         # Ciudad Valles, Tamuín
+      Sonora: 1                  # Hermosillo (reopened 2021)
+      Yucatán: 1                 # Mérida
+      Baja California: 1         # Ensenada
+  GCC_SHARE:
+    method: conteo_plantas_cemento
+    fuente: "https://cdn.investorcloud.net/gcc/InformacionFinanciera/InformacionAnual/GCC-Reporte-anual-2023.pdf"
+    nota: "Mexican cement production is Chihuahua-only: 3 plants (Chihuahua, Ciudad Juárez,
+      Samalayuca), ~2.5 Mt/yr; the ready-mix/block/aggregates network is also in-state, so
+      the state share is 1.0 regardless of weighting. US plants excluded (non-Mexico).
+      Consultado 2026-07-30 [eng]."
+    estados:
+      Chihuahua: 3
+  GMEXICO_SHARE:
+    method: conteo_unidades_operativas
+    fuente: "https://southerncoppercorp.com (10-K: Mexican open-pit segment + IMMSA
+      underground/processing units)"
+    nota: "Operating Mexican mining/metallurgical units of the mining division (Southern
+      Copper 88.9%-owned): Sonora = Buenavista del Cobre (Cananea), La Caridad mine +
+      metallurgical complex (Nacozari); San Luis Potosí = Charcas mine + electrolytic zinc
+      refinery; Zacatecas = San Martín. Suspended/closed units excluded (Taxco suspended
+      2007; Santa Bárbara/Santa Eulalia status unclear in current disclosures). San Julián
+      and Velardeña appear in some aggregator lists but are Fresnillo/Peñoles assets —
+      excluded here. Rail division out of scope (not production assets). Consultado
+      2026-07-30 [eng]."
+    estados:            # operating unit counts
+      Sonora: 3
+      San Luis Potosí: 2
+      Zacatecas: 1
+  PENOLES_SHARE:
+    method: conteo_unidades_operativas
+    fuente: "https://www.penoles.com.mx/nuestras-operaciones/localizacion-de-operaciones.html +
+      https://www.fresnilloplc.com/media/jwggz1pk/fresnillo-annual-report-2025-web.pdf"
+    nota: "Peñoles group operating units (incl. Fresnillo plc subsidiary mines): Zacatecas =
+      Fresnillo, Saucito, Juanicipio (commercial production since 2023); Durango = Ciénega
+      (San Ramón satellite counted within the district); Sonora = Herradura, Noche Buena;
+      Chihuahua = San Julián; Coahuila = Met-Mex Torreón, Aleazin Ramos Arizpe, Química del
+      Rey. Unit-count weighting [eng] — per-unit value not publicly disclosed at state
+      grain (Met-Mex alone is the world's largest silver refinery; nota for the S-tier
+      sensitivity). Consultado 2026-07-30."
+    estados:            # operating unit counts
+      Zacatecas: 3
+      Coahuila: 3
+      Sonora: 2
+      Durango: 1
+      Chihuahua: 1
+  GRUMA_SHARE:
+    method: estados_cobertura_gimsa
+    fuente: "https://www.gruma.com/en/investors/investors-gruma/company-overview.aspx +
+      https://www.gruma.com/media/729269/2q25-gruma.pdf"
+    nota: "GIMSA: 18 corn-flour plants across the states named in investor materials; no
+      per-state plant counts disclosed -> equal weight per covered state (the FINN13
+      precedent [eng]). Consultado 2026-07-30."
+    estados:            # covered states, equal weight
+      Nuevo León: 1
+      Tamaulipas: 1
+      Chihuahua: 1
+      Baja California: 1
+      Baja California Sur: 1
+      Sonora: 1
+      Nayarit: 1
+      Jalisco: 1
+      Yucatán: 1
+      Veracruz: 1
+      Guanajuato: 1
+      Michoacán: 1
+      Estado de México: 1
+      Sinaloa: 1
+      Chiapas: 1
