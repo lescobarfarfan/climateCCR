@@ -7,6 +7,13 @@ redistributed, never re-estimated. Emits the ``target_scales:`` YAML block for
 ``configs/climate_jump_real_mexican*.yaml`` plus the CNSF hidro USO x evento
 evidence table backing the S-matrix ordering.
 
+Phase B (peril-typed events): also estimates the trigger-set frequency peril
+mix ``pi`` (measurement-consistent with the INT-20 lambda) and the per-name
+per-peril scales ``c[i, p] = gamma_i^p / pi_p`` consumed by
+``ClimateJumpProcess`` — validated so ``sum_p pi_p c[i, p] == gamma_i`` to
+float precision (the Phase A per-name mean is preserved exactly; peril typing
+only redistributes impact across events).
+
 Deterministic (no RNG); idempotent (GEN-05): skips if the output exists, rerun
 with --forzar/--force.
 
@@ -37,6 +44,7 @@ def main() -> None:
         cnsf_uso_peril_evidence,
         compose_scales,
         load_damage_intensity,
+        peril_mix_from_events,
     )
     from climateCCR.infra import RunManifest, get_logger, load_config
 
@@ -92,6 +100,34 @@ def main() -> None:
 
     evidence = cnsf_uso_peril_evidence(config.paths.root / extra["cnsf_hidro_siniestros"])
 
+    # Phase B: trigger-set frequency peril mix + per-name per-peril scales.
+    mix_spec = extra["peril_mix_events"]
+    mix = peril_mix_from_events(
+        config.paths.root / mix_spec["events_csv"],
+        deflator=deflator,
+        peril_groups=extra["peril_groups"],
+        start_year=int(mix_spec["window"]["start_year"]),
+        end_year=int(mix_spec["window"]["end_year"]),
+        min_damage_mdp=float(mix_spec["min_damage_mdp"]),
+    )
+    peril_cols = list(intensity.columns)
+    missing_groups = sorted(set(peril_cols) - set(mix.index))
+    if missing_groups:
+        # A group with damage in H but no trigger-set arrivals would make c
+        # undefined; its gamma component would be unreachable. Fail loudly.
+        sys.exit(f"peril groups absent from the trigger set: {missing_groups}")
+    gamma_p = scales[[f"gamma_{p}" for p in peril_cols]].copy()
+    gamma_p.columns = peril_cols
+    c_scales = gamma_p.div(mix.reindex(peril_cols), axis=1)
+    identity = (c_scales * mix.reindex(peril_cols)).sum(axis=1) - scales["gamma"]
+    if identity.abs().max() > 1e-12:
+        worst = identity.abs().max()
+        sys.exit(f"anchor identity broken: max |sum_p pi_p c_ip - gamma_i| = {worst}")
+    logger.info(
+        "peril mix (trigger-set frequency): %s",
+        ", ".join(f"{p}={mix[p]:.4f}" for p in peril_cols),
+    )
+
     out_dir.mkdir(parents=True, exist_ok=True)
     scales.round(6).to_csv(out_csv)
     by_sector = (
@@ -100,15 +136,24 @@ def main() -> None:
     by_sector.round(6).to_csv(out_dir / "sector_scales.csv")
     intensity.round(9).to_csv(out_dir / "damage_intensity_state_peril.csv")
     evidence.round(6).to_csv(out_dir / "cnsf_uso_peril_shares.csv")
+    mix.rename("pi").round(6).to_csv(out_dir / "peril_mix.csv")
+    c_scales.round(6).to_csv(out_dir / "target_peril_scales.csv")
     manifest = RunManifest.create(seed=config.seed, config=config, project_root=config.paths.root)
     manifest_path = manifest.write(config.paths.manifests)
 
     print(scales.round(4).to_string())
     print(f"\nsum w*gamma = {anchor:.12f}")
+    print(f"max |sum_p pi_p c_ip - gamma_i| = {identity.abs().max():.2e}")
     print("\n# --- paste into equity_marks of configs/climate_jump_real_mexican*.yaml ---")
-    print("    target_scales:  # pipelines/10, results/equity_mark_scales (OQ-INT-11)")
-    for name, gamma in scales["gamma"].items():
-        print(f"      {name}: {gamma:.6f}")
+    print("    peril_mix:  # trigger-set frequency shares (pipelines/10, OQ-INT-11 Phase B)")
+    for p in peril_cols:
+        # 8 decimals: six rounded probabilities must still sum to 1 within the
+        # engine's 1e-6 validation tolerance.
+        print(f"      {p}: {mix[p]:.8f}")
+    print("    target_peril_scales:  # c_ip = gamma_i^p / pi_p; sum_p pi_p c_ip = gamma_i")
+    for name, row in c_scales.iterrows():
+        inner = ", ".join(f"{p}: {row[p]:.6f}" for p in peril_cols)
+        print(f"      {name}: {{{inner}}}")
     print(f"\nScales:   {out_csv}\nManifest: {manifest_path}")
 
 

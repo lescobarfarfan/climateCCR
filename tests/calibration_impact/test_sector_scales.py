@@ -150,3 +150,61 @@ def test_book_equity_weights_uses_call_strikes(tmp_path):
     assert weights["A_SHARE"] == pytest.approx(1000 / 1300)
     with pytest.raises(ValueError, match="C_SHARE"):
         book_equity_weights(path, ["A_SHARE", "C_SHARE"])
+
+
+def test_compose_scales_peril_components_sum_to_gamma():
+    # Phase B decomposition: the per-peril columns share the flat denominator,
+    # so sum_p gamma_<p> == gamma exactly and zero-susceptibility perils carry
+    # an exact zero component (the c = 0 masking source).
+    weights = pd.Series({"HOTELCO_SHARE": 0.5, "AGROCO_SHARE": 0.5})
+    scales = compose_scales(
+        EQUITIES,
+        susceptibility=SUSCEPTIBILITY,
+        geo_exposure={"HOTELCO_SHARE": {"estados": {"Costa": 10}}},
+        population=POPULATION,
+        intensity=_intensity(),
+        weights=weights,
+    )
+    recomposed = scales["gamma_ciclon"] + scales["gamma_sequia"]
+    pd.testing.assert_series_equal(recomposed, scales["gamma"], check_names=False)
+    assert scales.loc["HOTELCO_SHARE", "gamma_sequia"] == 0.0
+    assert scales.loc["AGROCO_SHARE", "gamma_ciclon"] == 0.0
+
+
+def test_peril_mix_from_events_frequency_shares(tmp_path):
+    from climateCCR.calibration.impact.sector_scales import peril_mix_from_events
+
+    frame = pd.DataFrame(
+        {
+            "anio": [2020, 2020, 2021, 2021, 2021, 2021],
+            "duracion_dias": [2.0, 3.0, 1.0, None, 4.0, 400.0],
+            "peril_canonico": ["Ciclón tropical"] * 3 + ["Sequía"] * 3,
+            "en_alcance_climatico": ["si", "si", "si", "si", "no", "si"],
+            # nominal 60 in 2020 deflates to 120 (base 2021) -> above threshold
+            "danio_mdp": [60.0, 40.0, 150.0, 200.0, 999.0, 999.0],
+        }
+    )
+    path = tmp_path / "events.csv"
+    frame.to_csv(path, index=False)
+    mix = peril_mix_from_events(
+        path,
+        deflator=DEFLATOR,
+        peril_groups=PERIL_GROUPS,
+        start_year=2020,
+        end_year=2021,
+        min_damage_mdp=100.0,
+    )
+    # Kept: ciclón 2020/60->120, ciclón 2021/150, sequía 2021/200 (NaN duration
+    # is discrete). Dropped: 2020/40->80 below bar, out-of-scope, 400-day
+    # aggregate. Frequency shares: ciclón 2/3, sequía 1/3.
+    assert mix["ciclon"] == pytest.approx(2 / 3)
+    assert mix["sequia"] == pytest.approx(1 / 3)
+    with pytest.raises(ValueError, match="unmapped"):
+        peril_mix_from_events(
+            path,
+            deflator=DEFLATOR,
+            peril_groups={"ciclon": ["Ciclón tropical"]},
+            start_year=2020,
+            end_year=2021,
+            min_damage_mdp=100.0,
+        )

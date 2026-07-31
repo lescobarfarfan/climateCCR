@@ -129,8 +129,10 @@ def compose_scales(
         missing_perils = sorted(set(intensity.columns) - set(s_row))
         if missing_perils:
             raise ValueError(f"sector {sector!r} misses peril groups: {missing_perils}")
-        # v[s] = sum_p S[sector, p] * H[s, p] — the state intensity felt by this sector.
-        felt = intensity.mul(pd.Series(s_row).reindex(intensity.columns), axis=1).sum(axis=1)
+        # felt_by_peril[s, p] = S[sector, p] * H[s, p] — kept per peril group so the
+        # flat gamma and its Phase B per-peril components come from one pass
+        # (gamma_raw = sum over columns; OQ-INT-11 a).
+        felt_by_peril = intensity.mul(pd.Series(s_row).reindex(intensity.columns), axis=1)
         block = geo_exposure.get(name)
         if block:
             g = pd.Series(block["estados"], dtype=float)
@@ -145,8 +147,11 @@ def compose_scales(
         else:
             g = pop_shares
             tier = "national_proxy"
-        gamma_raw = float(felt.reindex(g.index).fillna(0.0).mul(g).sum())
-        rows.append({"rf": name, "sector": sector, "geo_tier": tier, "gamma_raw": gamma_raw})
+        raw_by_peril = felt_by_peril.reindex(g.index).fillna(0.0).mul(g, axis=0).sum(axis=0)
+        row = {"rf": name, "sector": sector, "geo_tier": tier}
+        row.update({f"gamma_raw_{p}": float(v) for p, v in raw_by_peril.items()})
+        row["gamma_raw"] = float(raw_by_peril.sum())
+        rows.append(row)
 
     scales = pd.DataFrame(rows).set_index("rf")
     if (scales["gamma_raw"] <= 0).any():
@@ -155,8 +160,51 @@ def compose_scales(
     w = weights.reindex(scales.index)
     if w.isna().any():
         raise ValueError(f"weights missing names: {scales.index[w.isna()].tolist()}")
-    scales["gamma"] = scales["gamma_raw"] / (w * scales["gamma_raw"]).sum()
+    denom = (w * scales["gamma_raw"]).sum()
+    scales["gamma"] = scales["gamma_raw"] / denom
+    # Per-peril components share the flat denominator, so sum_p gamma_<p> == gamma
+    # exactly and Phase B redistributes without re-estimating (INT-24 principle).
+    for peril in intensity.columns:
+        scales[f"gamma_{peril}"] = scales[f"gamma_raw_{peril}"] / denom
     return scales
+
+
+def peril_mix_from_events(
+    events_csv: str | Path,
+    *,
+    deflator: Mapping[int, float],
+    peril_groups: Mapping[str, list[str]],
+    start_year: int,
+    end_year: int,
+    min_damage_mdp: float,
+) -> pd.Series:
+    """Event-frequency peril mix ``pi[group]`` from the jump trigger set (Phase B).
+
+    Loads the same discrete climate-scope CENAPRED event set the INT-20 arrival
+    intensity is fit on (:func:`~climateCCR.calibration.impact.hazard_jump.
+    load_climate_events` with the ``mayores_200mdp`` spec: registry window,
+    real-terms threshold), maps ``peril_canonico`` into the configured groups and
+    returns normalized *frequency* shares — the label distribution of the
+    arrivals the ``intensity`` counts, so labeling is measurement-consistent
+    with lambda (user decision 2026-07-30; the damage mix already lives inside
+    the per-peril gamma components). Raises on trigger-set perils missing from
+    ``peril_groups`` (a silently dropped label would bias the mix).
+    """
+    from climateCCR.calibration.impact.hazard_jump import load_climate_events
+
+    events = load_climate_events(
+        events_csv,
+        start_year=start_year,
+        end_year=end_year,
+        min_damage_mdp=min_damage_mdp,
+        deflator=deflator,
+    )
+    group_of = {peril: group for group, perils in peril_groups.items() for peril in perils}
+    unmapped = sorted(set(events["peril_canonico"]) - set(group_of))
+    if unmapped:
+        raise ValueError(f"peril_groups leaves trigger-set perils unmapped: {unmapped}")
+    counts = events["peril_canonico"].map(group_of).value_counts()
+    return (counts / counts.sum()).sort_index()
 
 
 def cnsf_uso_peril_evidence(cnsf_csv: str | Path, *, top_usos: int = 15) -> pd.DataFrame:
