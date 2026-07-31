@@ -2,7 +2,10 @@
 
 One climate event stream per Monte-Carlo path, shared across all shocked risk
 factors: each arrival hits every configured target with a mark drawn from that
-target's sampler. Arrivals are counted per simulation step (an event inside
+target's sampler — or, with peril typing on (OQ-INT-11 Phase B), scaled by the
+target's sensitivity to the event's shared categorical peril label, so only
+susceptible sectors move on a given event. Arrivals are counted per simulation
+step (an event inside
 ``(t_{i}, t_{i+1}]`` lands on the grid date ``t_{i+1}``, the engine's discrete
 resolution), so the overlay is a per-step *total mark* array that each diffusion
 superimposes on its own dynamics via
@@ -68,6 +71,19 @@ class ClimateJumpProcess:
             the jump-on vs baseline readout purely the climate component.
         mark_dependence: Only ``"independent"`` is implemented — per-event marks
             are independent across targets given the shared arrival.
+        peril_mix: Optional peril-label distribution ``{group: prob}`` (OQ-INT-11
+            Phase B). When given, every event draws one shared categorical peril
+            label; targets named in ``target_peril_scales`` take that event's
+            mark scaled by their per-peril sensitivity ``c[name][group]`` —
+            ``c = 0`` means the sector is not susceptible and the name does not
+            move on that event. Probabilities must be positive and sum to 1
+            (the trigger-set frequency mix, measurement-consistent with the
+            INT-20 ``intensity``). Absent -> Phase A behaviour, bit-identical.
+        target_peril_scales: ``{name: {group: c}}`` with exactly the
+            ``peril_mix`` groups per name; ``sum_p peril_mix[p] * c[name][p]``
+            equals the name's flat ``gamma`` (pipelines/10 identity), so the
+            per-name expected impact matches Phase A and peril typing only
+            redistributes it across events. Both-or-neither with ``peril_mix``.
     """
 
     def __init__(
@@ -76,6 +92,8 @@ class ClimateJumpProcess:
         targets: dict[str, MarkSampler],
         diffusion_dependence: str = "independent",
         mark_dependence: str = "independent",
+        peril_mix: dict[str, float] | None = None,
+        target_peril_scales: dict[str, dict[str, float]] | None = None,
     ) -> None:
         if not targets:
             raise ValueError("targets must map at least one risk-factor name to a MarkSampler")
@@ -95,6 +113,37 @@ class ClimateJumpProcess:
         self.diffusion_dependence = diffusion_dependence
         self.mark_dependence = mark_dependence
 
+        if (peril_mix is None) != (target_peril_scales is None):
+            raise ValueError("peril_mix and target_peril_scales are both-or-neither")
+        self.peril_labels: list[str] | None = None
+        self._peril_probs: np.ndarray | None = None
+        self._peril_scale_rows: dict[str, np.ndarray] = {}
+        if peril_mix is not None:
+            # Sorted label order: the draw stream depends on the group set, not on
+            # config key order (same stability rule as the sorted-target loop).
+            self.peril_labels = sorted(peril_mix)
+            probs = np.array([float(peril_mix[g]) for g in self.peril_labels])
+            if not np.all(np.isfinite(probs)) or np.any(probs <= 0):
+                raise ValueError(f"peril_mix probabilities must be finite and > 0: {peril_mix}")
+            if abs(probs.sum() - 1.0) > 1e-6:
+                raise ValueError(f"peril_mix must sum to 1, got {probs.sum():.8f}")
+            self._peril_probs = probs / probs.sum()
+            unknown = sorted(set(target_peril_scales) - set(self.targets))
+            if unknown:
+                raise ValueError(f"target_peril_scales names unknown targets: {unknown}")
+            for name, row in target_peril_scales.items():
+                if set(row) != set(self.peril_labels):
+                    raise ValueError(
+                        f"target_peril_scales[{name!r}] groups {sorted(row)} != "
+                        f"peril_mix groups {self.peril_labels}"
+                    )
+                c = np.array([float(row[g]) for g in self.peril_labels])
+                if not np.all(np.isfinite(c)) or np.any(c < 0):
+                    raise ValueError(
+                        f"target_peril_scales[{name!r}] must be finite and >= 0: {row}"
+                    )
+                self._peril_scale_rows[name] = c
+
     @classmethod
     def from_config(cls, jump_config: dict) -> ClimateJumpProcess:
         """Assemble the process from a ``climate_jumps`` config block.
@@ -106,13 +155,26 @@ class ClimateJumpProcess:
         while the rate translation stays open — OQ-INT-07).
 
         A channel may carry an optional ``target_scales: {name: gamma}`` mapping
-        (OQ-INT-11, derived by ``pipelines/10_equity_mark_scales.py``): each named
-        target's median is rescaled to ``median * gamma`` with ``sigma``/``sign``
-        unchanged, so its marks are exactly ``gamma *`` the uniform marks under
-        the same seed (same draw count per target, stream untouched). Unnamed
-        targets keep ``gamma = 1``; absent block == today's uniform behaviour.
+        (OQ-INT-11 Phase A, derived by ``pipelines/10_equity_mark_scales.py``):
+        each named target's median is rescaled to ``median * gamma`` with
+        ``sigma``/``sign`` unchanged, so its marks are exactly ``gamma *`` the
+        uniform marks under the same seed (same draw count per target, stream
+        untouched). Unnamed targets keep ``gamma = 1``.
+
+        Alternatively a channel may carry ``peril_mix: {group: prob}`` together
+        with ``target_peril_scales: {name: {group: c}}`` (OQ-INT-11 Phase B,
+        same pipeline): every event then draws a shared peril label from
+        ``peril_mix`` and a named target's mark on a ``p``-event is the base
+        draw times ``c[name][p]`` (``c = 0`` -> the name does not move). The
+        two forms are mutually exclusive per channel — ``c`` already embeds the
+        flat ``gamma`` (``sum_p mix[p] * c[name][p] = gamma``) — and only one
+        channel may declare peril typing (the label is a property of the event,
+        not of a channel). Unnamed targets take every event with the base
+        sampler. Absent blocks == uniform behaviour, bit-identical stream.
         """
         targets: dict[str, MarkSampler] = {}
+        peril_mix: dict[str, float] | None = None
+        target_peril_scales: dict[str, dict[str, float]] | None = None
         for channel in ("rate_marks", "equity_marks"):
             block = jump_config.get(channel)
             if block is None:
@@ -121,6 +183,30 @@ class ClimateJumpProcess:
                 median=block["median"], sigma=block["sigma"], sign=block["sign"]
             )
             scales = block.get("target_scales") or {}
+            mix = block.get("peril_mix")
+            peril_scales = block.get("target_peril_scales")
+            if (mix is None) != (peril_scales is None):
+                raise ValueError(
+                    f"{channel}: peril_mix and target_peril_scales are both-or-neither"
+                )
+            if mix is not None:
+                if scales:
+                    raise ValueError(
+                        f"{channel}: target_scales and target_peril_scales are mutually "
+                        "exclusive (the per-peril scales already embed gamma)"
+                    )
+                if peril_mix is not None:
+                    raise ValueError(
+                        "only one channel may declare peril_mix (event labels are shared)"
+                    )
+                unknown = sorted(set(peril_scales) - set(block["targets"]))
+                if unknown:
+                    raise ValueError(
+                        f"{channel}.target_peril_scales names unknown targets {unknown} "
+                        f"(not in {channel}.targets)"
+                    )
+                peril_mix = dict(mix)
+                target_peril_scales = {k: dict(v) for k, v in peril_scales.items()}
             unknown = sorted(set(scales) - set(block["targets"]))
             if unknown:
                 raise ValueError(
@@ -140,7 +226,12 @@ class ClimateJumpProcess:
                 )
         if not targets:
             raise ValueError("climate_jumps needs at least one of rate_marks/equity_marks")
-        return cls(jump_config["intensity"], targets)
+        return cls(
+            jump_config["intensity"],
+            targets,
+            peril_mix=peril_mix,
+            target_peril_scales=target_peril_scales,
+        )
 
     def _step_intensities(self, n_paths: int, step_sizes: np.ndarray) -> np.ndarray:
         """Expected events per (path, step): ``lambda_i * dt_i``, broadcast checked."""
@@ -182,6 +273,14 @@ class ClimateJumpProcess:
         event_counts = rng.poisson(lam=self._step_intensities(n_paths, step_sizes))
         total_events = int(event_counts.sum())
 
+        # One shared peril label per event (Phase B): drawn once, before the
+        # per-target mark loop, so every target sees the same event typology.
+        # Skipped entirely when peril typing is off — the Phase A stream is
+        # bit-identical (golden baselines, CCR-MIG-03).
+        labels: np.ndarray | None = None
+        if self._peril_probs is not None:
+            labels = rng.choice(len(self._peril_probs), size=total_events, p=self._peril_probs)
+
         step_marks: dict[str, np.ndarray] = {}
         # Sorted-name order keeps the draw sequence independent of dict insertion
         # order, so a fixture's mark stream is stable across configurations.
@@ -189,6 +288,8 @@ class ClimateJumpProcess:
         cell_index = np.repeat(np.arange(flat_counts.size), flat_counts)
         for name in sorted(self.targets):
             marks = self.targets[name].sample(rng, total_events)
+            if labels is not None and name in self._peril_scale_rows:
+                marks = marks * self._peril_scale_rows[name][labels]
             flat_sum = np.zeros(flat_counts.size)
             np.add.at(flat_sum, cell_index, marks)
             step_marks[name] = flat_sum.reshape(event_counts.shape)

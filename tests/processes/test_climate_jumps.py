@@ -162,6 +162,121 @@ def test_target_scales_unknown_target_raises():
         ClimateJumpProcess.from_config(_jump_config({"TYPO_SHARE": 1.5}))
 
 
+# ---------------------------------------------------------------------------
+# Peril-typed events (OQ-INT-11 Phase B)
+# ---------------------------------------------------------------------------
+
+
+def _peril_config(mix: dict, scales: dict, sigma: float = 1.2106) -> dict:
+    return {
+        "intensity": 3.0,
+        "equity_marks": {
+            "median": 0.006864,
+            "sigma": sigma,
+            "sign": -1.0,
+            "targets": sorted(scales),
+            "peril_mix": mix,
+            "target_peril_scales": scales,
+        },
+    }
+
+
+def test_peril_typing_preserves_event_counts():
+    # The label draw happens after the Poisson counts, so arrivals are identical
+    # with typing on or off under the same master seed.
+    uniform = ClimateJumpProcess.from_config(_jump_config(None)).generate(DATES, 64, SEED)
+    typed = ClimateJumpProcess.from_config(
+        _peril_config(
+            {"hidro": 1.0}, {n: {"hidro": 1.0} for n in ("A_SHARE", "B_SHARE", "C_SHARE")}
+        )
+    ).generate(DATES, 64, SEED)
+    np.testing.assert_array_equal(uniform.event_counts, typed.event_counts)
+
+
+def test_zero_susceptibility_masks_all_events():
+    # "Only susceptible sectors take the hit": c = 0 -> the name never moves,
+    # even though events arrive and hit the other target.
+    scenario = ClimateJumpProcess.from_config(
+        _peril_config({"hidro": 1.0}, {"A_SHARE": {"hidro": 0.0}, "B_SHARE": {"hidro": 2.0}})
+    ).generate(DATES, 64, SEED)
+    assert scenario.event_counts.sum() > 0
+    np.testing.assert_array_equal(scenario.step_marks["A_SHARE"], 0.0)
+    assert np.any(scenario.step_marks["B_SHARE"] != 0.0)
+
+
+def test_peril_labels_are_shared_and_exhaustive():
+    # sigma=0 makes the base draw the constant -median, so marks reveal the
+    # labels: complementary c rows must tile every event exactly once (X takes
+    # a-events, Y takes b-events, together every event), and the realized label
+    # frequencies must match the declared mix.
+    scenario = ClimateJumpProcess.from_config(
+        _peril_config(
+            {"a": 0.75, "b": 0.25},
+            {"X_SHARE": {"a": 1.0, "b": 0.0}, "Y_SHARE": {"a": 0.0, "b": 1.0}},
+            sigma=0.0,
+        )
+    ).generate(DATES, n_paths=2_000, master_seed=SEED)
+    total = scenario.step_marks["X_SHARE"] + scenario.step_marks["Y_SHARE"]
+    np.testing.assert_allclose(total, -0.006864 * scenario.event_counts)
+    assert scenario.event_counts.sum() > 1_000
+    share_a = scenario.step_marks["X_SHARE"].sum() / total.sum()
+    np.testing.assert_allclose(share_a, 0.75, rtol=0.05)
+
+
+def test_peril_typed_mean_matches_anchor_identity():
+    # sum_p pi_p c_ip is the name's flat gamma: with sigma=0 the realized mean
+    # mark per event converges to -median * gamma (the Phase A per-name mean).
+    mix = {"a": 0.5, "b": 0.5}
+    scales = {"Z_SHARE": {"a": 2.0, "b": 0.5}}  # gamma = 1.25
+    scenario = ClimateJumpProcess.from_config(_peril_config(mix, scales, sigma=0.0)).generate(
+        DATES, n_paths=2_000, master_seed=SEED
+    )
+    mean_per_event = scenario.step_marks["Z_SHARE"].sum() / scenario.event_counts.sum()
+    np.testing.assert_allclose(mean_per_event, -0.006864 * 1.25, rtol=0.02)
+
+
+def test_peril_config_validation():
+    good_mix = {"a": 0.5, "b": 0.5}
+    good_scales = {"A_SHARE": {"a": 1.0, "b": 1.0}}
+
+    config = _peril_config(good_mix, good_scales)
+    del config["equity_marks"]["target_peril_scales"]
+    with pytest.raises(ValueError, match="both-or-neither"):
+        ClimateJumpProcess.from_config(config)
+
+    config = _peril_config(good_mix, good_scales)
+    config["equity_marks"]["target_scales"] = {"A_SHARE": 1.5}
+    with pytest.raises(ValueError, match="mutually"):
+        ClimateJumpProcess.from_config(config)
+
+    both = {"A_SHARE": {"a": 1.0, "b": 1.0}, "TYPO_SHARE": {"a": 1.0, "b": 1.0}}
+    config = _peril_config(good_mix, both)
+    config["equity_marks"]["targets"] = ["A_SHARE"]
+    with pytest.raises(ValueError, match="TYPO_SHARE"):
+        ClimateJumpProcess.from_config(config)
+
+    with pytest.raises(ValueError, match="sum to 1"):
+        ClimateJumpProcess.from_config(_peril_config({"a": 0.5, "b": 0.4}, good_scales))
+
+    with pytest.raises(ValueError, match="groups"):
+        ClimateJumpProcess.from_config(_peril_config(good_mix, {"A_SHARE": {"a": 1.0}}))
+
+    with pytest.raises(ValueError, match=">= 0"):
+        ClimateJumpProcess.from_config(_peril_config(good_mix, {"A_SHARE": {"a": -1.0, "b": 1.0}}))
+
+    config = _peril_config(good_mix, good_scales)
+    config["rate_marks"] = {
+        "median": 1e-6,
+        "sigma": 1.0,
+        "sign": 1.0,
+        "targets": ["CURVE"],
+        "peril_mix": good_mix,
+        "target_peril_scales": {"CURVE": {"a": 1.0, "b": 1.0}},
+    }
+    with pytest.raises(ValueError, match="one channel"):
+        ClimateJumpProcess.from_config(config)
+
+
 def test_non_independent_dependence_is_explicitly_unimplemented():
     with pytest.raises(NotImplementedError):
         ClimateJumpProcess(1.0, {"A": DeterministicMark(-0.1)}, diffusion_dependence="correlated")
