@@ -45,6 +45,8 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 - Explanation: [[2026-07-25_headline_metric_explained]] — what EE/EPE/PFE mean, how to read the book-EPE delta band (−11.0/−6.5/−5.6%) and its sign, the wrong-way-risk caveat, and why the floor-at-reporting convention is supervisory-exact without touching the golden baselines (`notes/summary_explanations/`, `GEN-26`).
 - Reading: [[2026-07-26_sector_marks]] — the sector-marks read-log: the Bressan asset-level template + proxy caveat, DaLA sector decomposition, exposure-share→return evidence, the supervisory sector×geography frame, and the lognormal median-scaling algebra behind `target_scales` (`INT-24`; `notes/reading/`, `GEN-21`).
 - Explanation: [[2026-07-26_sector_marks_explained]] — what `γ_i` is, the G×S×D/pob layers, the Σwγ=1 redistribution anchor, the Jensen reading of the re-based EPE band (−8.74/−5.35/−4.68%) and the hotel/airport concentration, and the residual limits (`notes/summary_explanations/`, `GEN-26`).
+- Reading: [[2026-07-30_peril_typed_events]] — the peril-typing read-log: marking/thinning of Poisson processes behind `c_ip = γ_i^p/π_p`, the frequency-vs-damage mix discipline, the cause-vs-mechanism attribution caveats, and the robust-triage basis of the base inspección (`INT-25`/`HAZ-CENAPRED-11`; `notes/reading/`, `GEN-21`).
+- Explanation: [[2026-07-30_peril_typed_events_explained]] — what `π` and `c_ip` mean, the exact mean-preservation anchor, how to read the re-based band (−8.44/−5.12/−4.50%) and the three-generation lineage, and the five-variant + jitter robustness answers (`notes/summary_explanations/`, `GEN-26`).
 
 ## Literature
 - [[Compagnoni_2023_RandomizedSignatures]] — randomized signatures as a reservoir (`CCR-SIG-01`).
