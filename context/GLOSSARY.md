@@ -37,6 +37,7 @@ J. Content-word retrieval index
 - **git worktree** — a second working-tree checkout of one repo on a separate branch; used for parallel Claude Code agents, created **outside** the Obsidian-indexed vault to avoid duplicate-note / wikilink clashes (`GEN-16`).
 - **`additionalDirectories`** — the Claude Code setting (also `--add-dir` / `/add-dir`) that grants read/write access to one extra path (e.g. an external data drive) without widening filesystem scope (`GEN-15`).
 - **`CLAUDE.md`** — the repo-root memory file Claude Code loads each session; points at the canon and restates load-bearing rules. (Distinct from `00_README_CONTEXT.md`, the human entry point.)
+- **Knowledge graph (understand-anything, `.ua/`)** — derived, queryable code map of the repo (`.ua/knowledge-graph.json`; local dashboard via `/understand-dashboard`), rebuilt/refreshed incrementally by `/understand`; analysis scope fixed by the **tracked** `.ua/.understandignore` (vault notes out, canon docs in), all other `.ua/` artifacts git-ignored (`GEN-29`).
 
 ## C. Stochastic models & math
 - **BM / GBM** — Brownian motion / geometric Brownian motion (GBM supports constant **or** term-structure volatility here).
@@ -161,6 +162,7 @@ J. Content-word retrieval index
 | The CLIMADA calibration design | **subnational impact function v_thresh v_half LitPop PyMC partial pooling** |
 | The compound-Poisson/Cox plan | **compound Poisson Cox doubly stochastic aggregated tail CENAPRED** |
 | The headline-λ regime band | **headline lambda regime band floor CT anchor regime-consistent severity pairing scenario** |
+| The knowledge-graph tooling + its versioning | **understand-anything /understand dashboard .ua knowledge graph understandignore scope tracked GEN-29** |
 
 
 ---

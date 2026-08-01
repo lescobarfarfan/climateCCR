@@ -48,6 +48,7 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 - Reading: [[2026-07-30_peril_typed_events]] — the peril-typing read-log: marking/thinning of Poisson processes behind `c_ip = γ_i^p/π_p`, the frequency-vs-damage mix discipline, the cause-vs-mechanism attribution caveats, and the robust-triage basis of the base inspección (`INT-25`/`HAZ-CENAPRED-11`; `notes/reading/`, `GEN-21`).
 - Explanation: [[2026-07-30_peril_typed_events_explained]] — what `π` and `c_ip` mean, the exact mean-preservation anchor, how to read the re-based band (−8.44/−5.12/−4.50%) and the three-generation lineage, and the five-variant + jitter robustness answers (`notes/summary_explanations/`, `GEN-26`).
 - Reading: [[2026-08-01_knowledge_graph_tooling]] — tooling read-log, no analytical decisions (`GEN-29` adopts the understand-anything knowledge graph + dashboard, `.ua/` git-ignored; `notes/reading/`, `GEN-21`).
+- Reading: [[2026-08-01_ua_config_tracking]] — housekeeping read-log, no analytical decisions (`GEN-29` amended: the UA scope config `.ua/.understandignore` + `config.json` git-tracked, manual-incremental update policy documented; `notes/reading/`, `GEN-21`).
 
 ## Literature
 - [[Compagnoni_2023_RandomizedSignatures]] — randomized signatures as a reservoir (`CCR-SIG-01`).
