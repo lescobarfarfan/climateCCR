@@ -39,8 +39,13 @@ results/*
 .claude/settings.local.json
 .claude/worktrees/
 
-# understand-anything knowledge-graph artifacts (derived; rebuild via /understand — GEN-29)
-.ua/
+# understand-anything knowledge-graph artifacts (derived; rebuild via /understand — GEN-29).
+# Artifacts ignored, config tracked (GEN-04 pattern: reconstructor inputs are versioned) —
+# .understandignore holds the hand-curated scope (vault notes out, canon in) that a fresh
+# rebuild cannot regenerate from .gitignore alone.
+.ua/*
+!.ua/.understandignore
+!.ua/config.json
 
 # Obsidian per-machine workspace/config state (vault content is tracked; this is UI state)
 .obsidian/

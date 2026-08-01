@@ -1,0 +1,30 @@
+# .understandignore — patterns for files/dirs to exclude from analysis
+# Syntax: same as .gitignore (globs, # comments, ! negation, trailing / for dirs)
+# Built-in defaults (always excluded unless negated):
+#   node_modules/, .git/, dist/, build/, obj/, *.lock, *.min.js, etc.
+
+# --- Caches / artifacts / local config (from .gitignore) ---
+*.py[cod]
+*.egg-info/
+.eggs/
+.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+data/
+results/
+.DS_Store
+.claude/
+.obsidian/
+.ua/
+scraps/
+
+# --- Obsidian vault content (knowledge notes, not code architecture) ---
+# The canon (context/) and the root hub/MOC files STAY IN — they document the code.
+notes/
+literature/
+
+# --- Test file patterns (kept IN so tested_by coverage edges are generated) ---
+# **/test_*.py
+# **/conftest.py
