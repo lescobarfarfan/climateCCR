@@ -39,5 +39,8 @@ results/*
 .claude/settings.local.json
 .claude/worktrees/
 
+# understand-anything knowledge-graph artifacts (derived; rebuild via /understand — GEN-29)
+.ua/
+
 # Obsidian per-machine workspace/config state (vault content is tracked; this is UI state)
 .obsidian/
