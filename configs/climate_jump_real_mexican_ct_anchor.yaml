@@ -16,9 +16,11 @@
 #   196,734,670 -> larger rate marks, direction pinned by INT-20). The
 #   [Anyfantaki2025] literature-scenario status of the rate channel is
 #   unchanged (INT-18/19 null gate).
-# - targets renamed: the MXN curve and the 26 Mexican climate-book shares
-#   (uniform book-level equity marks per INT-17; sector-differentiated marks
-#   are an open question, not improvised here).
+# - targets renamed: the MXN curve and the 26 Mexican climate-book shares;
+#   equity marks carry the INT-24/25 sector/peril differentiation (peril_mix +
+#   target_peril_scales below, shared with the headline config) and the
+#   OQ-INT-11 e per-label severity (peril_severity below, mean-matched so only
+#   the conditional shape moves).
 
 seed: 233423        # master seed; jumps draw from a derived substream (GEN-07)
 n_paths: 10000      # matches the locked baseline discipline (CCR-MIG-03)
@@ -84,3 +86,10 @@ climate_jumps:
       FEMSA_SHARE: {ciclon_tropical: 0.701012, incendio_forestal: 0.000000, inundacion: 0.204911, lluvia: 0.195560, otros: 0.033454, sequia: 0.303801}
       WALMEX_SHARE: {ciclon_tropical: 0.934683, incendio_forestal: 0.141478, inundacion: 0.341518, lluvia: 0.293340, otros: 0.050181, sequia: 0.043400}
       ALSEA_SHARE: {ciclon_tropical: 0.701012, incendio_forestal: 0.000000, inundacion: 0.204911, lluvia: 0.195560, otros: 0.033454, sequia: 0.043400}
+    peril_severity:  # per-label sigma, mean-matched medians (pipelines/10, OQ-INT-11 e)
+      ciclon_tropical: {median: 0.0058848, sigma: 1.3317}
+      incendio_forestal: {median: 0.0068640, sigma: 1.2106}  # pooled fallback (thin label)
+      inundacion: {median: 0.0067454, sigma: 1.2249}
+      lluvia: {median: 0.0082563, sigma: 1.0470}
+      otros: {median: 0.0097978, sigma: 0.8682}
+      sequia: {median: 0.0102867, sigma: 0.8102}

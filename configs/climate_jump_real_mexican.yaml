@@ -28,6 +28,13 @@
 #   only redistributes it across events (INT-24 principle). The Phase A flat
 #   form (target_scales: {name: gamma}) remains available but is mutually
 #   exclusive with the peril blocks.
+# - equity_marks.peril_severity (OQ-INT-11 e): per-label lognormal severity on
+#   the same trigger rows, mean-matched to the pooled registry fit
+#   (median_p = median * exp((sigma^2 - sigma_p^2)/2), so E[L_p] = E[L] and
+#   the per-name/book expected impact is unchanged) — only the conditional
+#   shape moves: ciclon draws fatter (sigma 1.33 vs pooled 1.21), sequia/otros
+#   thinner. Values from pipelines/10 (results/equity_mark_scales/
+#   peril_severity.csv); incendio keeps the pooled parameters (2 trigger rows).
 
 seed: 233423        # master seed; jumps draw from a derived substream (GEN-07)
 n_paths: 10000      # matches the locked baseline discipline (CCR-MIG-03)
@@ -93,3 +100,10 @@ climate_jumps:
       FEMSA_SHARE: {ciclon_tropical: 0.701012, incendio_forestal: 0.000000, inundacion: 0.204911, lluvia: 0.195560, otros: 0.033454, sequia: 0.303801}
       WALMEX_SHARE: {ciclon_tropical: 0.934683, incendio_forestal: 0.141478, inundacion: 0.341518, lluvia: 0.293340, otros: 0.050181, sequia: 0.043400}
       ALSEA_SHARE: {ciclon_tropical: 0.701012, incendio_forestal: 0.000000, inundacion: 0.204911, lluvia: 0.195560, otros: 0.033454, sequia: 0.043400}
+    peril_severity:  # per-label sigma, mean-matched medians (pipelines/10, OQ-INT-11 e)
+      ciclon_tropical: {median: 0.0058848, sigma: 1.3317}
+      incendio_forestal: {median: 0.0068640, sigma: 1.2106}  # pooled fallback (thin label)
+      inundacion: {median: 0.0067454, sigma: 1.2249}
+      lluvia: {median: 0.0082563, sigma: 1.0470}
+      otros: {median: 0.0097978, sigma: 0.8682}
+      sequia: {median: 0.0102867, sigma: 0.8102}

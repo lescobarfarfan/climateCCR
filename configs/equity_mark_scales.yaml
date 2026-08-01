@@ -50,6 +50,30 @@ peril_mix_events:
   window: {start_year: 2002, end_year: 2015}
   min_damage_mdp: 200.0   # MDP-2025, applied after deflation (INT-17 discipline)
 
+# Phase B' per-label severity (OQ-INT-11 e): conditional lognormal dispersion
+# sigma_p per peril label from the SAME trigger rows, mean-matched to each
+# variant's pooled fit (fit_peril_severity: median_p = median * exp((sigma^2 -
+# sigma_p^2)/2), so E[L_p] = E[L] and the INT-24/25 identities are preserved —
+# only the conditional shape/tails move; the cross-label mean differential
+# already lives in c_ip = gamma_i^p/pi_p). Labels under min_events keep the
+# pooled parameters (GEN-03). Each variant reuses peril_mix_events' events_csv
+# + real-terms threshold with its own regime window (the INT-20 severity
+# pairing); jump_configs lists the configs whose equity_marks (median, sigma)
+# the emitted peril_severity paste block is computed for — their sigma must
+# match the variant's pooled fit (consistency check in pipelines/10).
+peril_severity:
+  min_events: 10
+  variants:
+    registro:                     # headline + CT-anchor marks (registry severity)
+      window: {start_year: 2002, end_year: 2015}
+      jump_configs:
+        - configs/climate_jump_real_mexican.yaml
+        - configs/climate_jump_real_mexican_ct_anchor.yaml
+    reporte:                      # floor marks (report-regime severity)
+      window: {start_year: 2016, end_year: 2024}
+      jump_configs:
+        - configs/climate_jump_real_mexican_floor.yaml
+
 # CENAPRED peril_canonico -> peril group (climate scope only, GEN-12; groups keep
 # the S matrix at 6 columns; 'otros' pools perils totalling ~2% of damage).
 peril_groups:

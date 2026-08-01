@@ -14,6 +14,13 @@ per-peril scales ``c[i, p] = gamma_i^p / pi_p`` consumed by
 float precision (the Phase A per-name mean is preserved exactly; peril typing
 only redistributes impact across events).
 
+Phase B' (per-label severity, OQ-INT-11 e): fits the conditional lognormal
+dispersion per peril label on the same trigger rows, mean-matched to each
+variant's pooled fit (``fit_peril_severity``), and emits the ``peril_severity:``
+paste block per jump config — each label's mark-scale median is the config's
+equity median times ``exp((sigma^2 - sigma_p^2)/2)``, so ``E[L_p] = E[L]`` and
+only the conditional shape moves.
+
 Deterministic (no RNG); idempotent (GEN-05): skips if the output exists, rerun
 with --forzar/--force.
 
@@ -39,6 +46,12 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    import pandas as pd
+    from climateCCR.calibration.impact.hazard_jump import (
+        fit_peril_severity,
+        fit_severity,
+        load_climate_events,
+    )
     from climateCCR.calibration.impact.sector_scales import (
         book_equity_weights,
         cnsf_uso_peril_evidence,
@@ -128,6 +141,49 @@ def main() -> None:
         ", ".join(f"{p}={mix[p]:.4f}" for p in peril_cols),
     )
 
+    # Phase B': per-label severity, mean-matched per regime-window variant.
+    sev_spec = extra["peril_severity"]
+    sev_frames = []
+    sev_blocks: list[tuple[str, str, pd.DataFrame, float]] = []
+    for variant, spec in sev_spec["variants"].items():
+        events = load_climate_events(
+            config.paths.root / mix_spec["events_csv"],
+            start_year=int(spec["window"]["start_year"]),
+            end_year=int(spec["window"]["end_year"]),
+            min_damage_mdp=float(mix_spec["min_damage_mdp"]),
+            deflator=deflator,
+        )
+        pooled = fit_severity(events, deflated=True)
+        table = fit_peril_severity(
+            events,
+            peril_groups=extra["peril_groups"],
+            pooled=pooled,
+            min_events=int(sev_spec["min_events"]),
+        )
+        logger.info(
+            "peril severity [%s] pooled median=%.2f sigma=%.4f (n=%d): %s",
+            variant,
+            pooled.median,
+            pooled.sigma,
+            pooled.n_events,
+            ", ".join(
+                f"{g}: sigma={row['sigma']:.4f} n={row['n_events']}"
+                + (" (pooled)" if row["pooled_fallback"] else "")
+                for g, row in table.iterrows()
+            ),
+        )
+        sev_frames.append(table.assign(variant=variant, pooled_sigma=pooled.sigma))
+        for jump_config in spec["jump_configs"]:
+            marks = yaml.safe_load((config.paths.root / jump_config).read_text())["climate_jumps"][
+                "equity_marks"
+            ]
+            if abs(float(marks["sigma"]) - pooled.sigma) > 1e-3:
+                sys.exit(
+                    f"{jump_config}: equity sigma {marks['sigma']} != {variant} pooled "
+                    f"fit {pooled.sigma:.6f} — wrong variant window for this config?"
+                )
+            sev_blocks.append((jump_config, variant, table, float(marks["median"])))
+
     out_dir.mkdir(parents=True, exist_ok=True)
     scales.round(6).to_csv(out_csv)
     by_sector = (
@@ -138,6 +194,7 @@ def main() -> None:
     evidence.round(6).to_csv(out_dir / "cnsf_uso_peril_shares.csv")
     mix.rename("pi").round(6).to_csv(out_dir / "peril_mix.csv")
     c_scales.round(6).to_csv(out_dir / "target_peril_scales.csv")
+    pd.concat(sev_frames).round(6).to_csv(out_dir / "peril_severity.csv")
     manifest = RunManifest.create(seed=config.seed, config=config, project_root=config.paths.root)
     manifest_path = manifest.write(config.paths.manifests)
 
@@ -154,6 +211,19 @@ def main() -> None:
     for name, row in c_scales.iterrows():
         inner = ", ".join(f"{p}: {row[p]:.6f}" for p in peril_cols)
         print(f"      {name}: {{{inner}}}")
+    for jump_config, variant, table, base_median in sev_blocks:
+        print(f"\n# --- paste into equity_marks of {jump_config} ({variant} severity) ---")
+        print(
+            "    peril_severity:  # per-label sigma, mean-matched medians "
+            "(pipelines/10, OQ-INT-11 e)"
+        )
+        for group in peril_cols:
+            row = table.loc[group]
+            note = "  # pooled fallback (thin label)" if row["pooled_fallback"] else ""
+            print(
+                f"      {group}: {{median: {base_median * row['median_multiplier']:.7f}, "
+                f"sigma: {row['sigma']:.4f}}}{note}"
+            )
     print(f"\nScales:   {out_csv}\nManifest: {manifest_path}")
 
 
