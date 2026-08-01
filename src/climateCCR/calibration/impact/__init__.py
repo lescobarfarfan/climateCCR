@@ -21,6 +21,7 @@ from .rate_response import (
     event_study,
     rate_scale_from_beta,
 )
+from .sector_response import episode_bootstrap_p, episode_cars, ordering_stat
 
 __all__ = [
     "ANNUAL_AGGREGATE_MIN_DAYS",
@@ -33,8 +34,11 @@ __all__ = [
     "annual_real_amounts",
     "build_episodes",
     "derive_loss_to_mark_scale",
+    "episode_bootstrap_p",
+    "episode_cars",
     "estimate_intensity",
     "event_study",
+    "ordering_stat",
     "fit_intensity_trend",
     "fit_peril_severity",
     "fit_severity",

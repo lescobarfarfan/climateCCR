@@ -1,0 +1,65 @@
+# Sector event study around cyclone episodes — OQ-INT-11 Phase C validation
+# (the INT-24/25 gamma/c ordering against realized equity returns).
+#
+# PRE-REGISTERED ADOPTION GATE — fixed verbatim BEFORE any estimation run
+# (INT-18 discipline; committed prior to the first execution of
+# pipelines/13_sector_event_study.py on real data):
+#
+#   The INT-24/25 mark ordering is considered VALIDATED (Phase C PASA) iff
+#   the episode-bootstrap one-sided p-value for Kendall tau < 0 — tau
+#   computed between per-name mean CAR over the [0, +5] business-day window
+#   around ciclon-tropical episodes and the name's adopted c_ciclon
+#   (configs/climate_jump_real_mexican.yaml target_peril_scales) — satisfies
+#   p_boot = P(tau* >= 0) < 0.05, on the primary episode set and name
+#   universe defined below. Any other window, statistic, episode cut, or
+#   name subset is DIAGNOSTIC ONLY and cannot flip the verdict. FALLA is a
+#   reportable result (INT-19 precedent): the ordering is then bounded as
+#   not detectable in daily market prices at this sample size.
+#
+# Primary specification (the gate's inputs):
+# - Episodes: Ciclón tropical trigger events (>= 200 MDP-2025 real damage
+#   after INPC deflation, duration <= 30 d), 2002-2024 extended base
+#   (includes Otis), merged within 5 business days (build_episodes — the
+#   INT-18/19 machinery verbatim).
+# - CARs: market model on daily log AdjClose returns vs the IPC (^MXX), OLS
+#   on business days [-120, -10] before the episode's first trading day,
+#   >= 60 estimation obs, event window [0, +5] with <= 40% missing days —
+#   the rate_response conventions verbatim.
+# - Names: the 26 book equities; a name enters the tau iff it has >= 10
+#   valid episode CARs at the gate window (eligibility decided once, on the
+#   original sample; the same universe is reused for every diagnostic).
+# - Bootstrap: 10,000 episode resamples, seeded (GEN-07) — resampling
+#   episodes, not (name, episode) cells, respects the shared-episode
+#   dependence across names.
+#
+# Secondary / diagnostic (reported, never gating): windows [0,+1] and
+# [0,+10]; the exact Kendall p (ignores shared-episode dependence); tau vs
+# the flat gamma; top-vs-bottom c_ciclon tercile mean-CAR spread; the
+# drop-largest-episode jackknife (Otis, the INT-19 leverage precedent).
+
+events_csv: data/hazard_mx/datos_CENAPRED/consolidados_2000_2024/eventos_cenapred_climada.csv
+deflator: configs/inpc_anual.yaml
+jump_config: configs/climate_jump_real_mexican.yaml # c_ciclon + name universe (adopted values)
+yahoo_book_dir: data/market_mx/yahoo/book
+ipc_csv: data/market_mx/yahoo/ipc_mxx.csv
+output_dir: sector_event_study
+
+event_set:
+  peril: "Ciclón tropical"
+  start: 2002
+  end: 2024
+  min_damage_mdp: 200.0 # MDP-2025, applied after deflation (INT-17 discipline)
+  max_duration_days: 30
+  merge_window_bd: 5
+
+study:
+  estimation_window_bd: [-120, -10]
+  min_estimation_obs: 60
+  max_missing_frac: 0.4
+  event_windows_bd: [1, 5, 10] # 5 = the gate window
+  gate_window_bd: 5
+  min_episodes_per_name: 10
+  n_bootstrap: 10000
+
+seed: 233423
+alpha: 0.05
