@@ -237,6 +237,64 @@ class LognormalSeverityFit:
         return LognormalMark(median=self.median / loss_to_mark_scale, sigma=self.sigma, sign=sign)
 
 
+def fit_peril_severity(
+    events: pd.DataFrame,
+    *,
+    peril_groups: Mapping[str, list[str]],
+    pooled: LognormalSeverityFit,
+    min_events: int = 10,
+) -> pd.DataFrame:
+    """Per-peril-label lognormal severity, mean-matched to the pooled fit (OQ-INT-11 e).
+
+    Phase B draws every event's peril label from the trigger-set frequency mix but
+    sizes it from one pooled lognormal, so conditional on a cyclone label the event
+    size is understated (the ciclon subset fits far fatter, INT-16). This refit
+    estimates the conditional dispersion ``sigma_p`` per label from the same
+    trigger rows and pins each label's *mean* to the pooled fit's mean::
+
+        median_p = pooled.median * exp((pooled.sigma**2 - sigma_p**2) / 2)
+
+    so ``E[L_p] = E[L]`` for every label and the INT-24/25 expected-impact
+    identities (book anchor, per-name means via ``sum_p pi_p c_ip = gamma_i``)
+    hold exactly with severity typing on: only the conditional shape/tails move.
+    The subset's own raw median is reported as the diagnostic of what
+    mean-matching discards — the cross-label mean differential already lives in
+    the ``c_ip = gamma_i^p / pi_p`` scales (damage over frequency shares), so
+    sizing labels by their subset means as well would double-count it.
+
+    Labels with fewer than ``min_events`` positive-loss rows keep the pooled
+    ``(sigma, median)`` — a 2-row incendio subset carries no shape information
+    (GEN-03: no certainty, no fabricated structure).
+    """
+    if min_events < 2:
+        raise ValueError(f"min_events must be >= 2, got {min_events}")
+    group_of = {peril: group for group, perils in peril_groups.items() for peril in perils}
+    unmapped = sorted(set(events["peril_canonico"]) - set(group_of))
+    if unmapped:
+        raise ValueError(f"peril_groups leaves trigger-set perils unmapped: {unmapped}")
+    keep = events["danio_mdp"].notna() & (events["danio_mdp"] > 0)
+    labeled = events.loc[keep].assign(_group=events.loc[keep, "peril_canonico"].map(group_of))
+
+    rows = []
+    for group in sorted(peril_groups):
+        logs = np.log(labeled.loc[labeled["_group"] == group, "danio_mdp"].to_numpy(dtype=float))
+        fallback = len(logs) < min_events
+        sigma = pooled.sigma if fallback else float(logs.std(ddof=0))  # MLE
+        multiplier = float(np.exp((pooled.sigma**2 - sigma**2) / 2.0))
+        rows.append(
+            {
+                "peril_group": group,
+                "n_events": int(len(logs)),
+                "sigma": sigma,
+                "median_multiplier": multiplier,
+                "median_mdp": pooled.median * multiplier,
+                "own_median_mdp": float(np.exp(logs.mean())) if len(logs) else float("nan"),
+                "pooled_fallback": fallback,
+            }
+        )
+    return pd.DataFrame(rows).set_index("peril_group")
+
+
 def annual_real_amounts(
     csv_path: str | Path,
     column: str,

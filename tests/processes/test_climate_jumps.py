@@ -277,6 +277,90 @@ def test_peril_config_validation():
         ClimateJumpProcess.from_config(config)
 
 
+def test_peril_severity_pooled_params_reproduce_phase_b_bitwise():
+    # The load-bearing seam property: a peril_severity block carrying the pooled
+    # (median, sigma) in every label consumes the same draws and produces the
+    # same marks as no block at all — the refinement is purely additive.
+    mix = {"a": 0.6, "b": 0.4}
+    scales = {"X_SHARE": {"a": 2.0, "b": 0.5}, "Y_SHARE": {"a": 0.0, "b": 1.5}}
+    plain = ClimateJumpProcess.from_config(_peril_config(mix, scales)).generate(DATES, 64, SEED)
+    config = _peril_config(mix, scales)
+    config["equity_marks"]["peril_severity"] = {
+        g: {"median": 0.006864, "sigma": 1.2106} for g in mix
+    }
+    typed = ClimateJumpProcess.from_config(config).generate(DATES, 64, SEED)
+    np.testing.assert_array_equal(plain.event_counts, typed.event_counts)
+    for name in scales:
+        np.testing.assert_array_equal(plain.step_marks[name], typed.step_marks[name])
+
+
+def test_peril_severity_selects_params_by_label():
+    # sigma=0 per-label severity makes marks reveal which label's parameters
+    # each event drew: complementary c rows must tile every event with the
+    # label's own median.
+    mix = {"a": 0.5, "b": 0.5}
+    scales = {"X_SHARE": {"a": 1.0, "b": 0.0}, "Y_SHARE": {"a": 0.0, "b": 1.0}}
+    config = _peril_config(mix, scales)
+    config["equity_marks"]["peril_severity"] = {
+        "a": {"median": 0.01, "sigma": 0.0},
+        "b": {"median": 0.04, "sigma": 0.0},
+    }
+    scenario = ClimateJumpProcess.from_config(config).generate(DATES, 2_000, SEED)
+    a_events = scenario.step_marks["X_SHARE"] / -0.01
+    b_events = scenario.step_marks["Y_SHARE"] / -0.04
+    np.testing.assert_allclose(a_events + b_events, scenario.event_counts)
+    assert a_events.sum() > 0 and b_events.sum() > 0
+
+
+def test_peril_severity_mean_matched_preserves_per_name_mean():
+    # Mean-matched labels (E[L_p] = E[L] via median_p = median * exp((s2-sp2)/2))
+    # leave the per-name expected mark at -median * exp(sigma^2/2) * gamma — the
+    # Phase A/B level — while the conditional shape differs by label.
+    base_sigma = 0.8
+    mix = {"a": 0.5, "b": 0.5}
+    scales = {"Z_SHARE": {"a": 1.0, "b": 1.0}}
+    config = _peril_config(mix, scales, sigma=base_sigma)
+    config["equity_marks"]["peril_severity"] = {
+        "a": {"median": 0.006864 * np.exp((base_sigma**2 - 0.4**2) / 2), "sigma": 0.4},
+        "b": {"median": 0.006864 * np.exp((base_sigma**2 - 1.2**2) / 2), "sigma": 1.2},
+    }
+    scenario = ClimateJumpProcess.from_config(config).generate(DATES, 6_000, SEED)
+    mean_per_event = scenario.step_marks["Z_SHARE"].sum() / scenario.event_counts.sum()
+    np.testing.assert_allclose(mean_per_event, -0.006864 * np.exp(base_sigma**2 / 2), rtol=0.05)
+
+
+def test_peril_severity_validation():
+    mix = {"a": 0.5, "b": 0.5}
+    scales = {"A_SHARE": {"a": 1.0, "b": 1.0}}
+
+    config = _jump_config(None)
+    config["equity_marks"]["peril_severity"] = {"a": {"median": 0.01, "sigma": 0.5}}
+    with pytest.raises(ValueError, match="requires peril_mix"):
+        ClimateJumpProcess.from_config(config)
+
+    config = _peril_config(mix, scales)
+    config["equity_marks"]["peril_severity"] = {"a": {"median": 0.01, "sigma": 0.5}}
+    with pytest.raises(ValueError, match="groups"):
+        ClimateJumpProcess.from_config(config)
+
+    config = _peril_config(mix, scales)
+    config["equity_marks"]["peril_severity"] = {
+        "a": {"median": -0.01, "sigma": 0.5},
+        "b": {"median": 0.01, "sigma": 0.5},
+    }
+    with pytest.raises(ValueError, match="median > 0"):
+        ClimateJumpProcess.from_config(config)
+
+    with pytest.raises(ValueError, match="LognormalMark"):
+        ClimateJumpProcess(
+            1.0,
+            {"A": DeterministicMark(-0.1)},
+            peril_mix={"a": 1.0},
+            target_peril_scales={"A": {"a": 1.0}},
+            peril_severity={"a": {"median": 0.01, "sigma": 0.5}},
+        )
+
+
 def test_non_independent_dependence_is_explicitly_unimplemented():
     with pytest.raises(NotImplementedError):
         ClimateJumpProcess(1.0, {"A": DeterministicMark(-0.1)}, diffusion_dependence="correlated")

@@ -84,6 +84,18 @@ class ClimateJumpProcess:
             equals the name's flat ``gamma`` (pipelines/10 identity), so the
             per-name expected impact matches Phase A and peril typing only
             redistributes it across events. Both-or-neither with ``peril_mix``.
+        peril_severity: Optional per-label severity ``{group: {median, sigma}}``
+            (OQ-INT-11 Phase B'), exactly the ``peril_mix`` groups. Targets
+            named in ``target_peril_scales`` (which must carry
+            :class:`~climateCCR.processes.jumps.marks.LognormalMark` samplers)
+            then draw their base mark from the *event label's* lognormal
+            instead of the shared pooled one — same single normal draw per
+            (target, event), so the stream is unchanged and parameters equal to
+            the pooled ``(median, sigma)`` reproduce Phase B bit-for-bit. The
+            calibration mean-matches the labels
+            (``fit_peril_severity``: ``E[L_p] = E[L]``), so only the
+            conditional shape moves and the per-name expected impact is still
+            ``gamma_i`` times the pooled mean. Requires ``peril_mix``.
     """
 
     def __init__(
@@ -94,6 +106,7 @@ class ClimateJumpProcess:
         mark_dependence: str = "independent",
         peril_mix: dict[str, float] | None = None,
         target_peril_scales: dict[str, dict[str, float]] | None = None,
+        peril_severity: dict[str, dict[str, float]] | None = None,
     ) -> None:
         if not targets:
             raise ValueError("targets must map at least one risk-factor name to a MarkSampler")
@@ -144,6 +157,31 @@ class ClimateJumpProcess:
                     )
                 self._peril_scale_rows[name] = c
 
+        self._sev_log_median: np.ndarray | None = None
+        self._sev_sigma: np.ndarray | None = None
+        if peril_severity is not None:
+            if self.peril_labels is None:
+                raise ValueError("peril_severity requires peril_mix (labels size the severity)")
+            if set(peril_severity) != set(self.peril_labels):
+                raise ValueError(
+                    f"peril_severity groups {sorted(peril_severity)} != "
+                    f"peril_mix groups {self.peril_labels}"
+                )
+            for name in self._peril_scale_rows:
+                if not isinstance(self.targets[name], LognormalMark):
+                    raise ValueError(
+                        f"peril_severity needs LognormalMark targets, {name!r} has "
+                        f"{self.targets[name]!r}"
+                    )
+            medians = np.array([float(peril_severity[g]["median"]) for g in self.peril_labels])
+            sigmas = np.array([float(peril_severity[g]["sigma"]) for g in self.peril_labels])
+            if np.any(medians <= 0) or np.any(sigmas < 0):
+                raise ValueError(
+                    f"peril_severity needs median > 0 and sigma >= 0: {peril_severity}"
+                )
+            self._sev_log_median = np.log(medians)
+            self._sev_sigma = sigmas
+
     @classmethod
     def from_config(cls, jump_config: dict) -> ClimateJumpProcess:
         """Assemble the process from a ``climate_jumps`` config block.
@@ -171,10 +209,18 @@ class ClimateJumpProcess:
         channel may declare peril typing (the label is a property of the event,
         not of a channel). Unnamed targets take every event with the base
         sampler. Absent blocks == uniform behaviour, bit-identical stream.
+
+        The peril-typed channel may additionally carry ``peril_severity:
+        {group: {median, sigma}}`` (mean-matched per-label severity from
+        ``fit_peril_severity``, pipelines/10): peril-scaled targets then draw
+        their base mark from the event label's lognormal — same draw stream,
+        and pooled parameters in every label reproduce the block-absent marks
+        bit-for-bit.
         """
         targets: dict[str, MarkSampler] = {}
         peril_mix: dict[str, float] | None = None
         target_peril_scales: dict[str, dict[str, float]] | None = None
+        peril_severity: dict[str, dict[str, float]] | None = None
         for channel in ("rate_marks", "equity_marks"):
             block = jump_config.get(channel)
             if block is None:
@@ -189,6 +235,8 @@ class ClimateJumpProcess:
                 raise ValueError(
                     f"{channel}: peril_mix and target_peril_scales are both-or-neither"
                 )
+            if block.get("peril_severity") is not None and mix is None:
+                raise ValueError(f"{channel}: peril_severity requires peril_mix")
             if mix is not None:
                 if scales:
                     raise ValueError(
@@ -207,6 +255,12 @@ class ClimateJumpProcess:
                     )
                 peril_mix = dict(mix)
                 target_peril_scales = {k: dict(v) for k, v in peril_scales.items()}
+                severity = block.get("peril_severity")
+                if severity is not None:
+                    peril_severity = {
+                        g: {"median": float(v["median"]), "sigma": float(v["sigma"])}
+                        for g, v in severity.items()
+                    }
             unknown = sorted(set(scales) - set(block["targets"]))
             if unknown:
                 raise ValueError(
@@ -231,6 +285,7 @@ class ClimateJumpProcess:
             targets,
             peril_mix=peril_mix,
             target_peril_scales=target_peril_scales,
+            peril_severity=peril_severity,
         )
 
     def _step_intensities(self, n_paths: int, step_sizes: np.ndarray) -> np.ndarray:
@@ -287,7 +342,17 @@ class ClimateJumpProcess:
         flat_counts = event_counts.ravel()
         cell_index = np.repeat(np.arange(flat_counts.size), flat_counts)
         for name in sorted(self.targets):
-            marks = self.targets[name].sample(rng, total_events)
+            if self._sev_sigma is not None and name in self._peril_scale_rows:
+                # Per-label severity (Phase B'): same one normal draw per
+                # (target, event) as LognormalMark.sample, with the (median,
+                # sigma) selected by the event's label — pooled parameters in
+                # every label reproduce the pooled marks bit-for-bit.
+                z = rng.standard_normal(total_events)
+                marks = self.targets[name].sign * np.exp(
+                    self._sev_log_median[labels] + self._sev_sigma[labels] * z
+                )
+            else:
+                marks = self.targets[name].sample(rng, total_events)
             if labels is not None and name in self._peril_scale_rows:
                 marks = marks * self._peril_scale_rows[name][labels]
             flat_sum = np.zeros(flat_counts.size)

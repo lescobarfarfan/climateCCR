@@ -11,6 +11,7 @@ from .hazard_jump import (
     derive_loss_to_mark_scale,
     estimate_intensity,
     fit_intensity_trend,
+    fit_peril_severity,
     fit_severity,
     load_climate_events,
 )
@@ -35,6 +36,7 @@ __all__ = [
     "estimate_intensity",
     "event_study",
     "fit_intensity_trend",
+    "fit_peril_severity",
     "fit_severity",
     "load_climate_events",
     "rate_scale_from_beta",

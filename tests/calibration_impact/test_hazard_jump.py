@@ -17,6 +17,7 @@ from climateCCR.calibration.impact import (
     derive_loss_to_mark_scale,
     estimate_intensity,
     fit_intensity_trend,
+    fit_peril_severity,
     fit_severity,
     load_climate_events,
 )
@@ -198,6 +199,69 @@ class TestSeverity:
         assert sampler.sign == -1.0
         with pytest.raises(ValueError, match="loss_to_mark_scale"):
             fit.to_mark_sampler(0.0)
+
+
+class TestPerilSeverity:
+    GROUPS = {"ciclon": ["Ciclón tropical"], "lluvia": ["Daños por lluvia"]}
+
+    @staticmethod
+    def _labeled_frame(rng: np.random.Generator) -> pd.DataFrame:
+        # Two labels with clearly different log-dispersion, one label thin.
+        ciclon = np.exp(rng.normal(np.log(300.0), 2.0, size=400))
+        lluvia = np.exp(rng.normal(np.log(900.0), 0.5, size=400))
+        frame = pd.concat(
+            [
+                _frame([2002] * 400, ciclon),
+                _frame([2003] * 400, lluvia).assign(peril_canonico="Daños por lluvia"),
+            ],
+            ignore_index=True,
+        )
+        return frame
+
+    def test_recovers_per_label_sigma_and_mean_matches(self):
+        events = self._labeled_frame(np.random.default_rng(7))
+        pooled = fit_severity(events)
+        table = fit_peril_severity(events, peril_groups=self.GROUPS, pooled=pooled)
+        assert table.loc["ciclon", "sigma"] == pytest.approx(2.0, rel=0.1)
+        assert table.loc["lluvia", "sigma"] == pytest.approx(0.5, rel=0.1)
+        assert not table["pooled_fallback"].any()
+        # Mean-match identity: every label's lognormal mean equals the pooled mean.
+        pooled_mean = pooled.median * np.exp(pooled.sigma**2 / 2)
+        for _, row in table.iterrows():
+            assert row["median_mdp"] * np.exp(row["sigma"] ** 2 / 2) == pytest.approx(pooled_mean)
+
+    def test_thin_label_keeps_pooled(self):
+        events = pd.concat(
+            [
+                _frame([2002] * 40, np.exp(np.linspace(4.0, 8.0, 40))),
+                _frame([2003] * 3, [500.0, 900.0, 1500.0]).assign(
+                    peril_canonico="Daños por lluvia"
+                ),
+            ],
+            ignore_index=True,
+        )
+        pooled = fit_severity(events)
+        table = fit_peril_severity(events, peril_groups=self.GROUPS, pooled=pooled, min_events=10)
+        assert bool(table.loc["lluvia", "pooled_fallback"])
+        assert table.loc["lluvia", "sigma"] == pytest.approx(pooled.sigma)
+        assert table.loc["lluvia", "median_multiplier"] == pytest.approx(1.0)
+        assert not bool(table.loc["ciclon", "pooled_fallback"])
+
+    def test_group_with_no_rows_keeps_pooled(self):
+        events = _frame([2002] * 20, np.linspace(100.0, 2000.0, 20))
+        pooled = fit_severity(events)
+        table = fit_peril_severity(events, peril_groups=self.GROUPS, pooled=pooled)
+        assert bool(table.loc["lluvia", "pooled_fallback"])
+        assert table.loc["lluvia", "n_events"] == 0
+        assert np.isnan(table.loc["lluvia", "own_median_mdp"])
+
+    def test_unmapped_peril_raises(self):
+        events = _frame([2002] * 20, np.linspace(100.0, 2000.0, 20)).assign(peril_canonico="Sequía")
+        pooled = fit_severity(events)
+        with pytest.raises(ValueError, match="unmapped"):
+            fit_peril_severity(events, peril_groups=self.GROUPS, pooled=pooled)
+        with pytest.raises(ValueError, match="min_events"):
+            fit_peril_severity(events, peril_groups=self.GROUPS, pooled=pooled, min_events=1)
 
 
 class TestLossToMarkScale:
