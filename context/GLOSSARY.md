@@ -50,6 +50,7 @@ J. Content-word retrieval index
 - **Q vs P measure** — risk-neutral (pricing) vs real-world (stress / economic capital).
 - **Girsanov / change of measure** — drift change between Q and P via the Radon–Nikodym derivative.
 - **Compound Poisson** — aggregate-loss / shock model (Poisson frequency × severity); here the carrier of climate shocks into the diffusion. `[Klugman ref?]`
+- **Mean-matched per-peril severity (`INT-26`)** — the Phase B′ refinement: a `p`-labeled event draws severity from its own lognormal with subset-fitted `σ_p` but a median pinned so `E[L_p] = E[L]` (`median_p = median·exp((σ²−σ_p²)/2)`); dispersion redistributes across labels and tails while every `INT-24/25` expected-impact identity holds exactly (the cross-label *mean* differential already lives in `c_ip`). Truncation lesson attached: the trigger-set ciclón σ is 1.33, not the unthresholded ≈2.9 — fit severity *after* the real-terms threshold, never before.
 - **Cox / doubly stochastic process** — Poisson with random / covariate-driven intensity `λ(t)`; lets the climate arrival rate vary with hazard covariates. `[ContTankov2004]`
 - **Jump-diffusion** — a process combining a continuous diffusion (GBM/HW1F) with a jump component; the integrating object of the project — `dX = (diffusion) + (Σ marks at Poisson/Cox times)` (`INT-10`).
 - **Jump mark / impact** — the size of a single climate shock's effect on the target process (a price-return jump for GBM, a rate jump for HW1F); estimated by HAZ. The empirical climate→price magnitude (`OQ-INT-07`).
@@ -162,6 +163,7 @@ J. Content-word retrieval index
 | The CLIMADA calibration design | **subnational impact function v_thresh v_half LitPop PyMC partial pooling** |
 | The compound-Poisson/Cox plan | **compound Poisson Cox doubly stochastic aggregated tail CENAPRED** |
 | The headline-λ regime band | **headline lambda regime band floor CT anchor regime-consistent severity pairing scenario** |
+| Per-peril severity & the Phase C null | **per-peril severity mean-matched sigma truncation ciclon 1.33 Phase C sector event study FALLA tau episode bootstrap canonical env climateCCR manifests** |
 | The knowledge-graph tooling + its versioning | **understand-anything /understand dashboard .ua knowledge graph understandignore scope tracked GEN-29** |
 
 

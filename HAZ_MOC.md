@@ -50,6 +50,8 @@ the intensity `λ` and the per-event **impact/jump-mark** that drive the climate
 - Explanation: [[2026-07-26_sector_marks_explained]] — the `γ_i` composition on the HAZ data layers and its honest limits (national-proxy tier, ordinal S tiers, shared arrivals pending peril-typing) (`notes/summary_explanations/`, `GEN-26`).
 - Reading: [[2026-07-30_peril_typed_events]] — the peril-typing read-log (`INT-25`): the trigger-set frequency mix as the label distribution, the imported impactcal-mx CENAPRED caveats (cause-labels, INUND→LLUV, celda vacía ≠ 0), and the row-level MDP/MDD triage behind `HAZ-CENAPRED-11` (`notes/reading/`, `GEN-21`).
 - Explanation: [[2026-07-30_peril_typed_events_explained]] — peril-typed arrivals on the HAZ data: what the mix measures, why NL/Campeche are real events not errors, and how the fluvial/hidro merge variants bound the attribution noise (`notes/summary_explanations/`, `GEN-26`).
+- Reading: [[2026-08-01_per_peril_severity_phase_c]] — per-label severity on the CENAPRED trigger subsets: the conditional-severity view of thresholded fits, the σ table per peril, and the report-regime censoring that thins non-CT labels (`INT-26`; `notes/reading/`, `GEN-21`).
+- Explanation: [[2026-08-01_per_peril_severity_phase_c_explained]] — the per-peril σ estimates in plain terms, why cyclone means don't rise (the c_ip double-count guard), and the Phase C null read against the HAZ construction evidence (`notes/summary_explanations/`, `GEN-26`).
 - Review: [[PONYTAIL_AUDIT_2026-07-11]] — over-engineering sweep; the CNSF normalizer dedup + the two deliberately rejected HAZ cuts (`HAZ-SCRAPER-CNSF-10`).
 
 ## Wires to the other arms
