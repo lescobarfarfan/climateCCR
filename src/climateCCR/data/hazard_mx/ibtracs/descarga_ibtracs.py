@@ -20,6 +20,7 @@ bloqueado; la descarga real se corre en la máquina del usuario.
 """
 
 from __future__ import annotations
+
 import hashlib
 import json
 import sys
@@ -27,10 +28,14 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+from climateCCR.infra import project_paths
+
 VERSION = "v04r01"
-BASE_URL = ("https://www.ncei.noaa.gov/data/"
-            "international-best-track-archive-for-climate-stewardship-ibtracs/"
-            f"{VERSION}/access/csv/")
+BASE_URL = (
+    "https://www.ncei.noaa.gov/data/"
+    "international-best-track-archive-for-climate-stewardship-ibtracs/"
+    f"{VERSION}/access/csv/"
+)
 
 # Subconjuntos por cuenca relevantes para México: Pacífico Este (EP) y Atlántico Norte (NA).
 # Cada subconjunto incluye todas las tormentas con >=1 posición en esa cuenca.
@@ -39,10 +44,11 @@ ARCHIVOS = {
     "NA": f"ibtracs.NA.list.{VERSION}.csv",
 }
 
-DOC_COLUMNAS = (f"{BASE_URL.replace('access/csv/', 'doc/')}"
-                f"IBTrACS_{VERSION}_column_documentation.pdf")
+DOC_COLUMNAS = (
+    f"{BASE_URL.replace('access/csv/', 'doc/')}" f"IBTrACS_{VERSION}_column_documentation.pdf"
+)
 
-DIR_CRUDOS = Path("datos/datos_IBTrACS/crudos")
+DIR_CRUDOS = project_paths().data / "hazard_mx" / "datos_IBTrACS" / "crudos"
 
 
 def _sha256(path: Path) -> str:
@@ -53,8 +59,7 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def descargar(dir_crudos: Path = DIR_CRUDOS, force: bool = False,
-              timeout: int = 120) -> dict:
+def descargar(dir_crudos: Path = DIR_CRUDOS, force: bool = False, timeout: int = 120) -> dict:
     """
     Descarga los CSV de IBTrACS a dir_crudos (idempotente: no rebaja si ya existe,
     salvo force=True) y escribe/actualiza _procedencia.json.
@@ -73,7 +78,10 @@ def descargar(dir_crudos: Path = DIR_CRUDOS, force: bool = False,
         destino = dir_crudos / nombre
         url = BASE_URL + nombre
         if destino.exists() and not force:
-            print(f"[descarga_ibtracs] ya existe, se omite: {destino.name} (usar force=True para rebajar)")
+            print(
+                f"[descarga_ibtracs] ya existe, se omite: {destino.name} "
+                f"(usar force=True para rebajar)"
+            )
         else:
             print(f"[descarga_ibtracs] descargando {url} ...")
             try:
@@ -88,7 +96,8 @@ def descargar(dir_crudos: Path = DIR_CRUDOS, force: bool = False,
             "bytes": destino.stat().st_size if destino.exists() else None,
         }
     (dir_crudos / "_procedencia.json").write_text(
-        json.dumps(procedencia, indent=2, ensure_ascii=False), encoding="utf-8")
+        json.dumps(procedencia, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     print(f"[descarga_ibtracs] procedencia escrita en {dir_crudos/'_procedencia.json'}")
     return procedencia
 

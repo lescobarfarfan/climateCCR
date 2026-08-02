@@ -45,15 +45,18 @@ import json
 import logging
 import re
 import unicodedata
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable, Optional
 
 import pandas as pd
+from climateCCR.infra import project_paths
+
+_DATOS_CNSF = project_paths().data / "hazard_mx" / "datos_CNSF"
 
 log = logging.getLogger("cnsf.consolidar")
 
-HOJAS_IGNORAR = {"indice"}                 # glosario (normalizado: sin acentos)
+HOJAS_IGNORAR = {"indice"}  # glosario (normalizado: sin acentos)
 PROVENANCIA = ["categoria", "anio", "archivo_origen"]
 RE_ANIO = re.compile(r"(?<!\d)(19|20)\d{2}(?!\d)")  # no \b: el '_' rompería el match
 MAX_FILAS_XLSX = 1_048_575
@@ -66,7 +69,7 @@ EXT_COMPRESION = {"none": "", "gzip": ".gz", "bz2": ".bz2", "xz": ".xz", "zstd":
 # VALOR = nombre corregido tal cual debe salir (puede llevar acentos y mayúsculas).
 # Se aplica a la salida tras emparejar/aliasar, así que no afecta el emparejamiento.
 CORRECCIONES_CANONICAS = {
-    "MONTO DEL SINIESTRO OCOURRIDO": "MONTO DEL SINIESTRO OCURRIDO",   # 2024 trae 'OCOURRIDO'
+    "MONTO DEL SINIESTRO OCOURRIDO": "MONTO DEL SINIESTRO OCURRIDO",  # 2024 trae 'OCOURRIDO'
     # Para corregir más, agrega aquí  "<clave_col del canónico>": "Nombre corregido".
     # Ejemplo (descomenta si quieres que la salida diga 'GIRO DE LA UBICACIÓN'):
     # "GIRO LA UBICACION": "GIRO DE LA UBICACIÓN",
@@ -76,12 +79,12 @@ CORRECCIONES_CANONICAS = {
 RE_MEDIDA = re.compile(
     r"PRIMA|MONTO|SUMA ASEGURADA|GASTO|SALVAMENTO|COMISI|DEDUCIBLE|COASEGURO|"
     r"REASEGURO|RECUPERAC|VALORES TOTALES|LIMITE MAXIMO|SUPERFICIE|UNIDADES|"
-    r"NUMERO DE")
+    r"NUMERO DE"
+)
 
 
 def _sin_acentos(s: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFKD", str(s))
-                   if not unicodedata.combining(c))
+    return "".join(c for c in unicodedata.normalize("NFKD", str(s)) if not unicodedata.combining(c))
 
 
 def clave_col(nombre) -> str:
@@ -109,6 +112,7 @@ def _corregir_encabezado(nombre: str) -> str:
 # Lectura de hojas
 # --------------------------------------------------------------------------- #
 
+
 def _motor(path: Path) -> str:
     return "xlrd" if path.suffix.lower() == ".xls" else "openpyxl"
 
@@ -122,12 +126,12 @@ def _detectar_encabezado(crudo: pd.DataFrame, max_scan: int = 8) -> int:
     return mejor_i
 
 
-def _resolver_hoja(path: Path, hoja_key: str) -> Optional[str]:
+def _resolver_hoja(path: Path, hoja_key: str) -> str | None:
     """Nombre real de la hoja en `path` cuyo nombre normalizado == hoja_key."""
-    xls = pd.ExcelFile(path, engine=_motor(path)) # type: ignore
+    xls = pd.ExcelFile(path, engine=_motor(path))  # type: ignore
     for h in xls.sheet_names:
         if clave_col(h) == hoja_key:
-            return h # type: ignore
+            return h  # type: ignore
     return None
 
 
@@ -151,7 +155,7 @@ def _col_vacia(col: pd.Series) -> bool:
     return bool(col.map(lambda v: pd.isna(v) or str(v).strip() == "").all())
 
 
-def leer_hoja(path: Path, hoja: str) -> Optional[pd.DataFrame]:
+def leer_hoja(path: Path, hoja: str) -> pd.DataFrame | None:
     """Lee la hoja `hoja` con encabezados reales, sin filas ni columnas vacías.
 
     Robusto ante encabezados DUPLICADOS (p. ej. varias columnas en blanco): la
@@ -161,15 +165,16 @@ def leer_hoja(path: Path, hoja: str) -> Optional[pd.DataFrame]:
     descartan aunque contengan un ' ' literal.
     """
     try:
-        crudo = pd.read_excel(path, sheet_name=hoja, header=None,
-                              engine=_motor(path), dtype=object) # type: ignore
+        crudo = pd.read_excel(
+            path, sheet_name=hoja, header=None, engine=_motor(path), dtype=object
+        )  # type: ignore
     except ValueError:
         return None
     if crudo.empty:
         return None
     h = _detectar_encabezado(crudo)
     cols = [str(c).strip() if pd.notna(c) else "" for c in crudo.iloc[h].tolist()]
-    df = crudo.iloc[h + 1:].reset_index(drop=True)
+    df = crudo.iloc[h + 1 :].reset_index(drop=True)
     df = df.dropna(how="all").reset_index(drop=True)
 
     # Selección por POSICIÓN: descarta columnas SIN encabezado que además están
@@ -178,13 +183,15 @@ def leer_hoja(path: Path, hoja: str) -> Optional[pd.DataFrame]:
     for i, c in enumerate(cols):
         if i >= df.shape[1]:
             break
-        es_spacer = (c == "" or c.startswith("COL_"))
+        es_spacer = c == "" or c.startswith("COL_")
         if es_spacer and _col_vacia(df.iloc[:, i]):
             continue
         keep.append(i)
         finales.append(c if c != "" else "(sin encabezado)")
     df = df.iloc[:, keep].copy()
-    df.columns = _unicos(finales)        # nombres únicos (las columnas en blanco con datos reales se reportan luego)
+    df.columns = _unicos(
+        finales
+    )  # nombres únicos (las columnas en blanco con datos reales se reportan luego)
     return df
 
 
@@ -192,10 +199,11 @@ def leer_hoja(path: Path, hoja: str) -> Optional[pd.DataFrame]:
 # Descubrimiento de archivos de entrada
 # --------------------------------------------------------------------------- #
 
+
 @dataclass(frozen=True)
 class Fuente:
     categoria_slug: str
-    anio: Optional[int]
+    anio: int | None
     path: Path
 
 
@@ -206,22 +214,24 @@ def descubrir_fuentes(root: Path) -> dict[str, list[Fuente]]:
             continue
         m = RE_ANIO.search(p.name)
         grupos.setdefault(p.parent.name, []).append(
-            Fuente(p.parent.name, int(m.group(0)) if m else None, p))
+            Fuente(p.parent.name, int(m.group(0)) if m else None, p)
+        )
     for cat in grupos:
         grupos[cat].sort(key=lambda f: (f.anio or 0))
     return grupos
 
 
 def hojas_de_datos(path: Path) -> list[str]:
-    xls = pd.ExcelFile(path, engine=_motor(path)) # type: ignore
-    return [h for h in xls.sheet_names if clave_col(h).lower() not in HOJAS_IGNORAR] # type: ignore
+    xls = pd.ExcelFile(path, engine=_motor(path))  # type: ignore
+    return [h for h in xls.sheet_names if clave_col(h).lower() not in HOJAS_IGNORAR]  # type: ignore
 
 
 # --------------------------------------------------------------------------- #
 # Alias por ámbito
 # --------------------------------------------------------------------------- #
 
-def aliases_para(aliases_raw: Optional[dict], cat_slug: str, hoja_slug: str) -> dict:
+
+def aliases_para(aliases_raw: dict | None, cat_slug: str, hoja_slug: str) -> dict:
     """Combina alias _global + <categoria> + <categoria>/<hoja>. Normaliza claves."""
     if not aliases_raw:
         return {}
@@ -245,6 +255,7 @@ def aliases_para(aliases_raw: Optional[dict], cat_slug: str, hoja_slug: str) -> 
 # Consolidación de una (categoría, hoja)
 # --------------------------------------------------------------------------- #
 
+
 @dataclass
 class ReporteHoja:
     categoria: str
@@ -259,16 +270,22 @@ class ReporteHoja:
     validaciones: dict = field(default_factory=dict)
 
 
-def consolidar_hoja(categoria: str, fuentes: list[Fuente], hoja_key: str,
-                    hoja_display: str, *, aliases: Optional[dict] = None,
-                    estricto: bool = False, limpiar: bool = False
-                    ) -> tuple[Optional[pd.DataFrame], ReporteHoja]:
+def consolidar_hoja(
+    categoria: str,
+    fuentes: list[Fuente],
+    hoja_key: str,
+    hoja_display: str,
+    *,
+    aliases: dict | None = None,
+    estricto: bool = False,
+    limpiar: bool = False,
+) -> tuple[pd.DataFrame | None, ReporteHoja]:
     aliases = aliases or {}
     rep = ReporteHoja(categoria=categoria, hoja=hoja_display)
 
     cargados: list[tuple[Fuente, pd.DataFrame]] = []
     for f in fuentes:
-        real = _resolver_hoja(f.path, hoja_key)     # nombre real (Emision/Emisión/...)
+        real = _resolver_hoja(f.path, hoja_key)  # nombre real (Emision/Emisión/...)
         if real is None:
             continue
         df = leer_hoja(f.path, real)
@@ -288,13 +305,13 @@ def consolidar_hoja(categoria: str, fuentes: list[Fuente], hoja_key: str,
     f_canon, df_canon = max(cargados, key=lambda t: (t[0].anio or 0))
     canon_cols = list(df_canon.columns)
     canon_keys = [keyf(c) for c in canon_cols]
-    key_a_canon = dict(zip(canon_keys, canon_cols))
+    key_a_canon = dict(zip(canon_keys, canon_cols, strict=False))
     rep.columnas_canonicas = canon_cols
 
     extra_keys: list[str] = []
     key_a_extra: dict[str, str] = {}
     if not estricto:
-        for f, df in cargados:
+        for _f, df in cargados:
             for c in df.columns:
                 k = keyf(c)
                 if k not in key_a_canon and k not in key_a_extra:
@@ -309,7 +326,7 @@ def consolidar_hoja(categoria: str, fuentes: list[Fuente], hoja_key: str,
         kmap = {keyf(c): c for c in df.columns}
         faltantes, extra = [], []
         datos = {}
-        for k, nombre_sal in zip(canon_keys, canon_cols):
+        for k, nombre_sal in zip(canon_keys, canon_cols, strict=False):
             if k in kmap:
                 datos[nombre_sal] = df[kmap[k]].values
             else:
@@ -336,7 +353,9 @@ def consolidar_hoja(categoria: str, fuentes: list[Fuente], hoja_key: str,
         ren = {c: _limpiar_encabezado(c) for c in salida_cols}
         out = out.rename(columns=ren)
         rep.columnas_canonicas = [_limpiar_encabezado(c) for c in canon_cols]
-        rep.columnas_extra_historicas = [_limpiar_encabezado(c) for c in rep.columnas_extra_historicas]
+        rep.columnas_extra_historicas = [
+            _limpiar_encabezado(c) for c in rep.columnas_extra_historicas
+        ]
         salida_cols = [ren[c] for c in salida_cols]
 
     # Corrige typos en los encabezados canónicos (p. ej. OCOURRIDO -> OCURRIDO).
@@ -346,7 +365,8 @@ def consolidar_hoja(categoria: str, fuentes: list[Fuente], hoja_key: str,
         nuevo = _corregir_encabezado(c)
         if nuevo != c and nuevo not in existentes:
             corr[c] = nuevo
-            existentes.discard(c); existentes.add(nuevo)
+            existentes.discard(c)
+            existentes.add(nuevo)
     if corr:
         out = out.rename(columns=corr)
         salida_cols = [corr.get(c, c) for c in salida_cols]
@@ -356,8 +376,9 @@ def consolidar_hoja(categoria: str, fuentes: list[Fuente], hoja_key: str,
     rep.filas_totales = len(out)
     rep.anios = sorted(set(rep.anios))
     rep.excede_limite_xlsx = rep.filas_totales > MAX_FILAS_XLSX
-    rep.validaciones = _validar(out, salida_cols, rep.columnas_canonicas,
-                                rep.columnas_extra_historicas, rep)
+    rep.validaciones = _validar(
+        out, salida_cols, rep.columnas_canonicas, rep.columnas_extra_historicas, rep
+    )
     return out, rep
 
 
@@ -365,8 +386,14 @@ def consolidar_hoja(categoria: str, fuentes: list[Fuente], hoja_key: str,
 # Verificación post-consolidación
 # --------------------------------------------------------------------------- #
 
-def _validar(df: pd.DataFrame, columnas_datos: list[str],
-             canon_cols: list[str], extra_cols: list[str], rep: ReporteHoja) -> dict:
+
+def _validar(
+    df: pd.DataFrame,
+    columnas_datos: list[str],
+    canon_cols: list[str],
+    extra_cols: list[str],
+    rep: ReporteHoja,
+) -> dict:
     avisos: list[str] = []
 
     # 1) reconciliación de filas
@@ -411,22 +438,28 @@ def _validar(df: pd.DataFrame, columnas_datos: list[str],
         if frac > 0.10:
             ejemplos = s[no_num].astype(str).unique()[:3].tolist()
             medidas_sospechosas.append(
-                {"columna": c, "frac_no_numerico": round(frac, 3), "ejemplos": ejemplos})
+                {"columna": c, "frac_no_numerico": round(frac, 3), "ejemplos": ejemplos}
+            )
 
     if vacias:
         avisos.append(f"{len(vacias)} columna(s) canónica(s) 100% vacías: {vacias}")
     if sin_enc:
         avisos.append(f"{len(sin_enc)} columna(s) sin encabezado: {sin_enc}")
     if duplicados:
-        avisos.append(f"{len(duplicados)} columna(s) histórica(s) parecida(s) a una "
-                      f"canónica (posible alias)")
+        avisos.append(
+            f"{len(duplicados)} columna(s) histórica(s) parecida(s) a una "
+            f"canónica (posible alias)"
+        )
     if medidas_sospechosas:
         avisos.append(f"{len(medidas_sospechosas)} columna(s) de medida con valores no numéricos")
 
     return {
-        "ok": not avisos, "avisos": avisos,
-        "columnas_vacias": vacias, "columnas_sin_encabezado": sin_enc,
-        "posibles_duplicados": duplicados, "medidas_no_numericas": medidas_sospechosas,
+        "ok": not avisos,
+        "avisos": avisos,
+        "columnas_vacias": vacias,
+        "columnas_sin_encabezado": sin_enc,
+        "posibles_duplicados": duplicados,
+        "medidas_no_numericas": medidas_sospechosas,
     }
 
 
@@ -434,17 +467,25 @@ def _validar(df: pd.DataFrame, columnas_datos: list[str],
 # Orquestación
 # --------------------------------------------------------------------------- #
 
-def consolidar(root: Path, out_dir: Path, *,
-               categorias: Optional[Iterable[str]] = None,
-               aliases: Optional[dict] = None, estricto: bool = False,
-               xlsx_si_cabe: bool = False, limpiar_encabezados: bool = False,
-               compresion: str = "none") -> dict:
+
+def consolidar(
+    root: Path,
+    out_dir: Path,
+    *,
+    categorias: Iterable[str] | None = None,
+    aliases: dict | None = None,
+    estricto: bool = False,
+    xlsx_si_cabe: bool = False,
+    limpiar_encabezados: bool = False,
+    compresion: str = "none",
+) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     grupos = descubrir_fuentes(root)
     if categorias:
         objetivos = {_slug(c) for c in categorias}
-        grupos = {k: v for k, v in grupos.items()
-                  if k in objetivos or any(o in k for o in objetivos)}
+        grupos = {
+            k: v for k, v in grupos.items() if k in objetivos or any(o in k for o in objetivos)
+        }
 
     resumen_global = []
     for cat, fuentes in grupos.items():
@@ -452,30 +493,44 @@ def consolidar(root: Path, out_dir: Path, *,
         cat_dir.mkdir(parents=True, exist_ok=True)
 
         # Agrupa hojas por NOMBRE NORMALIZADO (fusiona Emision/Emisión, etc.).
-        grupos_hoja: dict[str, str] = {}      # hoja_key -> display (del año más reciente)
+        grupos_hoja: dict[str, str] = {}  # hoja_key -> display (del año más reciente)
         for f in sorted(fuentes, key=lambda x: -(x.anio or 0)):
             for h in hojas_de_datos(f.path):
                 grupos_hoja.setdefault(clave_col(h), h)
 
-        log.info("Categoría %s: años=%s, hojas=%s",
-                 cat, [f.anio for f in fuentes], list(grupos_hoja.values()))
+        log.info(
+            "Categoría %s: años=%s, hojas=%s",
+            cat,
+            [f.anio for f in fuentes],
+            list(grupos_hoja.values()),
+        )
 
         reportes_cat, bases_usadas = [], {}
         for hoja_key, hoja_display in grupos_hoja.items():
             al = aliases_para(aliases, cat, _slug(hoja_display))
-            df, rep = consolidar_hoja(cat, fuentes, hoja_key, hoja_display,
-                                      aliases=al, estricto=estricto,
-                                      limpiar=limpiar_encabezados)
+            df, rep = consolidar_hoja(
+                cat,
+                fuentes,
+                hoja_key,
+                hoja_display,
+                aliases=al,
+                estricto=estricto,
+                limpiar=limpiar_encabezados,
+            )
             if df is None:
                 continue
             base = _slug(hoja_display)
-            if base in bases_usadas:              # guardia anti-colisión (no debería ocurrir)
+            if base in bases_usadas:  # guardia anti-colisión (no debería ocurrir)
                 base = f"{base}__{hoja_key.lower().replace(' ', '_')}"
                 log.warning("Colisión de salida en %s; uso %s.csv", cat, base)
             bases_usadas[base] = hoja_key
             csv_path = cat_dir / f"{base}.csv{EXT_COMPRESION[compresion]}"
-            df.to_csv(csv_path, index=False, encoding="utf-8-sig",
-                      compression=(None if compresion == "none" else compresion))
+            df.to_csv(
+                csv_path,
+                index=False,
+                encoding="utf-8-sig",
+                compression=(None if compresion == "none" else compresion),
+            )
             salida = [str(csv_path)]
             hizo_xlsx = xlsx_si_cabe and not rep.excede_limite_xlsx
             if hizo_xlsx:
@@ -483,62 +538,102 @@ def consolidar(root: Path, out_dir: Path, *,
                 df.to_excel(xp, index=False)
                 salida.append(str(xp))
             estado_val = "OK" if rep.validaciones.get("ok") else "REVISAR"
-            log.info("  %-18s -> %d filas, %d cols | %s | validación: %s",
-                     hoja_display, rep.filas_totales,
-                     len(rep.columnas_canonicas) + len(rep.columnas_extra_historicas),
-                     "CSV+XLSX" if hizo_xlsx else "CSV", estado_val)
+            log.info(
+                "  %-18s -> %d filas, %d cols | %s | validación: %s",
+                hoja_display,
+                rep.filas_totales,
+                len(rep.columnas_canonicas) + len(rep.columnas_extra_historicas),
+                "CSV+XLSX" if hizo_xlsx else "CSV",
+                estado_val,
+            )
             for a in rep.validaciones.get("avisos", []):
                 log.warning("     · %s", a)
-            reportes_cat.append({
-                "hoja": rep.hoja, "salida": salida, "anios": rep.anios,
-                "filas_totales": rep.filas_totales, "filas_por_anio": rep.filas_por_anio,
-                "n_columnas_canonicas": len(rep.columnas_canonicas),
-                "columnas_canonicas": rep.columnas_canonicas,
-                "columnas_extra_historicas": rep.columnas_extra_historicas,
-                "deriva_por_anio": rep.deriva_por_anio,
-                "excede_limite_xlsx": rep.excede_limite_xlsx,
-                "validaciones": rep.validaciones,
-            })
+            reportes_cat.append(
+                {
+                    "hoja": rep.hoja,
+                    "salida": salida,
+                    "anios": rep.anios,
+                    "filas_totales": rep.filas_totales,
+                    "filas_por_anio": rep.filas_por_anio,
+                    "n_columnas_canonicas": len(rep.columnas_canonicas),
+                    "columnas_canonicas": rep.columnas_canonicas,
+                    "columnas_extra_historicas": rep.columnas_extra_historicas,
+                    "deriva_por_anio": rep.deriva_por_anio,
+                    "excede_limite_xlsx": rep.excede_limite_xlsx,
+                    "validaciones": rep.validaciones,
+                }
+            )
 
         (cat_dir / "_reporte.json").write_text(
-            json.dumps({"categoria": cat, "root": str(root), "estricto": estricto,
-                        "hojas": reportes_cat}, ensure_ascii=False, indent=2),
-            encoding="utf-8")
-        resumen_global.append({
-            "categoria": cat, "carpeta": str(cat_dir),
-            "hojas": [r["hoja"] for r in reportes_cat],
-            "filas_por_hoja": {r["hoja"]: r["filas_totales"] for r in reportes_cat},
-            "hojas_a_revisar": [r["hoja"] for r in reportes_cat
-                                if not r["validaciones"].get("ok")],
-        })
+            json.dumps(
+                {"categoria": cat, "root": str(root), "estricto": estricto, "hojas": reportes_cat},
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        resumen_global.append(
+            {
+                "categoria": cat,
+                "carpeta": str(cat_dir),
+                "hojas": [r["hoja"] for r in reportes_cat],
+                "filas_por_hoja": {r["hoja"]: r["filas_totales"] for r in reportes_cat},
+                "hojas_a_revisar": [
+                    r["hoja"] for r in reportes_cat if not r["validaciones"].get("ok")
+                ],
+            }
+        )
 
-    reporte = {"root": str(root), "out_dir": str(out_dir), "estricto": estricto,
-               "categorias": resumen_global}
+    reporte = {
+        "root": str(root),
+        "out_dir": str(out_dir),
+        "estricto": estricto,
+        "categorias": resumen_global,
+    }
     (out_dir / "reporte_consolidacion.json").write_text(
-        json.dumps(reporte, ensure_ascii=False, indent=2), encoding="utf-8")
+        json.dumps(reporte, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     return reporte
 
 
 def main():
     ap = argparse.ArgumentParser(description="Consolidador CNSF por (categoría, hoja)")
-    ap.add_argument("--root", default="datos/datos_CNSF/crudos")
-    ap.add_argument("--out-dir", default="datos/datos_CNSF/consolidados")
+    ap.add_argument("--root", default=str(_DATOS_CNSF / "crudos"))
+    ap.add_argument("--out-dir", default=str(_DATOS_CNSF / "consolidados"))
     ap.add_argument("--categorias", nargs="*")
     ap.add_argument("--estricto", action="store_true")
     ap.add_argument("--xlsx-si-cabe", action="store_true")
-    ap.add_argument("--limpiar-encabezados", action="store_true",
-                    help="colapsa saltos de línea/espacios en los encabezados de salida")
-    ap.add_argument("--comprimir", choices=list(EXT_COMPRESION), default="none",
-                    help="comprime los CSV de salida (recomendado: gzip -> .csv.gz)")
-    ap.add_argument("--aliases", default="src/aliases_cnsf.json", help="JSON de alias (plano o por ámbito)")
+    ap.add_argument(
+        "--limpiar-encabezados",
+        action="store_true",
+        help="colapsa saltos de línea/espacios en los encabezados de salida",
+    )
+    ap.add_argument(
+        "--comprimir",
+        choices=list(EXT_COMPRESION),
+        default="none",
+        help="comprime los CSV de salida (recomendado: gzip -> .csv.gz)",
+    )
+    ap.add_argument(
+        "--aliases", default="src/aliases_cnsf.json", help="JSON de alias (plano o por ámbito)"
+    )
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
-    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
-                        format="%(asctime)s %(levelname)s %(message)s")
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+    )
     aliases = json.loads(Path(args.aliases).read_text(encoding="utf-8")) if args.aliases else None
-    consolidar(Path(args.root), Path(args.out_dir), categorias=args.categorias,
-               aliases=aliases, estricto=args.estricto, xlsx_si_cabe=args.xlsx_si_cabe,
-               limpiar_encabezados=args.limpiar_encabezados, compresion=args.comprimir)
+    consolidar(
+        Path(args.root),
+        Path(args.out_dir),
+        categorias=args.categorias,
+        aliases=aliases,
+        estricto=args.estricto,
+        xlsx_si_cabe=args.xlsx_si_cabe,
+        limpiar_encabezados=args.limpiar_encabezados,
+        compresion=args.comprimir,
+    )
     log.info("Listo.")
 
 

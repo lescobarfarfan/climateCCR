@@ -20,6 +20,7 @@ Patrón de robustez (logging, reintentos, sesión) siguiendo el scraper SIAP.
 """
 
 from __future__ import annotations
+
 import argparse
 import hashlib
 import json
@@ -29,11 +30,11 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-import numpy as np
-
+import agregacion_sequia as ag
 import config_sequia as cfg
 import indices_sequia as ix
-import agregacion_sequia as ag
+import numpy as np
+from climateCCR.infra import project_paths
 
 logging.basicConfig(
     level=logging.INFO,
@@ -53,9 +54,15 @@ def _sha256(ruta: Path) -> str:
     return h.hexdigest()
 
 
-def registrar_procedencia(dir_destino: Path, archivo: Path, *, dataset: str,
-                          request: dict, version: str | None = None,
-                          doi: str | None = None) -> None:
+def registrar_procedencia(
+    dir_destino: Path,
+    archivo: Path,
+    *,
+    dataset: str,
+    request: dict,
+    version: str | None = None,
+    doi: str | None = None,
+) -> None:
     """Anexa una entrada de procedencia a _procedencia.json en el directorio.
 
     Guarda, además del sha256/bytes/fecha, el REQUEST exacto del CDS, su versión y
@@ -78,10 +85,8 @@ def registrar_procedencia(dir_destino: Path, archivo: Path, *, dataset: str,
     # Reemplaza si ya había un registro del mismo archivo (re-descarga).
     existentes = [r for r in existentes if r.get("archivo") != archivo.name]
     existentes.append(registro)
-    ruta_proc.write_text(json.dumps(existentes, indent=2, ensure_ascii=False),
-                         encoding="utf-8")
-    log.info("Procedencia registrada: %s (sha256=%s...)", archivo.name,
-             registro["sha256"][:12])
+    ruta_proc.write_text(json.dumps(existentes, indent=2, ensure_ascii=False), encoding="utf-8")
+    log.info("Procedencia registrada: %s (sha256=%s...)", archivo.name, registro["sha256"][:12])
 
 
 # --------------------------------------------------------------------------- #
@@ -128,37 +133,51 @@ def _planificar_descargas(args, dir_crudos: Path) -> list[dict]:
     plan = []
 
     # 1) Crudos ERA5 (CRÍTICO: de esto depende todo el cálculo).
-    plan.append({
-        "etiqueta": "crudo_era5", "critico": True,
-        "dataset": cfg.CDS_DATASET_CRUDO,
-        "request": {
-            "product_type": cfg.CDS_PRODUCT_TYPE_CRUDO,
-            "variable": cfg.VARIABLES_ERA5,
-            "year": anios, "month": meses, "time": "00:00",
-            "area": cfg.BBOX_CDS_AREA, "data_format": "netcdf",
-        },
-        "destino": dir_crudos / f"era5_p_pet_mexico_{args.anio_inicial}_{args.anio_final}.nc",
-        "version": None, "doi": None,
-    })
+    plan.append(
+        {
+            "etiqueta": "crudo_era5",
+            "critico": True,
+            "dataset": cfg.CDS_DATASET_CRUDO,
+            "request": {
+                "product_type": cfg.CDS_PRODUCT_TYPE_CRUDO,
+                "variable": cfg.VARIABLES_ERA5,
+                "year": anios,
+                "month": meses,
+                "time": "00:00",
+                "area": cfg.BBOX_CDS_AREA,
+                "data_format": "netcdf",
+            },
+            "destino": dir_crudos / f"era5_p_pet_mexico_{args.anio_inicial}_{args.anio_final}.nc",
+            "version": None,
+            "doi": None,
+        }
+    )
 
     # 2) Benchmark oficial ERA5-Drought (NO crítico: solo sirve para 'validar').
     for codigo, indice_oficial in [
-            ("spi", "standardised_precipitation_index"),
-            ("spei", "standardised_precipitation_evapotranspiration_index")]:
-        plan.append({
-            "etiqueta": f"benchmark_{codigo}", "critico": False,
-            "dataset": cfg.CDS_DATASET_OFICIAL,
-            "request": {
-                "variable": [indice_oficial],
-                "accumulation_period": [str(n) for n in args.escalas],
+        ("spi", "standardised_precipitation_index"),
+        ("spei", "standardised_precipitation_evapotranspiration_index"),
+    ]:
+        plan.append(
+            {
+                "etiqueta": f"benchmark_{codigo}",
+                "critico": False,
+                "dataset": cfg.CDS_DATASET_OFICIAL,
+                "request": {
+                    "variable": [indice_oficial],
+                    "accumulation_period": [str(n) for n in args.escalas],
+                    "version": cfg.CDS_VERSION_OFICIAL,
+                    "product_type": [cfg.CDS_PRODUCT_TYPE_OFICIAL],
+                    "dataset_type": cfg.CDS_DATASET_TYPE_OFICIAL,
+                    "year": anios_oficial,
+                    "month": meses,
+                    "area": cfg.BBOX_CDS_AREA,
+                },
+                "destino": dir_crudos / f"era5drought_{codigo}_oficial.nc",
                 "version": cfg.CDS_VERSION_OFICIAL,
-                "product_type": [cfg.CDS_PRODUCT_TYPE_OFICIAL],
-                "dataset_type": cfg.CDS_DATASET_TYPE_OFICIAL,
-                "year": anios_oficial, "month": meses, "area": cfg.BBOX_CDS_AREA,
-            },
-            "destino": dir_crudos / f"era5drought_{codigo}_oficial.nc",
-            "version": cfg.CDS_VERSION_OFICIAL, "doi": cfg.CDS_DOI_OFICIAL,
-        })
+                "doi": cfg.CDS_DOI_OFICIAL,
+            }
+        )
     return plan
 
 
@@ -175,14 +194,24 @@ def modo_verificar(args, raiz: Path):
     log.info("== 1) Configuración del CDS ==")
     rc = Path.home() / ".cdsapirc"
     if rc.exists():
-        url = next((ln.split(":", 1)[1].strip() for ln in rc.read_text().splitlines()
-                    if ln.strip().startswith("url")), "(sin url)")
+        url = next(
+            (
+                ln.split(":", 1)[1].strip()
+                for ln in rc.read_text().splitlines()
+                if ln.strip().startswith("url")
+            ),
+            "(sin url)",
+        )
         log.info(".cdsapirc encontrado: %s | url=%s | key=(oculta)", rc, url)
     else:
-        log.warning(".cdsapirc NO encontrado en %s. Crear con url+key del CDS "
-                    "(https://cds.climate.copernicus.eu/how-to-api).", rc)
+        log.warning(
+            ".cdsapirc NO encontrado en %s. Crear con url+key del CDS "
+            "(https://cds.climate.copernicus.eu/how-to-api).",
+            rc,
+        )
     try:
         import cdsapi
+
         try:
             cdsapi.Client()
             log.info("cdsapi instalado e inicializado correctamente.")
@@ -199,8 +228,14 @@ def modo_verificar(args, raiz: Path):
         estado, detalle = _estado_integridad(d["destino"], indice_proc)
         anios_req = d["request"].get("year", [])
         rango = f"{anios_req[0]}-{anios_req[-1]}" if anios_req else "?"
-        log.info("[%s] %s | años=%s -> %s (%s)", d["etiqueta"], d["destino"].name,
-                 rango, estado.upper(), detalle)
+        log.info(
+            "[%s] %s | años=%s -> %s (%s)",
+            d["etiqueta"],
+            d["destino"].name,
+            rango,
+            estado.upper(),
+            detalle,
+        )
         log.info("      request=%s", json.dumps(d["request"], ensure_ascii=False))
         if estado != "ok":
             pendientes.append(f"{d['etiqueta']}({estado})")
@@ -215,8 +250,10 @@ def modo_verificar(args, raiz: Path):
         n = len(json.loads(proc.read_text(encoding="utf-8")))
         log.info("%s existe (%d registro[s]). Ya hubo descargas previas.", proc.name, n)
     else:
-        log.info("%s no existe: es la primera descarga (correr --modo descargar).",
-                 cfg.ARCHIVO_PROCEDENCIA)
+        log.info(
+            "%s no existe: es la primera descarga (correr --modo descargar).",
+            cfg.ARCHIVO_PROCEDENCIA,
+        )
 
 
 # --------------------------------------------------------------------------- #
@@ -225,13 +262,18 @@ def modo_verificar(args, raiz: Path):
 def _es_error_cliente(e: Exception) -> bool:
     """True si el error es 4xx / 'invalid request' (no tiene caso reintentar)."""
     s = str(e).lower()
-    return ("invalid request" in s or "400 client error" in s
-            or "403 client error" in s or "404 client error" in s
-            or "not produced a valid combination" in s)
+    return (
+        "invalid request" in s
+        or "400 client error" in s
+        or "403 client error" in s
+        or "404 client error" in s
+        or "not produced a valid combination" in s
+    )
 
 
 def _cdsapi_con_reintentos(dataset, request, destino: Path, intentos=4):
     import cdsapi  # import diferido: el resto del pipeline no depende de cdsapi
+
     cliente = cdsapi.Client()
     for k in range(1, intentos + 1):
         try:
@@ -240,10 +282,12 @@ def _cdsapi_con_reintentos(dataset, request, destino: Path, intentos=4):
         except Exception as e:
             if _es_error_cliente(e):  # 4xx: el request es inválido, reintentar no ayuda
                 raise RuntimeError(
-                    f"Request inválido para {dataset} (error de cliente, sin reintentos): {e}")
-            espera = 2 ** k  # solo reintenta errores transitorios (red, 5xx, timeouts)
-            log.warning("Descarga falló (intento %d/%d): %s. Reintento en %ds.",
-                        k, intentos, e, espera)
+                    f"Request inválido para {dataset} (error de cliente, sin reintentos): {e}"
+                ) from e
+            espera = 2**k  # solo reintenta errores transitorios (red, 5xx, timeouts)
+            log.warning(
+                "Descarga falló (intento %d/%d): %s. Reintento en %ds.", k, intentos, e, espera
+            )
             time.sleep(espera)
     raise RuntimeError(f"Descarga agotó reintentos: {dataset}")
 
@@ -258,29 +302,38 @@ def modo_descargar(args, raiz: Path):
         # (estilo 'sync' de CENAPRED). Re-baja lo faltante, cambiado o parcial.
         estado, detalle = _estado_integridad(d["destino"], indice_proc)
         if estado == "ok" and not args.forzar:
-            log.info("[%s] %s íntegro vs procedencia; se omite.",
-                     d["etiqueta"], d["destino"].name)
+            log.info("[%s] %s íntegro vs procedencia; se omite.", d["etiqueta"], d["destino"].name)
             continue
         if estado in ("cambiado", "sin_procedencia"):
-            log.warning("[%s] %s: %s -> se re-descarga.",
-                        d["etiqueta"], d["destino"].name, detalle)
+            log.warning("[%s] %s: %s -> se re-descarga.", d["etiqueta"], d["destino"].name, detalle)
         log.info("Descargando [%s] -> %s", d["etiqueta"], d["destino"].name)
         try:
             _cdsapi_con_reintentos(d["dataset"], d["request"], d["destino"])
-            registrar_procedencia(dir_crudos, d["destino"], dataset=d["dataset"],
-                                  request=d["request"], version=d["version"], doi=d["doi"])
+            registrar_procedencia(
+                dir_crudos,
+                d["destino"],
+                dataset=d["dataset"],
+                request=d["request"],
+                version=d["version"],
+                doi=d["doi"],
+            )
         except Exception as e:
             if d["critico"]:
                 log.error("Fallo en descarga CRÍTICA [%s]; se aborta. %s", d["etiqueta"], e)
                 raise
             # No crítico (benchmark): se registra y se continúa; 'validar' lo saltará.
-            log.warning("Fallo en descarga NO crítica [%s]; se continúa sin ella. %s",
-                        d["etiqueta"], e)
+            log.warning(
+                "Fallo en descarga NO crítica [%s]; se continúa sin ella. %s", d["etiqueta"], e
+            )
             fallos.append(d["etiqueta"])
     if fallos:
-        log.warning("Descarga completa con %d benchmark(s) faltante(s): %s. "
-                    "Los crudos están listos; 'calcular' y 'agregar' pueden proceder; "
-                    "'validar' omitirá lo faltante.", len(fallos), ", ".join(fallos))
+        log.warning(
+            "Descarga completa con %d benchmark(s) faltante(s): %s. "
+            "Los crudos están listos; 'calcular' y 'agregar' pueden proceder; "
+            "'validar' omitirá lo faltante.",
+            len(fallos),
+            ", ".join(fallos),
+        )
     else:
         log.info("Descarga completa.")
 
@@ -295,8 +348,9 @@ def _entrada_plan(args, dir_crudos: Path, objetivo: str):
     for d in plan:
         if d["etiqueta"] == objetivo:
             return d
-    log.error("--objetivo '%s' no válido. Opciones: %s",
-              objetivo, ", ".join(d["etiqueta"] for d in plan))
+    log.error(
+        "--objetivo '%s' no válido. Opciones: %s", objetivo, ", ".join(d["etiqueta"] for d in plan)
+    )
     return None
 
 
@@ -321,21 +375,29 @@ def modo_recuperar(args, raiz: Path):
         if entrada is None:
             sys.exit(1)
         destino = entrada["destino"]
-        meta = {"dataset": entrada["dataset"],
-                "request": {**entrada["request"], "_request_id_recuperado": args.request_id},
-                "version": entrada["version"], "doi": entrada["doi"]}
+        meta = {
+            "dataset": entrada["dataset"],
+            "request": {**entrada["request"], "_request_id_recuperado": args.request_id},
+            "version": entrada["version"],
+            "doi": entrada["doi"],
+        }
         if args.destino:
-            log.warning("Se ignora --destino: --objetivo fija el nombre canónico %s.",
-                        destino.name)
+            log.warning("Se ignora --destino: --objetivo fija el nombre canónico %s.", destino.name)
     elif args.destino:
         destino = Path(args.destino)
         if not destino.is_absolute():
             destino = raiz / destino
-        meta = {"dataset": "(recuperado por request_id)",
-                "request": {"request_id": args.request_id}, "version": None, "doi": None}
-        log.warning("Sin --objetivo: si el nombre no es canónico, 'verificar'/'descargar' "
-                    "NO lo reconocerán. Recomendado: --objetivo "
-                    "{crudo_era5|benchmark_spi|benchmark_spei}.")
+        meta = {
+            "dataset": "(recuperado por request_id)",
+            "request": {"request_id": args.request_id},
+            "version": None,
+            "doi": None,
+        }
+        log.warning(
+            "Sin --objetivo: si el nombre no es canónico, 'verificar'/'descargar' "
+            "NO lo reconocerán. Recomendado: --objetivo "
+            "{crudo_era5|benchmark_spi|benchmark_spei}."
+        )
     else:
         log.error("Falta --objetivo (recomendado) o --destino.")
         sys.exit(1)
@@ -352,8 +414,11 @@ def modo_recuperar(args, raiz: Path):
         remoto = cliente.client.get_remote(args.request_id)
     except Exception as e:
         if _es_error_cliente(e):
-            log.error("Job %s no encontrado (¿ID incorrecto o expiró de la caché?). %s",
-                      args.request_id, e)
+            log.error(
+                "Job %s no encontrado (¿ID incorrecto o expiró de la caché?). %s",
+                args.request_id,
+                e,
+            )
         else:
             log.error("Error al consultar el job %s: %s", args.request_id, e)
         sys.exit(1)
@@ -370,8 +435,14 @@ def modo_recuperar(args, raiz: Path):
         log.error("Falló la descarga del job %s: %s", args.request_id, e)
         sys.exit(1)
 
-    registrar_procedencia(destino.parent, destino, dataset=meta["dataset"],
-                          request=meta["request"], version=meta["version"], doi=meta["doi"])
+    registrar_procedencia(
+        destino.parent,
+        destino,
+        dataset=meta["dataset"],
+        request=meta["request"],
+        version=meta["version"],
+        doi=meta["doi"],
+    )
     log.info("Recuperación completa: %s (procedencia registrada).", destino.name)
 
 
@@ -391,18 +462,30 @@ def modo_registrar(args, raiz: Path):
         sys.exit(1)
     destino = entrada["destino"]
     if not destino.exists():
-        log.error("No existe %s; nada que registrar. Descárgalo (descargar) o "
-                  "recupéralo (recuperar --objetivo %s) primero.",
-                  destino.name, args.objetivo)
+        log.error(
+            "No existe %s; nada que registrar. Descárgalo (descargar) o "
+            "recupéralo (recuperar --objetivo %s) primero.",
+            destino.name,
+            args.objetivo,
+        )
         sys.exit(1)
 
-    log.info("Adoptando %s como '%s' (sin red; se confía en que está completo).",
-             destino.name, args.objetivo)
+    log.info(
+        "Adoptando %s como '%s' (sin red; se confía en que está completo).",
+        destino.name,
+        args.objetivo,
+    )
     req = {**entrada["request"], "_origen": "adoptado_local"}
     if args.request_id:
         req["_request_id_recuperado"] = args.request_id
-    registrar_procedencia(dir_crudos, destino, dataset=entrada["dataset"],
-                          request=req, version=entrada["version"], doi=entrada["doi"])
+    registrar_procedencia(
+        dir_crudos,
+        destino,
+        dataset=entrada["dataset"],
+        request=req,
+        version=entrada["version"],
+        doi=entrada["doi"],
+    )
     estado, detalle = _estado_integridad(destino, _cargar_indice_procedencia(dir_crudos))
     log.info("Estado tras registrar: %s (%s)", estado.upper(), detalle)
 
@@ -418,6 +501,7 @@ def _abrir_crudos(ruta_nc: Path):
     Las conversiones se registran en log para revisión manual (verification-first).
     """
     import xarray as xr
+
     ds = xr.open_dataset(ruta_nc)
     nombres = {v.lower(): v for v in ds.data_vars}
     var_tp = nombres.get("tp", "tp")
@@ -427,9 +511,14 @@ def _abrir_crudos(ruta_nc: Path):
     pev = ds[var_pev]
     # m -> mm. Sanity-check de magnitud (log para revisión).
     P = tp * 1000.0
-    PET = np.abs(pev) * 1000.0   # |pev|: ERA5 reporta pev <= 0
-    log.info("Rango P (mm/mes): [%.1f, %.1f]; PET (mm/mes): [%.1f, %.1f] -> revisar",
-             float(P.min()), float(P.max()), float(PET.min()), float(PET.max()))
+    PET = np.abs(pev) * 1000.0  # |pev|: ERA5 reporta pev <= 0
+    log.info(
+        "Rango P (mm/mes): [%.1f, %.1f]; PET (mm/mes): [%.1f, %.1f] -> revisar",
+        float(P.min()),
+        float(P.max()),
+        float(PET.min()),
+        float(PET.max()),
+    )
 
     tiempo = ds["valid_time"] if "valid_time" in ds else ds["time"]
     anios = tiempo.dt.year.values
@@ -445,6 +534,7 @@ def _abrir_crudos(ruta_nc: Path):
 # --------------------------------------------------------------------------- #
 def modo_calcular(args, raiz: Path):
     import xarray as xr
+
     dir_crudos = raiz / cfg.DIR_CRUDOS
     dir_cons = raiz / cfg.DIR_CONSOLIDADOS
     dir_cons.mkdir(parents=True, exist_ok=True)
@@ -461,35 +551,52 @@ def modo_calcular(args, raiz: Path):
         ini, fin = cfg.PERIODOS_REFERENCIA[nombre_periodo]
         for n in args.escalas:
             for tipo in args.indices:
-                log.info("Calculando %s-%d | ref %s | %d miembro(s)...",
-                         tipo.upper(), n, nombre_periodo, len(miembros))
-                campo = _calcular_grid(P, PET, lats, lons, anios, meses,
-                                       n, ini, fin, tipo, dim_miembro, miembros)
+                log.info(
+                    "Calculando %s-%d | ref %s | %d miembro(s)...",
+                    tipo.upper(),
+                    n,
+                    nombre_periodo,
+                    len(miembros),
+                )
+                campo = _calcular_grid(
+                    P, PET, lats, lons, anios, meses, n, ini, fin, tipo, dim_miembro, miembros
+                )
                 da = xr.DataArray(
-                    campo, dims=("number", "time", "latitude", "longitude"),
-                    coords={"number": list(miembros), "time": tiempo,
-                            "latitude": lats, "longitude": lons},
+                    campo,
+                    dims=("number", "time", "latitude", "longitude"),
+                    coords={
+                        "number": list(miembros),
+                        "time": tiempo,
+                        "latitude": lats,
+                        "longitude": lons,
+                    },
                     name=f"{tipo}_{n}",
-                    attrs={"periodo_referencia": nombre_periodo,
-                           "escala_meses": n, "distribucion":
-                           cfg.DIST_SPI if tipo == "spi" else cfg.DIST_SPEI})
+                    attrs={
+                        "periodo_referencia": nombre_periodo,
+                        "escala_meses": n,
+                        "distribucion": cfg.DIST_SPI if tipo == "spi" else cfg.DIST_SPEI,
+                    },
+                )
                 salida = dir_cons / f"{tipo}{n}_ref{nombre_periodo}.nc"
                 da.to_netcdf(salida)
                 log.info("  -> %s", salida.name)
 
 
-def _calcular_grid(P, PET, lats, lons, anios, meses, n, ini, fin, tipo,
-                   dim_miembro, miembros):
+def _calcular_grid(P, PET, lats, lons, anios, meses, n, ini, fin, tipo, dim_miembro, miembros):
     """Aplica SPI/SPEI celda por celda y miembro por miembro. Devuelve
     arreglo (miembro, tiempo, lat, lon). Salta celdas totalmente NaN (océano)."""
-    nt = len(anios); nla = len(lats); nlo = len(lons); nm = len(miembros)
+    nt = len(anios)
+    nla = len(lats)
+    nlo = len(lons)
+    nm = len(miembros)
     salida = np.full((nm, nt, nla, nlo), np.nan, dtype="float32")
-    for im, miembro in enumerate(miembros):
+    for im, _miembro in enumerate(miembros):
         if dim_miembro:
             p_m = P.isel({dim_miembro: im}).values
             pet_m = PET.isel({dim_miembro: im}).values
         else:
-            p_m = P.values; pet_m = PET.values
+            p_m = P.values
+            pet_m = PET.values
         for i in range(nla):
             for j in range(nlo):
                 serie_p = p_m[:, i, j]
@@ -498,8 +605,7 @@ def _calcular_grid(P, PET, lats, lons, anios, meses, n, ini, fin, tipo,
                 if tipo == "spi":
                     z = ix.spi_serie(serie_p, anios, meses, n, ini, fin)
                 else:
-                    z = ix.spei_serie(serie_p, pet_m[:, i, j], anios, meses,
-                                      n, ini, fin)
+                    z = ix.spei_serie(serie_p, pet_m[:, i, j], anios, meses, n, ini, fin)
                 salida[im, :, i, j] = z
     return salida
 
@@ -508,9 +614,10 @@ def _calcular_grid(P, PET, lats, lons, anios, meses, n, ini, fin, tipo,
 # MODO: agregar (malla -> estatal, ponderado por área).
 # --------------------------------------------------------------------------- #
 def modo_agregar(args, raiz: Path):
-    import xarray as xr
-    import pandas as pd
     import geopandas as gpd
+    import pandas as pd
+    import xarray as xr
+
     dir_cons = raiz / cfg.DIR_CONSOLIDADOS
     if not args.shp_estados:
         log.error("Falta --shp-estados (Marco Geoestadístico INEGI, 32 entidades).")
@@ -520,27 +627,36 @@ def modo_agregar(args, raiz: Path):
     filas = []
     W = claves = None
     import warnings
+
     for ruta in sorted(dir_cons.glob("*.nc")):
-      with warnings.catch_warnings():
-        warnings.simplefilter("ignore", RuntimeWarning)
-        da = xr.open_dataarray(ruta)
-        lats = da["latitude"].values; lons = da["longitude"].values
-        # Media (central) y sd (incertidumbre) sobre miembros del ensemble.
-        with np.errstate(invalid="ignore"):
-            media = da.mean("number"); sd = da.std("number")
-        if W is None:  # matriz de pesos: se construye UNA sola vez (malla fija)
-            mascara = np.isfinite(media.values).any(axis=0)  # celdas con dato
-            W, claves, _ = ag.construir_matriz_pesos(lats, lons, estados, mascara)
-        # Agregación de TODO el stack temporal con un producto matriz.
-        agr_m = ag.agregar_stack(media.values, W)   # (T, n_estados)
-        agr_s = ag.agregar_stack(sd.values, W)
-        fechas = [str(t)[:10] for t in da["time"].values]
-        for it, fecha in enumerate(fechas):
-            for r, clave in enumerate(claves):
-                filas.append({"fecha": fecha, "cve_ent": clave, "indice": da.name,
-                              "periodo_referencia": da.attrs.get("periodo_referencia"),
-                              "valor_medio": agr_m[it, r],
-                              "incertidumbre_sd": agr_s[it, r]})
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            da = xr.open_dataarray(ruta)
+            lats = da["latitude"].values
+            lons = da["longitude"].values
+            # Media (central) y sd (incertidumbre) sobre miembros del ensemble.
+            with np.errstate(invalid="ignore"):
+                media = da.mean("number")
+                sd = da.std("number")
+            if W is None:  # matriz de pesos: se construye UNA sola vez (malla fija)
+                mascara = np.isfinite(media.values).any(axis=0)  # celdas con dato
+                W, claves, _ = ag.construir_matriz_pesos(lats, lons, estados, mascara)
+            # Agregación de TODO el stack temporal con un producto matriz.
+            agr_m = ag.agregar_stack(media.values, W)  # (T, n_estados)
+            agr_s = ag.agregar_stack(sd.values, W)
+            fechas = [str(t)[:10] for t in da["time"].values]
+            for it, fecha in enumerate(fechas):
+                for r, clave in enumerate(claves):
+                    filas.append(
+                        {
+                            "fecha": fecha,
+                            "cve_ent": clave,
+                            "indice": da.name,
+                            "periodo_referencia": da.attrs.get("periodo_referencia"),
+                            "valor_medio": agr_m[it, r],
+                            "incertidumbre_sd": agr_s[it, r],
+                        }
+                    )
     df = pd.DataFrame(filas)
     salida_csv = dir_cons / "panel_sequia_estatal.csv"
     df.to_csv(salida_csv, index=False)
@@ -556,32 +672,61 @@ def modo_agregar(args, raiz: Path):
 # --------------------------------------------------------------------------- #
 def construir_parser():
     p = argparse.ArgumentParser(description="Pipeline de sequía ERA5 -> SPI/SPEI -> estatal.")
-    p.add_argument("--modo", required=True,
-                   choices=["verificar", "descargar", "recuperar", "registrar",
-                            "calcular", "agregar", "validar", "todo"])
-    p.add_argument("--raiz", default=".", help="Raíz del proyecto (contiene datos/).")
+    p.add_argument(
+        "--modo",
+        required=True,
+        choices=[
+            "verificar",
+            "descargar",
+            "recuperar",
+            "registrar",
+            "calcular",
+            "agregar",
+            "validar",
+            "todo",
+        ],
+    )
+    p.add_argument(
+        "--raiz",
+        default=str(project_paths().root),
+        help="Raíz del proyecto (contiene data/hazard_mx/; default: la raíz del repo).",
+    )
     p.add_argument("--anio-inicial", type=int, default=cfg.ANIO_INICIAL_DEFECTO)
     p.add_argument("--anio-final", type=int, default=datetime.now().year - 1)
-    p.add_argument("--indices", nargs="+", default=["spi", "spei"],
-                   choices=["spi", "spei"])
+    p.add_argument("--indices", nargs="+", default=["spi", "spei"], choices=["spi", "spei"])
     p.add_argument("--escalas", nargs="+", type=int, default=cfg.ESCALAS_BASE)
-    p.add_argument("--escalas-extra", action="store_true",
-                   help="Añade las escalas opcionales (1, 48) al set base.")
-    p.add_argument("--periodos-referencia", nargs="+",
-                   default=list(cfg.PERIODOS_REFERENCIA.keys()),
-                   choices=list(cfg.PERIODOS_REFERENCIA.keys()))
-    p.add_argument("--forzar", action="store_true",
-                   help="Re-descarga aunque el archivo ya exista (por defecto se omite).")
+    p.add_argument(
+        "--escalas-extra",
+        action="store_true",
+        help="Añade las escalas opcionales (1, 48) al set base.",
+    )
+    p.add_argument(
+        "--periodos-referencia",
+        nargs="+",
+        default=list(cfg.PERIODOS_REFERENCIA.keys()),
+        choices=list(cfg.PERIODOS_REFERENCIA.keys()),
+    )
+    p.add_argument(
+        "--forzar",
+        action="store_true",
+        help="Re-descarga aunque el archivo ya exista (por defecto se omite).",
+    )
     p.add_argument("--shp-estados", help="Ruta al shapefile estatal (INEGI).")
-    p.add_argument("--request-id",
-                   help="ID de un job del CDS ya enviado (modos recuperar/registrar).")
-    p.add_argument("--objetivo", choices=["crudo_era5", "benchmark_spi", "benchmark_spei"],
-                   help="Objetivo canónico a recuperar/registrar; fija nombre y procedencia "
-                        "correctos (recomendado sobre --destino).")
-    p.add_argument("--destino",
-                   help="Ruta de salida libre para 'recuperar' (relativa a --raiz si no es "
-                        "absoluta). Solo si NO usas --objetivo; ojo: un nombre no canónico "
-                        "no será reconocido por verificar/descargar.")
+    p.add_argument(
+        "--request-id", help="ID de un job del CDS ya enviado (modos recuperar/registrar)."
+    )
+    p.add_argument(
+        "--objetivo",
+        choices=["crudo_era5", "benchmark_spi", "benchmark_spei"],
+        help="Objetivo canónico a recuperar/registrar; fija nombre y procedencia "
+        "correctos (recomendado sobre --destino).",
+    )
+    p.add_argument(
+        "--destino",
+        help="Ruta de salida libre para 'recuperar' (relativa a --raiz si no es "
+        "absoluta). Solo si NO usas --objetivo; ojo: un nombre no canónico "
+        "no será reconocido por verificar/descargar.",
+    )
     return p
 
 
@@ -595,12 +740,13 @@ def _configurar_log_archivo(raiz: Path) -> Path:
     dir_sequia.mkdir(parents=True, exist_ok=True)
     ruta = dir_sequia / cfg.ARCHIVO_LOG
     raiz_log = logging.getLogger()
-    ya = any(isinstance(h, logging.FileHandler)
-             and getattr(h, "baseFilename", "") == str(ruta) for h in raiz_log.handlers)
+    ya = any(
+        isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", "") == str(ruta)
+        for h in raiz_log.handlers
+    )
     if not ya:
         fh = logging.FileHandler(ruta, mode="a", encoding="utf-8")
-        fh.setFormatter(logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+        fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
         raiz_log.addHandler(fh)
     return ruta
 
@@ -611,11 +757,19 @@ def main(argv=None):
         args.escalas = sorted(set(args.escalas) | set(cfg.ESCALAS_EXTRA))
     raiz = Path(args.raiz).resolve()
     ruta_log = _configurar_log_archivo(raiz)
-    log.info("==================== Nueva ejecución %s ====================",
-             datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    log.info("Modo=%s | escalas=%s | periodos=%s | indices=%s | años=%s-%s",
-             args.modo, args.escalas, args.periodos_referencia, args.indices,
-             args.anio_inicial, args.anio_final)
+    log.info(
+        "==================== Nueva ejecución %s ====================",
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    )
+    log.info(
+        "Modo=%s | escalas=%s | periodos=%s | indices=%s | años=%s-%s",
+        args.modo,
+        args.escalas,
+        args.periodos_referencia,
+        args.indices,
+        args.anio_inicial,
+        args.anio_final,
+    )
     log.info("Bitácora persistente: %s", ruta_log)
 
     try:
@@ -633,6 +787,7 @@ def main(argv=None):
             modo_agregar(args, raiz)
         if args.modo in ("validar", "todo"):
             import validacion_sequia
+
             validacion_sequia.validar(args, raiz)
         log.info("Ejecución finalizada correctamente (modo=%s).", args.modo)
     except Exception:

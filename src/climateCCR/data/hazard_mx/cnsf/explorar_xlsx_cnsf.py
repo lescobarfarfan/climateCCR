@@ -30,11 +30,12 @@ import json
 import logging
 from collections import Counter
 from pathlib import Path
-from typing import Optional
 
+import consolidar_cnsf as C  # primitivas compartidas
 import pandas as pd
+from climateCCR.infra import project_paths
 
-import consolidar_cnsf as C   # primitivas compartidas
+_DATOS_CNSF = project_paths().data / "hazard_mx" / "datos_CNSF"
 
 log = logging.getLogger("cnsf.estructura")
 
@@ -42,36 +43,37 @@ UMBRAL_ALIAS = 0.88
 MUESTRA_DEFECTO = 200
 
 
-def _estructura_hoja(path: Path, hoja: str, muestra: int) -> Optional[dict]:
+def _estructura_hoja(path: Path, hoja: str, muestra: int) -> dict | None:
     """Lee solo las primeras `muestra` filas para deducir encabezados y muestras
     (rápido; no carga la hoja completa)."""
     try:
-        crudo = pd.read_excel(path, sheet_name=hoja, header=None,
-                              engine=C._motor(path), dtype=object, nrows=muestra) # type: ignore
+        crudo = pd.read_excel(
+            path, sheet_name=hoja, header=None, engine=C._motor(path), dtype=object, nrows=muestra
+        )  # type: ignore
     except ValueError:
         return None
     if crudo.empty:
         return None
     h = C._detectar_encabezado(crudo)
     cols = [str(c).strip() if pd.notna(c) else "" for c in crudo.iloc[h].tolist()]
-    datos = crudo.iloc[h + 1:].reset_index(drop=True)
+    datos = crudo.iloc[h + 1 :].reset_index(drop=True)
     info = []
     for i, c in enumerate(cols):
         col = datos.iloc[:, i] if i < datos.shape[1] else pd.Series([], dtype=object)
         # "reales" = no NaN y no solo espacios (los spacers de SharePoint traen ' ')
         reales = col[col.map(lambda v: not (pd.isna(v) or str(v).strip() == ""))]
         ej = [str(v) for v in pd.unique(reales)[:3]]
-        info.append({"pos": i, "encabezado": c, "no_nulos_muestra": int(len(reales)), "muestra": ej})
+        info.append(
+            {"pos": i, "encabezado": c, "no_nulos_muestra": int(len(reales)), "muestra": ej}
+        )
     return {"cols": cols, "info": info}
 
 
-def explorar(root: Path, categorias: Optional[list] = None,
-             muestra: int = MUESTRA_DEFECTO) -> dict:
+def explorar(root: Path, categorias: list | None = None, muestra: int = MUESTRA_DEFECTO) -> dict:
     grupos = C.descubrir_fuentes(root)
     if categorias:
         filtros = [C._slug(x) for x in categorias]
-        grupos = {c: v for c, v in grupos.items()
-                  if any(f in c for f in filtros)}
+        grupos = {c: v for c, v in grupos.items() if any(f in c for f in filtros)}
     reporte: dict = {}
 
     for cat, fuentes in sorted(grupos.items()):
@@ -80,7 +82,7 @@ def explorar(root: Path, categorias: Optional[list] = None,
         hojas: dict[str, str] = {}
         for f in fuentes:
             for h in C.hojas_de_datos(f.path):
-                hojas[C.clave_col(h)] = h     # el último (más reciente) deja su display
+                hojas[C.clave_col(h)] = h  # el último (más reciente) deja su display
         cat_rep: dict = {}
 
         for hkey, hdisp in hojas.items():
@@ -95,9 +97,12 @@ def explorar(root: Path, categorias: Optional[list] = None,
                 if est is None:
                     continue
                 anio = f.anio
-                por_anio[anio] = est["cols"] # type: ignore
-                be = [{"pos": x["pos"], "muestra": x["muestra"]}
-                      for x in est["info"] if x["encabezado"] == "" and x["no_nulos_muestra"] > 0]
+                por_anio[anio] = est["cols"]  # type: ignore
+                be = [
+                    {"pos": x["pos"], "muestra": x["muestra"]}
+                    for x in est["info"]
+                    if x["encabezado"] == "" and x["no_nulos_muestra"] > 0
+                ]
                 if be:
                     sin_enc[str(anio)] = be
                 cnt = Counter(c for c in est["cols"] if c != "")
@@ -133,14 +138,19 @@ def explorar(root: Path, categorias: Optional[list] = None,
                     if r >= UMBRAL_ALIAS and (mejor is None or r > mejor[1]):
                         mejor = (ck, r)
                 if mejor:
-                    alias_cand[k] = {"parecida_a": matriz.get(mejor[0], {}).get("display", mejor[0]),
-                                     "clave_canonica": mejor[0], "similitud": round(mejor[1], 3),
-                                     "display": m["display"], "anios": m["anios"]}
+                    alias_cand[k] = {
+                        "parecida_a": matriz.get(mejor[0], {}).get("display", mejor[0]),
+                        "clave_canonica": mejor[0],
+                        "similitud": round(mejor[1], 3),
+                        "display": m["display"],
+                        "anios": m["anios"],
+                    }
 
             # Columnas que aparecen/desaparecen (no presentes en todos los años).
             todos = sorted(por_anio)
-            no_universales = {m["display"]: m["anios"] for k, m in matriz.items()
-                              if len(m["anios"]) != len(todos)}
+            no_universales = {
+                m["display"]: m["anios"] for k, m in matriz.items() if len(m["anios"]) != len(todos)
+            }
 
             cat_rep[hdisp] = {
                 "anios": todos,
@@ -160,18 +170,31 @@ def _resumen(reporte: dict) -> None:
     for cat, hojas in reporte.items():
         log.info("══ %s ══", cat)
         for hoja, r in hojas.items():
-            log.info("  • %s | años %s | %d cols canónicas (año %s)",
-                     hoja, f"{r['anios'][0]}–{r['anios'][-1]}" if r["anios"] else "?",
-                     r["n_columnas_canonicas"], r["anio_canonico"])
+            log.info(
+                "  • %s | años %s | %d cols canónicas (año %s)",
+                hoja,
+                f"{r['anios'][0]}–{r['anios'][-1]}" if r["anios"] else "?",
+                r["n_columnas_canonicas"],
+                r["anio_canonico"],
+            )
             if r["alias_candidatos"]:
-                for k, a in r["alias_candidatos"].items():
-                    log.info("      alias? '%s' (años %s) ~ '%s'  [%.2f]",
-                             a["display"], a["anios"], a["parecida_a"], a["similitud"])
+                for _k, a in r["alias_candidatos"].items():
+                    log.info(
+                        "      alias? '%s' (años %s) ~ '%s'  [%.2f]",
+                        a["display"],
+                        a["anios"],
+                        a["parecida_a"],
+                        a["similitud"],
+                    )
             if r["sin_encabezado_con_datos"]:
                 for anio, cols in r["sin_encabezado_con_datos"].items():
                     for be in cols:
-                        log.info("      sin encabezado %s pos %d, muestra %s",
-                                 anio, be["pos"], be["muestra"])
+                        log.info(
+                            "      sin encabezado %s pos %d, muestra %s",
+                            anio,
+                            be["pos"],
+                            be["muestra"],
+                        )
             if r["encabezados_duplicados"]:
                 log.info("      encabezados duplicados: %s", r["encabezados_duplicados"])
             faltan = r["columnas_no_en_todos_los_anios"]
@@ -181,15 +204,18 @@ def _resumen(reporte: dict) -> None:
 
 def main():
     ap = argparse.ArgumentParser(description="Explorador de estructura de los xlsx de la CNSF")
-    ap.add_argument("--root", default="datos/datos_CNSF/crudos", help="carpeta de Excel crudos")
+    ap.add_argument("--root", default=str(_DATOS_CNSF / "crudos"), help="carpeta de Excel crudos")
     ap.add_argument("--categorias", nargs="*", help="filtra (coincidencia parcial). Default: todas")
     ap.add_argument("--out", default="reporte_estructura.json", help="ruta del reporte JSON")
-    ap.add_argument("--muestra", type=int, default=MUESTRA_DEFECTO,
-                    help="filas a leer por hoja para deducir estructura/muestras (default 200)")
+    ap.add_argument(
+        "--muestra",
+        type=int,
+        default=MUESTRA_DEFECTO,
+        help="filas a leer por hoja para deducir estructura/muestras (default 200)",
+    )
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
-    logging.basicConfig(level=logging.INFO,
-                        format="%(asctime)s %(levelname)s %(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
     reporte = explorar(Path(args.root), categorias=args.categorias, muestra=args.muestra)
     Path(args.out).write_text(json.dumps(reporte, ensure_ascii=False, indent=2), encoding="utf-8")

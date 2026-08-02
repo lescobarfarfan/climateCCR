@@ -42,10 +42,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import pandas as pd
+from climateCCR.infra import project_paths
 
 # Vocabulario compartido con el consolidador (mismo directorio; los scripts CNSF
 # se importan entre sí por nombre plano — ver tests/conftest.py, OQ-HAZ-15).
 from consolidar_cnsf import _sin_acentos, _slug
+
+_DATOS_CNSF = project_paths().data / "hazard_mx" / "datos_CNSF"
 
 log = logging.getLogger("cnsf.autos")
 
@@ -446,9 +449,12 @@ def procesar(
 
 def main():
     ap = argparse.ArgumentParser(description="Procesador de Automóviles CNSF (MDB -> CSV)")
-    ap.add_argument("--root", default="datos/datos_CNSF/automoviles", help="carpeta con los .zip")
-    ap.add_argument("--out-dir", default="datos/datos_CNSF/consolidados")
-    ap.add_argument("--config", default="src/catalogos_autos_cnsf.json")
+    ap.add_argument("--root", default=str(_DATOS_CNSF / "automoviles"), help="carpeta con los .zip")
+    ap.add_argument("--out-dir", default=str(_DATOS_CNSF / "consolidados"))
+    ap.add_argument(
+        "--config",
+        default=str(Path(__file__).parent / "config" / "catalogos_autos_cnsf.json"),
+    )
     ap.add_argument("--subsectores", nargs="*", help="individual flotillas (default: ambos)")
     ap.add_argument(
         "--comprimir",

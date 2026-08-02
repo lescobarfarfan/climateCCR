@@ -39,6 +39,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from climateCCR.infra import project_paths
 
 # limpieza_cnsf vive en la raíz del repo o junto a src/
 sys.path.extend([".", "..", str(Path(__file__).resolve().parent.parent)])
@@ -51,7 +52,7 @@ except ImportError:  # fallback mínimo para no romper si se corre aislado
 
     CAT_ESTADO = "estado"
 
-DIR_BASE = Path("datos/datos_CENAPRED")
+DIR_BASE = project_paths().data / "hazard_mx" / "datos_CENAPRED"
 DIR_CRUDOS = DIR_BASE / "crudos"
 DIR_CONS = DIR_BASE / "consolidados"
 ARCHIVO_CSV = DIR_CRUDOS / "BASE_IMPACTO_SOCIOECONOMICO_DESASTRES_2000_2015.csv"

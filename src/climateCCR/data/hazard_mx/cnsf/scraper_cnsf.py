@@ -50,13 +50,16 @@ import random
 import re
 import shutil
 import time
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Iterable, Optional
 
 import requests
 from bs4 import BeautifulSoup
+from climateCCR.infra import project_paths
+
+_DATOS_CNSF = project_paths().data / "hazard_mx" / "datos_CNSF"
 
 log = logging.getLogger("cnsf")
 
@@ -66,8 +69,7 @@ log = logging.getLogger("cnsf")
 
 BASE = "https://www.cnsf.gob.mx"
 URL_INDICE = (
-    BASE
-    + "/EntidadesSupervisadas/InstitucionesSociedadesMutualistas/Paginas/DetalladaSeguros.aspx"
+    BASE + "/EntidadesSupervisadas/InstitucionesSociedadesMutualistas/Paginas/DetalladaSeguros.aspx"
 )
 EXTENSIONES_DATOS = (
     ".xlsx",
@@ -115,7 +117,7 @@ def _slug(texto: str) -> str:
     return t or "x"
 
 
-def _subsector_de(nombre: str) -> Optional[str]:
+def _subsector_de(nombre: str) -> str | None:
     """Devuelve el subsector ('individual'/'flotilla') según el nombre del archivo,
     o None si no aplica. El valor es también el nombre de la subcarpeta."""
     low = str(nombre).lower()
@@ -144,11 +146,11 @@ class Categoria:
 class ArchivoCNSF:
     categoria: str
     categoria_slug: str
-    anio: Optional[int]
+    anio: int | None
     nombre_archivo: str
     url: str
     ext: str
-    tamano_kb: Optional[float] = None
+    tamano_kb: float | None = None
 
     def ruta_relativa(self) -> Path:
         base = Path(self.categoria_slug)
@@ -187,7 +189,7 @@ def _get(
     timeout: int = 120,
     stream: bool = False,
 ) -> requests.Response:
-    ultimo: Optional[Exception] = None
+    ultimo: Exception | None = None
     for intento in range(1, reintentos + 1):
         try:
             r = session.get(url, timeout=timeout, stream=stream, allow_redirects=True)
@@ -270,7 +272,7 @@ def _normalizar_url(href: str) -> str:
 # --------------------------------------------------------------------------- #
 
 
-def descubrir_categorias(session, html: Optional[str] = None) -> list[Categoria]:
+def descubrir_categorias(session, html: str | None = None) -> list[Categoria]:
     if html is None:
         html = _get(session, URL_INDICE).text
     sopa = BeautifulSoup(html, _BS_PARSER)
@@ -293,7 +295,7 @@ def descubrir_categorias(session, html: Optional[str] = None) -> list[Categoria]
     return cats
 
 
-def _anio_de(nombre: str, texto_fila: str) -> Optional[int]:
+def _anio_de(nombre: str, texto_fila: str) -> int | None:
     for fuente in (nombre, texto_fila):
         m = RE_ANIO.search(fuente or "")
         if m:
@@ -301,7 +303,7 @@ def _anio_de(nombre: str, texto_fila: str) -> Optional[int]:
     return None
 
 
-def _tamano_kb_de(texto_fila: str) -> Optional[float]:
+def _tamano_kb_de(texto_fila: str) -> float | None:
     m = RE_TAMANO_KB.search(texto_fila or "")
     if not m:
         return None
@@ -311,9 +313,7 @@ def _tamano_kb_de(texto_fila: str) -> Optional[float]:
         return None
 
 
-def listar_archivos(
-    session, cat: Categoria, html: Optional[str] = None
-) -> list[ArchivoCNSF]:
+def listar_archivos(session, cat: Categoria, html: str | None = None) -> list[ArchivoCNSF]:
     from urllib.parse import unquote, urlsplit
 
     if html is None:
@@ -350,19 +350,13 @@ def listar_archivos(
     return archivos
 
 
-def _filtrar_categorias(
-    todas: list[Categoria], pedidas: Optional[Iterable[str]]
-) -> list[Categoria]:
+def _filtrar_categorias(todas: list[Categoria], pedidas: Iterable[str] | None) -> list[Categoria]:
     if not pedidas:
         return todas
     objetivos = {_slug(p) for p in pedidas}
-    sel = [
-        c for c in todas if c.slug in objetivos or any(o in c.slug for o in objetivos)
-    ]
+    sel = [c for c in todas if c.slug in objetivos or any(o in c.slug for o in objetivos)]
     # un objetivo "se encontró" si es igual a algún slug o substring de alguno
-    encontrados = {
-        o for o in objetivos if any(o == c.slug or o in c.slug for c in todas)
-    }
+    encontrados = {o for o in objetivos if any(o == c.slug or o in c.slug for c in todas)}
     faltan = objetivos - encontrados
     if faltan:
         log.warning("Categorías no encontradas: %s", ", ".join(sorted(faltan)))
@@ -371,9 +365,9 @@ def _filtrar_categorias(
 
 def inventario_remoto(
     session,
-    categorias: Optional[Iterable[str]] = None,
-    anios: Optional[Iterable[int]] = None,
-    crudos_dir: Optional[Path] = None,
+    categorias: Iterable[str] | None = None,
+    anios: Iterable[int] | None = None,
+    crudos_dir: Path | None = None,
     guardar_snapshot: bool = False,
 ) -> list[ArchivoCNSF]:
     """Lista TODOS los archivos disponibles en la red (con filtros opcionales)."""
@@ -435,7 +429,7 @@ def _sembrar_estado_local(arch: ArchivoCNSF, destino: Path) -> dict:
 
 def evaluar(
     session, arch: ArchivoCNSF, estado: dict, out_dir: Path, forzar: bool
-) -> tuple[bool, str, Optional[dict], Optional[dict]]:
+) -> tuple[bool, str, dict | None, dict | None]:
     """
     Decide si hay que (re)descargar `arch`.
     Devuelve (descargar, motivo, prev, head):
@@ -449,9 +443,7 @@ def evaluar(
         return True, "forzado", prev, None
     if prev is None:
         if destino.exists():
-            prev = _sembrar_estado_local(
-                arch, destino
-            )  # teníamos el archivo, no el estado
+            prev = _sembrar_estado_local(arch, destino)  # teníamos el archivo, no el estado
         else:
             return True, "nuevo", None, None
 
@@ -496,7 +488,7 @@ class SyncResult:
 
 
 def _archivar_version(
-    destino: Path, categoria_slug: str, sha_prev: Optional[str], out_dir: Path
+    destino: Path, categoria_slug: str, sha_prev: str | None, out_dir: Path
 ) -> Path:
     vdir = out_dir / "_versiones" / categoria_slug
     vdir.mkdir(parents=True, exist_ok=True)
@@ -506,9 +498,7 @@ def _archivar_version(
     return dst
 
 
-def _fila(
-    arch: ArchivoCNSF, estado_str: str, motivo: str, meta: Optional[dict]
-) -> dict:
+def _fila(arch: ArchivoCNSF, estado_str: str, motivo: str, meta: dict | None) -> dict:
     meta = meta or {}
     return {
         "categoria": arch.categoria,
@@ -537,7 +527,7 @@ def sincronizar(
     versionar: bool = True,
 ) -> SyncResult:
     res = SyncResult()
-    for i, arch in enumerate(inventario, 1):
+    for _i, arch in enumerate(inventario, 1):
         destino = out_dir / arch.ruta_relativa()
         descargar, motivo, prev, head = evaluar(session, arch, estado, out_dir, forzar)
         if prev is not None and arch.clave() not in estado:
@@ -545,9 +535,7 @@ def sincronizar(
 
         if not descargar:
             res.sin_cambio += 1
-            res.filas.append(
-                _fila(arch, "sin_cambio", motivo, estado.get(arch.clave()))
-            )
+            res.filas.append(_fila(arch, "sin_cambio", motivo, estado.get(arch.clave())))
             continue
 
         destino.parent.mkdir(parents=True, exist_ok=True)
@@ -568,9 +556,7 @@ def sincronizar(
         else:
             if destino.exists() and prev:
                 if versionar:
-                    v = _archivar_version(
-                        destino, arch.categoria_slug, prev.get("sha256"), out_dir
-                    )
+                    v = _archivar_version(destino, arch.categoria_slug, prev.get("sha256"), out_dir)
                     log.info("versión previa archivada -> %s", v.name)
                 estado_str = "cambiado"
                 res.cambiados += 1
@@ -610,9 +596,7 @@ def escribir_manifest(res: SyncResult, path: Path) -> None:
         "categorias_cambiadas": sorted(res.categorias_cambiadas),
         "archivos": res.filas,
     }
-    path.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     log.info(
         "Manifest -> %s (nuevos=%d, cambiados=%d, sin_cambio=%d, errores=%d)",
         path,
@@ -642,9 +626,7 @@ def _reporte_verificacion(session, inventario, estado, out_dir) -> dict:
     filas = []
     n_nuevos = n_cambio = n_igual = 0
     for arch in inventario:
-        descargar, motivo, prev, _ = evaluar(
-            session, arch, estado, out_dir, forzar=False
-        )
+        descargar, motivo, prev, _ = evaluar(session, arch, estado, out_dir, forzar=False)
         if descargar and prev is None:
             etiqueta = "nuevo"
             n_nuevos += 1
@@ -702,9 +684,7 @@ def _consolidar(
     )
 
 
-def _procesar_autos(
-    out_dir: Path, consol_dir: Path, *, autos_config, compresion="none"
-):
+def _procesar_autos(out_dir: Path, consol_dir: Path, *, autos_config, compresion="none"):
     """Procesa las categorías MDB (autos): descomprime .zip, lee .mdb y consolida."""
     try:
         import procesar_autos_cnsf
@@ -726,9 +706,7 @@ def _procesar_autos(
             continue
         log.info("Procesando categoría MDB '%s' (autos)…", slug)
         resultados.append(
-            procesar_autos_cnsf.procesar(
-                root, consol_dir, config, compresion=compresion
-            )
+            procesar_autos_cnsf.procesar(root, consol_dir, config, compresion=compresion)
         )
     return resultados
 
@@ -768,9 +746,7 @@ def _despachar(
             xlsx_si_cabe=xlsx_si_cabe,
             compresion=compresion,
         )
-        _procesar_autos(
-            out_dir, consol_dir, autos_config=autos_config, compresion=compresion
-        )
+        _procesar_autos(out_dir, consol_dir, autos_config=autos_config, compresion=compresion)
         return
     autos = [c for c in cats if _es_token_autos(c)]
     xlsx = [c for c in cats if not _es_token_autos(c)]
@@ -785,15 +761,11 @@ def _despachar(
             compresion=compresion,
         )
     if autos:
-        _procesar_autos(
-            out_dir, consol_dir, autos_config=autos_config, compresion=compresion
-        )
+        _procesar_autos(out_dir, consol_dir, autos_config=autos_config, compresion=compresion)
 
 
 def main():
-    ap = argparse.ArgumentParser(
-        description="Pipeline CNSF (verificar/descargar/consolidar/sync)"
-    )
+    ap = argparse.ArgumentParser(description="Pipeline CNSF (verificar/descargar/consolidar/sync)")
     ap.add_argument(
         "--modo",
         choices=["sync", "descargar", "consolidar", "verificar"],
@@ -810,22 +782,18 @@ def main():
         action="store_true",
         help="imprime las categorías disponibles (nombre y slug) y termina",
     )
+    ap.add_argument("--anios", nargs="*", type=int, help="filtra por año. Default: todos")
     ap.add_argument(
-        "--anios", nargs="*", type=int, help="filtra por año. Default: todos"
-    )
-    ap.add_argument(
-        "--out-dir", default="datos/datos_CNSF/crudos", help="carpeta de Excel crudos"
+        "--out-dir", default=str(_DATOS_CNSF / "crudos"), help="carpeta de Excel crudos"
     )
     ap.add_argument(
         "--crudos-dir",
-        default="datos/datos_CNSF/crudos_snapshots",
+        default=str(_DATOS_CNSF / "crudos_snapshots"),
         help="snapshots HTML de listados",
     )
-    ap.add_argument("--consol-out-dir", default="datos/datos_CNSF/consolidados")
+    ap.add_argument("--consol-out-dir", default=str(_DATOS_CNSF / "consolidados"))
     # descarga
-    ap.add_argument(
-        "--forzar", action="store_true", help="re-descarga aunque no haya cambios"
-    )
+    ap.add_argument("--forzar", action="store_true", help="re-descarga aunque no haya cambios")
     ap.add_argument("--pausa", type=float, default=0.5)
     ap.add_argument("--no-snapshot", action="store_true")
     ap.add_argument(
@@ -867,11 +835,7 @@ def main():
 
     out_dir = Path(args.out_dir)
     consol_dir = Path(args.consol_out_dir)
-    aliases = (
-        json.loads(Path(args.aliases).read_text(encoding="utf-8"))
-        if args.aliases
-        else None
-    )
+    aliases = json.loads(Path(args.aliases).read_text(encoding="utf-8")) if args.aliases else None
 
     # --- listar categorías y salir (requiere red) ---
     if args.listar_categorias:

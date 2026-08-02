@@ -30,6 +30,7 @@ sandbox de desarrollo; la descarga real se corre en la máquina del usuario (igu
 """
 
 from __future__ import annotations
+
 import argparse
 import hashlib
 import json
@@ -41,11 +42,15 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+from climateCCR.infra import project_paths
+
 # ----------------------------------------------------------------------------- #
 # Configuración
 # ----------------------------------------------------------------------------- #
-URL_CSV = ("https://www.cenapred.unam.mx/DatosAbiertos/"
-           "BASE_IMPACTO_SOCIOECONOMICO_DESASTRES_2000_2015.csv")
+URL_CSV = (
+    "https://www.cenapred.unam.mx/DatosAbiertos/"
+    "BASE_IMPACTO_SOCIOECONOMICO_DESASTRES_2000_2015.csv"
+)
 
 # Páginas donde se listan las publicaciones (para descubrir PDFs nuevos).
 # La 1ª es un ÍNDICE APACHE navegable (descubre TODO por regex); las demás, respaldo.
@@ -91,9 +96,10 @@ EXTENSOS_CONOCIDOS = {
 
 # Regex de descubrimiento sobre las páginas/índices: captura resúmenes y extensos.
 RE_PDF_IMPACTO = re.compile(
-    r'href="([^"]*?(?:RESUMENEJECUTIVOIMPACTO|IMPACTO_?SOCIOECON[A-Z_]*?)[\-_]?(\d{4})\.(?:pdf|PDF))"')
+    r'href="([^"]*?(?:RESUMENEJECUTIVOIMPACTO|IMPACTO_?SOCIOECON[A-Z_]*?)[\-_]?(\d{4})\.(?:pdf|PDF))"'
+)
 
-DIR_BASE = Path("datos/datos_CENAPRED")
+DIR_BASE = project_paths().data / "hazard_mx" / "datos_CENAPRED"
 DIR_CRUDOS = DIR_BASE / "crudos"
 ARCHIVO_LOG = DIR_BASE / "_log_cenapred.log"
 ARCHIVO_PROCEDENCIA = DIR_CRUDOS / "_procedencia.json"
@@ -127,6 +133,7 @@ def _contexto_ssl() -> ssl.SSLContext:
         return ctx
     try:
         import certifi
+
         return ssl.create_default_context(cafile=certifi.where())
     except ImportError:
         return ssl.create_default_context()
@@ -137,8 +144,11 @@ def configurar_log():
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[logging.FileHandler(ARCHIVO_LOG, encoding="utf-8"),
-                  logging.StreamHandler(sys.stdout)])
+        handlers=[
+            logging.FileHandler(ARCHIVO_LOG, encoding="utf-8"),
+            logging.StreamHandler(sys.stdout),
+        ],
+    )
 
 
 # ----------------------------------------------------------------------------- #
@@ -158,8 +168,7 @@ def _get(url: str) -> bytes:
     for intento in range(1, REINTENTOS + 1):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": UA})
-            with urllib.request.urlopen(req, timeout=TIMEOUT,
-                                        context=_contexto_ssl()) as r:
+            with urllib.request.urlopen(req, timeout=TIMEOUT, context=_contexto_ssl()) as r:
                 return r.read()
         except Exception as e:  # noqa: BLE001
             ultimo_error = e
@@ -171,7 +180,8 @@ def _get(url: str) -> bytes:
                     "(2) si persiste (cadena incompleta del servidor de gobierno), "
                     "re-correr con --inseguro: deshabilita la verificación SSL de forma "
                     "EXPLÍCITA; la integridad se valida después con el sha256 de "
-                    "_procedencia.json (modo verificar).")
+                    "_procedencia.json (modo verificar)."
+                )
                 break  # reintentar no resuelve un error de certificado
             if any(f"Error {c}" in str(e) for c in (403, 404, 410)):
                 break  # error definitivo del servidor: reintentar no lo resuelve
@@ -189,6 +199,7 @@ ESPEJOS = ["www.cenapred.gob.mx", "www.cenapred.unam.mx", "olmeca.cenapred.unam.
 def _urls_espejo(url: str) -> list[str]:
     """URL original primero; luego el mismo path en los demás dominios espejo."""
     from urllib.parse import urlsplit, urlunsplit
+
     p = urlsplit(url)
     if p.netloc not in ESPEJOS:
         return [url]
@@ -213,15 +224,16 @@ def _get_con_espejos(url: str) -> tuple[bytes, str]:
 def cargar_procedencia() -> dict:
     if ARCHIVO_PROCEDENCIA.exists():
         return json.loads(ARCHIVO_PROCEDENCIA.read_text(encoding="utf-8"))
-    return {"fuente": "CENAPRED — Impacto socioeconómico de los desastres en México",
-            "metodologia": "Basada en la metodología DaLA de la CEPAL, adaptada por CENAPRED",
-            "archivos": {}}
+    return {
+        "fuente": "CENAPRED — Impacto socioeconómico de los desastres en México",
+        "metodologia": "Basada en la metodología DaLA de la CEPAL, adaptada por CENAPRED",
+        "archivos": {},
+    }
 
 
 def guardar_procedencia(proc: dict):
     proc["fecha_actualizacion_utc"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    ARCHIVO_PROCEDENCIA.write_text(json.dumps(proc, indent=2, ensure_ascii=False),
-                                   encoding="utf-8")
+    ARCHIVO_PROCEDENCIA.write_text(json.dumps(proc, indent=2, ensure_ascii=False), encoding="utf-8")
     log.info("procedencia escrita en %s", ARCHIVO_PROCEDENCIA)
 
 
@@ -245,8 +257,11 @@ def descubrir_pdfs() -> dict[str, str]:
             for m in RE_PDF_IMPACTO.finditer(html):
                 url, anio = m.group(1), int(m.group(2))
                 if not url.startswith("http"):
-                    url = (base + url) if not url.startswith("/") else \
-                          "/".join(pagina.split("/")[:3]) + url
+                    url = (
+                        (base + url)
+                        if not url.startswith("/")
+                        else "/".join(pagina.split("/")[:3]) + url
+                    )
                 tipo = "resumen" if "RESUMENEJECUTIVO" in url.upper() else "extenso"
                 clave = f"{tipo}_{anio}"
                 if clave not in encontrados:
@@ -260,27 +275,37 @@ def descubrir_pdfs() -> dict[str, str]:
 # ----------------------------------------------------------------------------- #
 # Descarga
 # ----------------------------------------------------------------------------- #
-def descargar_archivo(url: str, destino: Path, proc: dict, clave: str,
-                      force: bool = False) -> bool:
+def descargar_archivo(url: str, destino: Path, proc: dict, clave: str, force: bool = False) -> bool:
     """Descarga un archivo si falta o si force. Actualiza procedencia. True si descargó."""
     if destino.exists() and not force:
         log.info("ya existe, se omite: %s", destino.name)
         # asegura que esté en procedencia aunque no se rebaje
         if clave not in proc["archivos"]:
             proc["archivos"][clave] = {
-                "nombre": destino.name, "url": url,
-                "sha256": _sha256(destino), "bytes": destino.stat().st_size,
-                "fecha_descarga_utc": None}
+                "nombre": destino.name,
+                "url": url,
+                "sha256": _sha256(destino),
+                "bytes": destino.stat().st_size,
+                "fecha_descarga_utc": None,
+            }
         return False
     log.info("descargando %s ...", url)
     datos, url_efectiva = _get_con_espejos(url)
     destino.write_bytes(datos)
     proc["archivos"][clave] = {
-        "nombre": destino.name, "url": url, "url_efectiva": url_efectiva,
-        "sha256": _sha256(destino), "bytes": destino.stat().st_size,
-        "fecha_descarga_utc": datetime.now(timezone.utc).isoformat(timespec="seconds")}
-    log.info("guardado %s (%d bytes, sha256=%s...)", destino.name,
-             len(datos), proc["archivos"][clave]["sha256"][:12])
+        "nombre": destino.name,
+        "url": url,
+        "url_efectiva": url_efectiva,
+        "sha256": _sha256(destino),
+        "bytes": destino.stat().st_size,
+        "fecha_descarga_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    log.info(
+        "guardado %s (%d bytes, sha256=%s...)",
+        destino.name,
+        len(datos),
+        proc["archivos"][clave]["sha256"][:12],
+    )
     return True
 
 
@@ -294,21 +319,25 @@ def modo_sync(force: bool = False):
     pdfs = descubrir_pdfs()
     nuevos = 0
     for clave, url in pdfs.items():
-        destino = DIR_CRUDOS / f"{clave.upper()}.pdf"   # p. ej. EXTENSO_2021.pdf
+        destino = DIR_CRUDOS / f"{clave.upper()}.pdf"  # p. ej. EXTENSO_2021.pdf
         if descargar_archivo(url, destino, proc, clave, force=force):
             nuevos += 1
     guardar_procedencia(proc)
-    log.info("sync terminado: %d publicaciones en catálogo (%d resúmenes, %d extensos), "
-             "%d descargadas ahora",
-             len(pdfs), sum(k.startswith("resumen") for k in pdfs),
-             sum(k.startswith("extenso") for k in pdfs), nuevos)
+    log.info(
+        "sync terminado: %d publicaciones en catálogo (%d resúmenes, %d extensos), "
+        "%d descargadas ahora",
+        len(pdfs),
+        sum(k.startswith("resumen") for k in pdfs),
+        sum(k.startswith("extenso") for k in pdfs),
+        nuevos,
+    )
 
 
 def modo_verificar() -> bool:
     """Compara checksums locales contra _procedencia.json (sin red). True si todo OK."""
     proc = cargar_procedencia()
     ok = True
-    for clave, info in proc.get("archivos", {}).items():
+    for _clave, info in proc.get("archivos", {}).items():
         destino = DIR_CRUDOS / info["nombre"]
         if not destino.exists():
             log.error("FALTA archivo registrado: %s", info["nombre"])
@@ -316,8 +345,12 @@ def modo_verificar() -> bool:
             continue
         sha = _sha256(destino)
         if sha != info["sha256"]:
-            log.error("CHECKSUM DIFIERE: %s (local %s... vs registrado %s...)",
-                      info["nombre"], sha[:12], info["sha256"][:12])
+            log.error(
+                "CHECKSUM DIFIERE: %s (local %s... vs registrado %s...)",
+                info["nombre"],
+                sha[:12],
+                info["sha256"][:12],
+            )
             ok = False
         else:
             log.info("OK: %s", info["nombre"])
@@ -329,10 +362,13 @@ if __name__ == "__main__":
     configurar_log()
     p = argparse.ArgumentParser()
     p.add_argument("--modo", choices=["sync", "verificar", "descargar"], default="sync")
-    p.add_argument("--inseguro", action="store_true",
-                   help="deshabilita la verificación SSL (solo si el servidor sirve la "
-                        "cadena de certificados incompleta; la integridad se compensa "
-                        "con el sha256 de _procedencia.json)")
+    p.add_argument(
+        "--inseguro",
+        action="store_true",
+        help="deshabilita la verificación SSL (solo si el servidor sirve la "
+        "cadena de certificados incompleta; la integridad se compensa "
+        "con el sha256 de _procedencia.json)",
+    )
     a = p.parse_args()
     if a.inseguro:
         VERIFICAR_SSL = False

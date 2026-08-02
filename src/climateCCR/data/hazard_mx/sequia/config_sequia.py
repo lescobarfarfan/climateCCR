@@ -29,8 +29,12 @@ BBOX_MEXICO = {
     "sur": 14.0,
     "este": -86.0,
 }
-BBOX_CDS_AREA = [BBOX_MEXICO["norte"], BBOX_MEXICO["oeste"],
-                 BBOX_MEXICO["sur"], BBOX_MEXICO["este"]]
+BBOX_CDS_AREA = [
+    BBOX_MEXICO["norte"],
+    BBOX_MEXICO["oeste"],
+    BBOX_MEXICO["sur"],
+    BBOX_MEXICO["este"],
+]
 
 # --------------------------------------------------------------------------- #
 # Escalas de acumulación (en meses).
@@ -105,11 +109,12 @@ ANIO_INICIAL_DEFECTO = 1960
 # --------------------------------------------------------------------------- #
 CRS_EQUIAREA = "EPSG:6933"  # World Cylindrical Equal Area (preserva área)
 CRS_GEOGRAFICO = "EPSG:4326"
-CLAVE_ESTADO = "CVE_ENT"    # campo de clave estatal en el Marco Geoestadístico INEGI
+CLAVE_ESTADO = "CVE_ENT"  # campo de clave estatal en el Marco Geoestadístico INEGI
 
-# Nombres de directorios (espejo de la convención CNSF).
-DIR_SEQUIA = "datos/datos_sequia"
-DIR_CRUDOS = "datos/datos_sequia/crudos"
-DIR_CONSOLIDADOS = "datos/datos_sequia/consolidados"
+# Nombres de directorios, relativos a la raíz del repo (GEN-24: los datos viven
+# en data/hazard_mx/; se unen a --raiz, que por defecto es la raíz del proyecto).
+DIR_SEQUIA = "data/hazard_mx/datos_sequia"
+DIR_CRUDOS = "data/hazard_mx/datos_sequia/crudos"
+DIR_CONSOLIDADOS = "data/hazard_mx/datos_sequia/consolidados"
 ARCHIVO_PROCEDENCIA = "_procedencia.json"
-ARCHIVO_LOG = "scraper_sequia.log"   # bitácora persistente (append) por ejecución
+ARCHIVO_LOG = "scraper_sequia.log"  # bitácora persistente (append) por ejecución

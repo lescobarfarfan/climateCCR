@@ -36,6 +36,10 @@ class ProjectPaths:
         return self.root / "configs"
 
     @property
+    def data(self) -> Path:
+        return self.root / "data"
+
+    @property
     def results(self) -> Path:
         return self.root / "results"
 
