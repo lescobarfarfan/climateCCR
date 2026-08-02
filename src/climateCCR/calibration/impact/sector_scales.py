@@ -177,8 +177,12 @@ def peril_mix_from_events(
     start_year: int,
     end_year: int,
     min_damage_mdp: float,
+    cluster_storms: bool = False,
 ) -> pd.Series:
     """Event-frequency peril mix ``pi[group]`` from the jump trigger set (Phase B).
+
+    ``cluster_storms`` counts one arrival per merged named storm instead of one
+    per state row (the OQ-INT-11 f grain), passed through to the loader.
 
     Loads the same discrete climate-scope CENAPRED event set the INT-20 arrival
     intensity is fit on (:func:`~climateCCR.calibration.impact.hazard_jump.
@@ -198,6 +202,7 @@ def peril_mix_from_events(
         end_year=end_year,
         min_damage_mdp=min_damage_mdp,
         deflator=deflator,
+        cluster_storms=cluster_storms,
     )
     group_of = {peril: group for group, perils in peril_groups.items() for peril in perils}
     unmapped = sorted(set(events["peril_canonico"]) - set(group_of))

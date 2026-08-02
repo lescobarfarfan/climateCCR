@@ -115,6 +115,51 @@ class TestLoader:
             load_climate_events(path, start_year=2010, end_year=2005)
 
 
+class TestStormClustering:
+    COLS = [*COLUMNS, "nombre_evento"]
+
+    def _csv(self, tmp_path: Path, rows: list[tuple]) -> Path:
+        path = tmp_path / "eventos_nombrados.csv"
+        pd.DataFrame(rows, columns=self.COLS).to_csv(path, index=False)
+        return path
+
+    def test_merges_named_sums_damage_and_conserves_total(self, tmp_path):
+        path = self._csv(
+            tmp_path,
+            [
+                (2010, 3.0, "Ciclón tropical", "si", 100.0, "Huracán Alex"),
+                (2010, 3.0, "Ciclón tropical", "si", 50.0, "Huracán Alex"),
+                (2010, 2.0, "Daños por lluvia", "si", 200.0, "Huracán Alex"),
+                (2010, 1.0, "Ciclón tropical", "si", 75.0, None),
+                (2010, 1.0, "Ciclón tropical", "si", 25.0, " "),
+            ],
+        )
+        base = load_climate_events(path, start_year=2010, end_year=2010)
+        clustered = load_climate_events(path, start_year=2010, end_year=2010, cluster_storms=True)
+        # Same-name same-peril rows merge; the total damage — hence lambda * E[L]
+        # over the window — is conserved exactly.
+        assert len(base) == 5 and len(clustered) == 4
+        assert clustered["danio_mdp"].sum() == pytest.approx(base["danio_mdp"].sum())
+        merged = clustered[
+            (clustered["nombre_evento"] == "Huracán Alex")
+            & (clustered["peril_canonico"] == "Ciclón tropical")
+        ]
+        assert len(merged) == 1
+        assert merged["danio_mdp"].iloc[0] == pytest.approx(150.0)
+        assert merged["n_filas_fusionadas"].iloc[0] == 2
+        # Same-name different-peril, unnamed, and blank-name rows stay separate.
+        assert (clustered["n_filas_fusionadas"] == 1).sum() == 3
+        assert clustered.attrs["clustered"] is True
+        assert base.attrs["clustered"] is False
+        assert "n_filas_fusionadas" not in base.columns
+
+    def test_missing_name_column_raises(self, tmp_path):
+        path = _events_csv(tmp_path, [(2010, 1.0, "Sequía", "si", 10.0)])
+        load_climate_events(path, start_year=2010, end_year=2010)
+        with pytest.raises(ValueError, match="nombre_evento"):
+            load_climate_events(path, start_year=2010, end_year=2010, cluster_storms=True)
+
+
 class TestFrequency:
     def test_counts_zero_fill(self):
         events = _frame([2002, 2002, 2004], [1.0, 1.0, 1.0])

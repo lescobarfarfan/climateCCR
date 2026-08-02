@@ -57,6 +57,7 @@ def load_climate_events(
     perils: Iterable[str] | None = None,
     min_damage_mdp: float | None = None,
     deflator: Mapping[int, float] | pd.Series | None = None,
+    cluster_storms: bool = False,
 ) -> pd.DataFrame:
     """Discrete climate-scope CENAPRED events for the estimation window.
 
@@ -76,13 +77,21 @@ def load_climate_events(
     pesos across the window instead of a nominal bar whose real height falls
     with inflation (GEN-13, OQ-INT-07b).
 
+    ``cluster_storms`` merges same-storm state rows *after* every filter above —
+    one event per ``(anio, nombre_evento, peril_canonico)`` with ``danio_mdp``
+    summed (:func:`_cluster_storms`) — the OQ-INT-11 (f) row-grain robustness.
+    Applying it post-threshold keeps the trigger membership (and hence total
+    damage, so ``lambda * E[L]``) exactly invariant vs the unclustered set.
+
     The window is stamped on ``.attrs["window"]`` so downstream counts keep the
-    zero-event years in the exposure time.
+    zero-event years in the exposure time; ``.attrs["clustered"]`` records the
+    grain.
     """
     if start_year > end_year:
         raise ValueError(f"start_year {start_year} > end_year {end_year}")
     events = pd.read_csv(csv_path, low_memory=False)
-    missing = [c for c in _REQUIRED_COLUMNS if c not in events.columns]
+    required = list(_REQUIRED_COLUMNS) + (["nombre_evento"] if cluster_storms else [])
+    missing = [c for c in required if c not in events.columns]
     if missing:
         raise ValueError(f"{csv_path}: missing required columns {missing}")
 
@@ -104,8 +113,42 @@ def load_climate_events(
         out["danio_mdp"] = out["danio_mdp"] * (base / index.loc[years].to_numpy())
     if min_damage_mdp is not None:
         out = out[out["danio_mdp"] >= min_damage_mdp]
+    if cluster_storms:
+        out = _cluster_storms(out)
     out.attrs["window"] = (int(start_year), int(end_year))
+    out.attrs["clustered"] = bool(cluster_storms)
     return out
+
+
+def _cluster_storms(events: pd.DataFrame) -> pd.DataFrame:
+    """One event per ``(anio, nombre_evento, peril_canonico)``, damage summed.
+
+    CENAPRED registers a named storm once per affected state, so a hurricane
+    enters the per-event fits as several independent arrivals (Alex = 3 rows,
+    Ernesto = 6). Merging sums ``danio_mdp`` — total damage is conserved exactly
+    — keeps every other column from the group's first row, and records the group
+    size in ``n_filas_fusionadas``. The key includes ``peril_canonico`` because
+    an event label is single-peril (DC-CCR-SIM-2): Manuel-2013's cyclone row and
+    its La Pintada landslide row stay distinct events. Rows with a missing or
+    blank ``nombre_evento`` carry no verifiable shared identity and stay
+    unmerged (GEN-03 — no certainty, no fabricated structure).
+    """
+    name = events["nombre_evento"]
+    named = name.notna() & name.astype(str).str.strip().ne("")
+    if not named.any():
+        out = events.copy()
+        out["n_filas_fusionadas"] = 1
+        return out
+    key = ["anio", "nombre_evento", "peril_canonico"]
+    sub = events.loc[named].copy()
+    sub["n_filas_fusionadas"] = 1
+    agg = {c: "first" for c in sub.columns if c not in key}
+    agg["danio_mdp"] = "sum"
+    agg["n_filas_fusionadas"] = "sum"
+    merged = sub.groupby(key, as_index=False, sort=False).agg(agg)
+    rest = events.loc[~named].copy()
+    rest["n_filas_fusionadas"] = 1
+    return pd.concat([merged, rest], ignore_index=True)[[*events.columns, "n_filas_fusionadas"]]
 
 
 def annual_event_counts(

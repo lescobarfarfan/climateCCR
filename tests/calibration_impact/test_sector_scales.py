@@ -208,3 +208,32 @@ def test_peril_mix_from_events_frequency_shares(tmp_path):
             end_year=2021,
             min_damage_mdp=100.0,
         )
+
+
+def test_peril_mix_from_events_cluster_storms(tmp_path):
+    from climateCCR.calibration.impact.sector_scales import peril_mix_from_events
+
+    frame = pd.DataFrame(
+        {
+            "anio": [2021, 2021, 2021],
+            "duracion_dias": [2.0, 2.0, 1.0],
+            "peril_canonico": ["Ciclón tropical", "Ciclón tropical", "Sequía"],
+            "en_alcance_climatico": ["si"] * 3,
+            "danio_mdp": [150.0, 150.0, 200.0],
+            "nombre_evento": ["Huracán Rick", "Huracán Rick", None],
+        }
+    )
+    path = tmp_path / "events.csv"
+    frame.to_csv(path, index=False)
+    kwargs = dict(
+        deflator=DEFLATOR,
+        peril_groups=PERIL_GROUPS,
+        start_year=2021,
+        end_year=2021,
+        min_damage_mdp=100.0,
+    )
+    # Unclustered: 2 ciclón rows + 1 sequía. Clustered: Rick merges -> 1 + 1.
+    assert peril_mix_from_events(path, **kwargs)["ciclon"] == pytest.approx(2 / 3)
+    mix = peril_mix_from_events(path, cluster_storms=True, **kwargs)
+    assert mix["ciclon"] == pytest.approx(1 / 2)
+    assert mix["sequia"] == pytest.approx(1 / 2)
