@@ -19,9 +19,16 @@ Two outputs under results/inspeccion/cenapred_base_2000_2015/:
    FIX) and cross-references the ``mayores_200mdp`` trigger set (INT-20) so the
    rows that reach the lambda/severity fits are explicit.
 
-Findings only — corrects nothing (GEN-27); documented rules would come later.
-Deterministic (no RNG); idempotent (GEN-05): skips if the annex exists, rerun
-with --forzar/--force.
+3. ``resolucion_triaje.md`` — the documented resolution rule (user decision
+   2026-08-01, OQ-INT-11 g) applied to the annex as a ``resolucion`` column:
+   ``danio_mdd`` is discarded as unreliable in the flagged rows (it feeds no
+   fit); ``danio_mdp`` is kept where the event is in climate scope and its
+   magnitude is justified, else flagged/excluded from diagnostics.
+
+The battery itself still corrects nothing (GEN-27); the resolution is a
+documented verdict on the findings, not a data mutation. Deterministic (no
+RNG); idempotent (GEN-05): skips if the annex exists, rerun with
+--forzar/--force.
 
     python pipelines/12_inspeccion_cenapred_base.py [--forzar]
 """
@@ -45,6 +52,38 @@ INPC_CONFIG = REPO_ROOT / "configs" / "inpc_anual.yaml"
 BASE_END_YEAR = 2015  # the open-CSV registry segment; the extension is QA-clean
 TRIGGER_WINDOW = (2002, 2015)  # mayores_200mdp spec (INT-20)
 TRIGGER_MIN_REAL_MDP = 200.0
+
+# Resolución del triaje (regla documentada, decisión de usuario 2026-08-01; GEN-27).
+# La columna danio_mdd de las filas señaladas es no confiable — el FIX implícito
+# (razon) queda lejos de cualquier FIX histórico — y ningún ajuste la consume: se
+# descarta. danio_mdp se conserva si el evento está en alcance climático y su
+# magnitud está justificada; si no, se excluye de los diagnósticos sin umbral.
+_MDP_CORROBORADO = {
+    # En el conjunto disparador; magnitud históricamente corroborada (HAZ-CENAPRED-11):
+    "CEN-2007-02365",  # deslizamiento Juan de Grijalva 2007 (1,015.9 MDP)
+    "CEN-2003-00712",  # tormenta tropical Larry 2003 (298.3 MDP)
+}
+_MDP_EXCLUIDO_DIAGNOSTICOS = {
+    # Incendios forestales Chiapas 2003 (~72-76 MDP nominales): temporada activa
+    # confirmada (registro UNAM de la temporada mar-abr 2003) pero la magnitud no
+    # es corroborable externamente a 22 años; sub-umbral (<200 MDP-2025), así que
+    # los ajustes adoptados no cambian bajo ninguno de los dos veredictos.
+    "CEN-2003-00460",
+    "CEN-2003-00399",
+}
+
+
+def _resolucion(row: pd.Series) -> str:
+    """Verdict per flagged row under the documented rule (resolucion_triaje.md)."""
+    if row["en_alcance_climatico"] != "si":
+        return "fuera_alcance_climatico"
+    if row["danio_mdp"] == 0:
+        return "mdp_sin_valor"
+    if row["evento_id"] in _MDP_CORROBORADO:
+        return "mdp_corroborado"
+    if row["evento_id"] in _MDP_EXCLUIDO_DIAGNOSTICOS:
+        return "mdp_excluido_diagnosticos"
+    return "mdp_aceptado_submaterial"
 
 
 def main() -> None:
@@ -107,6 +146,15 @@ def main() -> None:
         & flag["anio"].between(trigger_lo, trigger_hi)
         & (flag["danio_mdp_real2025"] >= TRIGGER_MIN_REAL_MDP)
     )
+    flag["resolucion"] = flag.apply(_resolucion, axis=1)
+    # The corroborated set must be exactly the trigger-set intersection: a new
+    # trigger-reaching flag in a future re-derivation demands fresh human triage.
+    trigger_ids = set(flag.loc[flag["en_conjunto_disparador"], "evento_id"])
+    if trigger_ids != _MDP_CORROBORADO:
+        sys.exit(
+            f"trigger-set flags {sorted(trigger_ids)} != corroborated ids "
+            f"{sorted(_MDP_CORROBORADO)} — review the resolution rule before rerunning"
+        )
     cols = [
         "evento_id",
         "anio",
@@ -122,6 +170,7 @@ def main() -> None:
         "danio_mdp_real2025",
         "en_conjunto_disparador",
         "triaje",
+        "resolucion",
     ]
     flag = flag[cols].sort_values("danio_mdp_real2025", ascending=False)
     flag.round(6).to_csv(annex_csv, index=False)
@@ -140,7 +189,47 @@ def main() -> None:
             ["evento_id", "anio", "peril_canonico", "estados", "danio_mdp", "danio_mdd", "razon"]
         ].to_string(index=False)
     )
-    print(f"\nAnnex:  {annex_csv}\nBattery: {out_dir / 'resumen.md'}")
+    conteos = flag["resolucion"].value_counts()
+    nota = out_dir / "resolucion_triaje.md"
+    nota.write_text(
+        "# Resolución del triaje MDP/MDD — regla documentada (OQ-INT-11 g)\n\n"
+        "Decisión de usuario 2026-08-01, aplicada por este pipeline como columna "
+        "`resolucion` del anexo (GEN-27: los hallazgos requieren triaje humano y solo "
+        "las reglas documentadas se aplican; esto es un veredicto sobre los hallazgos, "
+        "no una mutación de datos).\n\n"
+        "## Regla\n\n"
+        "1. La columna `danio_mdd` de las 41 filas señaladas se **descarta** como no "
+        "confiable: el FIX implícito (`razon`) queda entre 1.4e-5 y 145,135 MXN/USD "
+        "frente a medianas anuales de 9.7-13.5 — ningún FIX histórico lo reproduce, y la "
+        "concentración en Chiapas apunta a un defecto sistemático de captura. Ningún "
+        "ajuste del proyecto consume `danio_mdd` (HAZ-CENAPRED-11), así que el descarte "
+        "no cambia nada aguas abajo.\n"
+        "2. `danio_mdp` se conserva si el evento está **en alcance climático** (GEN-12) y "
+        "su **magnitud está justificada** frente a datos observados; si no, se excluye de "
+        "los diagnósticos sin umbral. Los ajustes adoptados (`mayores_200mdp`) solo tocan "
+        "las 2 filas del conjunto disparador, ambas corroboradas.\n\n"
+        "## Veredictos\n\n"
+        f"{conteos.to_string()}\n\n"
+        "- `mdp_corroborado` — CEN-2007-02365 (deslizamiento Juan de Grijalva 2007) y "
+        "CEN-2003-00712 (TS Larry 2003): en el conjunto disparador, magnitud MDP "
+        "históricamente corroborada (HAZ-CENAPRED-11).\n"
+        "- `mdp_excluido_diagnosticos` — CEN-2003-00460 y CEN-2003-00399 (incendios "
+        "forestales Chiapas 2003, ~72-76 MDP nominales ≈ 187-196 MDP-2025): la temporada "
+        "mar-abr 2003 fue activa en Chiapas (registro UNAM de evaluación de incendios; "
+        "SNIF/CONAFOR sin cifras por evento a esta distancia), lo que corrobora la "
+        "existencia pero no la magnitud — veredicto conservador según la regla. "
+        "Sub-umbral: los ajustes adoptados no cambian bajo ningún veredicto. Para "
+        "revertir, mover los ids a `_MDP_CORROBORADO` y re-ejecutar con `--forzar`.\n"
+        "- `fuera_alcance_climatico` — accidentes de transporte y toxicidad: nunca "
+        "entran a ningún ajuste (GEN-12).\n"
+        "- `mdp_sin_valor` — `danio_mdp = 0`: nada que conservar (el ajuste lognormal "
+        "descarta no-positivos).\n"
+        "- `mdp_aceptado_submaterial` — resto en alcance, sub-umbral y de magnitud "
+        "pequeña consistente con su contexto estado-año (z robusta en el anexo); se "
+        "conservan para diagnósticos, la bandera queda registrada.\n\n"
+        f"Comando: `{shlex.join(sys.argv)}`\n"
+    )
+    print(f"\nAnnex:  {annex_csv}\nRegla:   {nota}\nBattery: {out_dir / 'resumen.md'}")
 
 
 if __name__ == "__main__":
