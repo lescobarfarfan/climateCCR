@@ -52,6 +52,8 @@ the intensity `λ` and the per-event **impact/jump-mark** that drive the climate
 - Explanation: [[2026-07-30_peril_typed_events_explained]] — peril-typed arrivals on the HAZ data: what the mix measures, why NL/Campeche are real events not errors, and how the fluvial/hidro merge variants bound the attribution noise (`notes/summary_explanations/`, `GEN-26`).
 - Reading: [[2026-08-01_per_peril_severity_phase_c]] — per-label severity on the CENAPRED trigger subsets: the conditional-severity view of thresholded fits, the σ table per peril, and the report-regime censoring that thins non-CT labels (`INT-26`; `notes/reading/`, `GEN-21`).
 - Explanation: [[2026-08-01_per_peril_severity_phase_c_explained]] — the per-peril σ estimates in plain terms, why cyclone means don't rise (the c_ip double-count guard), and the Phase C null read against the HAZ construction evidence (`notes/summary_explanations/`, `GEN-26`).
+- Reading: [[2026-08-01_storm_cluster_robustness]] — the storm-cluster read-log (`INT-28`/`HAZ-CENAPRED-12`): compound-Poisson aggregation as the exact λ·E[L] invariance, the Jensen wedge in refitted severity, and the reporting-grain caveat behind the triage rule (`notes/reading/`, `GEN-21`).
+- Explanation: [[2026-08-01_storm_cluster_robustness_explained]] — what clustering re-defines, why the band holds while the CT anchor is the grain-sensitive leg, why tails ease, and the MDP/MDD resolution verdicts in plain terms (`notes/summary_explanations/`, `GEN-26`).
 - Review: [[PONYTAIL_AUDIT_2026-07-11]] — over-engineering sweep; the CNSF normalizer dedup + the two deliberately rejected HAZ cuts (`HAZ-SCRAPER-CNSF-10`).
 
 ## Wires to the other arms
