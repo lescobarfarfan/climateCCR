@@ -1,0 +1,41 @@
+# NGFS short-term scenarios (May 2025, V1.0) — download config (OQ-CCR-03;
+# MKT-NGFS-03 ST-first; DC-MKT-NGFS-1). [NGFS2025ST]
+#
+# Data source: the IIASA legacy Scenario Explorer REST API, application
+# IXSE_NGFS_PHASE_5_SHORT_TERM (env `ngfs_phase_5_short_term`), via the guest
+# (anonymous) token — the same flow the pyam package automates [Huppmann2021].
+# No credentials are required; nothing secret lands in provenance.
+#
+# Values are stored AS PUBLISHED (Policy rate in %, spread adjustments in
+# "abs. change with respect to BAU in percentage points"); the pp -> decimal
+# conversion happens in the shock builder (pipelines/16), never here.
+#
+# Region choice (documented for the manuscript): EIRIN publishes `Policy rate`
+# at 5 macro-regions only. Mexico rides `EIRIN 1.0|North America` — identified
+# empirically from the database itself: the CLIMACRED MEX policy contribution
+# (sovereign_spread_adjustment_incl_policy|MEX minus the excl-policy variant)
+# tracks the North America policy-rate delta (SWUC 2027-30: gap 0.45/1.93/
+# 1.55/0.96 pp vs NAM 0.53/2.14/1.74/1.13; South America is 3-5x off), and
+# Mexico's GDP collapses under DAPS_NAM (-6.7% 2027) but not DAPS_SAM (-0.0%).
+# DAPS_NAM is therefore also the Disasters & Policy Stagnation variant that
+# hits Mexico (the jump-off comparison scenario).
+
+out_dir: data/scenarios_mx/ngfs_short_term
+
+auth_url: https://api.manager.ece.iiasa.ac.at
+application: IXSE_NGFS_PHASE_5_SHORT_TERM
+
+# Each pull -> one tidy CSV <out_dir>/<model_lower>.csv with columns
+# model, scenario, region, variable, unit, year, subannual, value.
+pulls:
+  - model: EIRIN
+    scenarios: [Baseline, HWTP, SWUC, DAPS_NAM]
+    variables: ["Policy rate"]
+    regions: ["EIRIN 1.0|North America"]
+  - model: CLIMACRED
+    scenarios: [HWTP, SWUC, DAPS_NAM]   # CLIMACRED has no Baseline run: its
+    variables:                           # variables are already deltas vs BAU
+      - "sovereign_spread_adjustment|MEX"
+      - "sovereign_spread_adjustment_incl_policy|MEX"
+      - "sovereign_bond_price_rel_adjustment|MEX"
+    regions: ["Mexico - MEX"]

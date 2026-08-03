@@ -1,0 +1,56 @@
+# NGFS short-term curve shocks -> per-scenario Mexican book overlays
+# (OQ-CCR-03; MKT-NGFS-01/02 adapted to the ST vintage; INT-12 fixed flavor).
+#
+# pipelines/16_ngfs_shock_curves.py reads the tidy NGFS data (pipelines/15),
+# derives the two-anchor peak deltas per scenario (data/scenarios/ngfs.py) and
+# writes one book data-root per scenario under <out_root>/<scenario_lower>/ —
+# a verbatim copy of <book_root> in which only the HW1F curve CSVs (RFE +
+# pricing) carry the shocked pillars. pipelines/01 then consumes the overlay
+# via --data-root; the simulation machinery is untouched (the direct_input
+# Curve derives f(0,t) from the shocked pillars, so no separate theta rebuild
+# exists to disagree with it).
+#
+# Anchor tenors [eng]: the policy-rate anchor pins the money-market end at ~1M
+# (0.0833y, the shortest liquid pillar family); the sovereign anchor pins 10Y —
+# the long-term government-bond reference of MKT-NGFS-02 and the tenor family
+# CLIMACRED's sovereign basket references. Flat beyond each anchor, linear in
+# tenor between (scenario_shock.shock_zero_pillars).
+#
+# Flavor: fixed — the peak (max |delta|, sign kept) over the scenario window,
+# the stress-standard most-adverse point [FedCSA2024] [BoE2022CBES]. The
+# trajectory flavor (quarterly path absorbed into f(0,t), held constant after
+# 2030) is the documented build-2 seam, not yet wired.
+
+ngfs_dir: data/scenarios_mx/ngfs_short_term
+book_root: data/ccr_book_mx
+out_root: data/ccr_book_mx_ngfs
+
+scenarios: [HWTP, SWUC, DAPS_NAM]
+region: "EIRIN 1.0|North America"   # Mexico's EIRIN macro-region (see ngfs_short_term.yaml)
+window: [2025.0, 2030.0]            # the ST scenario horizon
+
+anchors:
+  short_tenor_years: 0.0833
+  long_tenor_years: 10.0
+
+curve_name: MXN_ZERO_YIELD_CURVE
+hw1f_files:   # book-root-relative CSVs whose curve row gets the shock
+  - calibration_data/RFE_models/RFE_HW1F_Calibration.csv
+  - calibration_data/pricing_models/Pricing_HW1F_Calibration.csv
+
+summary_dir: results/ngfs_shock_curves   # anchor deltas + shocked pillars per scenario
+
+# --- pipelines/17_ngfs_epe_readout.py ---
+# Book-EPE deltas across the scenario run matrix (each run_name a
+# pipelines/01 results directory; the base run is the unshocked book).
+readout:
+  out_dir: results/ngfs_epe_readout
+  base_run: climate_jump_real_mexican
+  scenario_runs:
+    - {scenario: HWTP, band: headline, run: climate_jump_real_mexican_ngfs_hwtp}
+    - {scenario: HWTP, band: floor, run: climate_jump_real_mexican_floor_ngfs_hwtp}
+    - {scenario: HWTP, band: ct_anchor, run: climate_jump_real_mexican_ct_anchor_ngfs_hwtp}
+    - {scenario: SWUC, band: headline, run: climate_jump_real_mexican_ngfs_swuc}
+    - {scenario: SWUC, band: floor, run: climate_jump_real_mexican_floor_ngfs_swuc}
+    - {scenario: SWUC, band: ct_anchor, run: climate_jump_real_mexican_ct_anchor_ngfs_swuc}
+    - {scenario: DAPS_NAM, band: headline, run: climate_jump_real_mexican_ngfs_daps_nam}
