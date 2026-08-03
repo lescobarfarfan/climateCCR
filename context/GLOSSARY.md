@@ -159,6 +159,7 @@ A. Project & architecture · B. Reproducibility & engineering · C. Stochastic m
 | The headline-λ regime band | **headline lambda regime band floor CT anchor regime-consistent severity pairing scenario** |
 | Per-peril severity & the Phase C null | **per-peril severity mean-matched sigma truncation ciclon 1.33 Phase C sector event study FALLA tau episode bootstrap canonical env climateCCR manifests** |
 | The knowledge-graph tooling + its versioning | **understand-anything /understand dashboard .ua knowledge graph understandignore scope tracked GEN-29** |
+| The weekly-sampling adoption + Svensson rejection | **weekly sampling W-WED W-FRI anchor sample_weekly_last agreement check restored policy-step microstructure MKT-CALIB-08 GEN-31 adopt-if-material S_rate_eff 175 million Svensson rejected long-end sparsity densification** |
 
 
 ---
