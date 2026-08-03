@@ -14,8 +14,16 @@ vintage actually publishes [NGFS2025ST]:
   (policy transmission + spread), so each tenor uses exactly one number and
   nothing is double-counted; the excl-policy variant is kept for decomposition.
 
-All deltas are in percentage points, as published; the pp -> decimal
-conversion belongs to the shock builder (pipelines/16).
+The equity/corporate leg (OQ-MKT-13 c) reads the CLIMACRED 50-sector families
+the same way: ``equity_relative_adjustment|<sector>`` (% vs BAU) and
+``corporate_bond_spread_adjustment|<sector>`` (pp vs BAU, *excl.* policy — the
+shocked curve already carries the policy + sovereign move at both anchors, so
+the cebur leg takes only the credit-spread component on top; the incl-policy
+variant would double-count). ``sector_peak`` extracts their signed peak.
+
+All deltas are in percentage points (or percent, for the ``*_rel_*`` and
+equity families), as published; the pp/% -> decimal conversion belongs to the
+shock builder (pipelines/16).
 """
 
 from __future__ import annotations
@@ -115,3 +123,20 @@ def anchor_peaks(
         sovereign_adjustment(frame, scenario, variable=long_variable), window
     )
     return AnchorDeltas(scenario, short_pp, long_pp, short_time, long_time)
+
+
+def sector_peak(
+    frame: pd.DataFrame,
+    scenario: str,
+    *,
+    variable: str,
+    window: tuple[float, float] = (2025.0, 2030.0),
+) -> tuple[float, float]:
+    """Signed peak (max |value|, sign kept) of an already-delta CLIMACRED series.
+
+    The fixed-flavor extraction of ``anchor_peaks`` for the sector families
+    (``equity_relative_adjustment|<sector>``, ``corporate_bond_spread_adjustment
+    |<sector>``): no Baseline differencing — CLIMACRED publishes deltas vs BAU.
+    Returns ``(peak, decimal_year_of_peak)`` in the series' published unit.
+    """
+    return _signed_peak(sovereign_adjustment(frame, scenario, variable=variable), window)

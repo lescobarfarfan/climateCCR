@@ -5,6 +5,7 @@ from climateCCR.data.scenarios.ngfs import (
     anchor_peaks,
     load_short_term,
     policy_rate_delta,
+    sector_peak,
     sovereign_adjustment,
 )
 
@@ -13,5 +14,6 @@ __all__ = [
     "anchor_peaks",
     "load_short_term",
     "policy_rate_delta",
+    "sector_peak",
     "sovereign_adjustment",
 ]

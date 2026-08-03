@@ -1,5 +1,6 @@
-# NGFS short-term curve shocks -> per-scenario Mexican book overlays
-# (OQ-CCR-03; MKT-NGFS-01/02 adapted to the ST vintage; INT-12 fixed flavor).
+# NGFS short-term shocks -> per-scenario Mexican book overlays
+# (OQ-CCR-03; MKT-NGFS-01/02 adapted to the ST vintage; INT-12 fixed flavor;
+# equity/corporate leg per OQ-MKT-13 c).
 #
 # pipelines/16_ngfs_shock_curves.py reads the tidy NGFS data (pipelines/15),
 # derives the two-anchor peak deltas per scenario (data/scenarios/ngfs.py) and
@@ -39,6 +40,95 @@ hw1f_files:   # book-root-relative CSVs whose curve row gets the shock
   - calibration_data/pricing_models/Pricing_HW1F_Calibration.csv
 
 summary_dir: results/ngfs_shock_curves   # anchor deltas + shocked pillars per scenario
+
+# --- Equity / corporate leg (OQ-MKT-13 c) -----------------------------------
+# The CLIMACRED 50-sector families extend the overlay to the book's equity and
+# cebur legs, same fixed flavor (signed peak over `window`):
+#   equity: S0 -> S0 * (1 + peak%/100), rewritten in the spot file and the two
+#     GBM calibration CSVs' `initial_value` (an instantaneous revaluation of
+#     current values, the CBES/Fed-CSA translation practice). GBM drift/vol
+#     stay untouched — the scenario moves initial conditions, not dynamics
+#     (the equity analog of the curve rule above) — and option strikes /
+#     notionals stay at their contractual build-time values (sticky-strike:
+#     moneyness shifts through the pricer's K/S0 IV lookup). MXN_USD_FX_RATE
+#     is not an equity and is never shocked.
+#   cebures: spread -> spread + peak_pp/100 per issuer in the DEBT desk file.
+#     The family is the EXCL-policy spread adjustment: the shocked curve
+#     already carries the policy + sovereign move at both anchors, so the
+#     bond leg takes only the corporate credit-spread component on top —
+#     the incl_policy variant would double-count the curve shock.
+# The jump channel is untouched: target_scales / target_peril_scales in the
+# climate_jump_real_mexican* configs keep their unshocked-book values across
+# scenarios (the physical-exposure composition gamma must not depend on the
+# transition state; INT-29 channel separation, the INT-30 practice).
+#
+# Sector crosswalk: book name -> GEM-E3/CLIMACRED sector, hand-assigned per
+# name with the assignment rationale inline (the INT-24 provenance pattern).
+# The book's own sector labels (configs/mexican_book.yaml, INT-24 vocabulary)
+# drive the mapping; GEM-E3 has no hotel/retail/finance split, so service
+# names ride the `Market Services` aggregate, and airports ride `Warehousing`
+# (GEM-E3's ISIC H52 — warehousing and *support activities for transportation*,
+# which is where service activities incidental to air transport live).
+
+equity_leg:
+  variable_family: equity_relative_adjustment   # "% vs BAU" (CLIMACRED, annual)
+  spot_file: market_data/Equity_Spot.csv        # columns name, spot
+  gbm_files:                                    # indexed by name, col initial_value
+    - calibration_data/RFE_models/RFE_GBM_Calibration.csv
+    - calibration_data/pricing_models/Pricing_GBM_Calibration.csv
+  sectors:
+    HCITY_SHARE: Market Services            # hoteles — accommodation services
+    HOTEL_SHARE: Market Services            # hoteles
+    FIHO12_SHARE: Market Services           # fibra hotelera — accommodation real estate
+    RLH_SHARE: Market Services              # hoteles (luxury properties)
+    POSADAS_SHARE: Market Services          # hoteles
+    FINN13_SHARE: Market Services           # fibra hotelera
+    ASUR_SHARE: Warehousing                 # aeropuertos — ISIC H52 air-transport support
+    GAP_SHARE: Warehousing                  # aeropuertos
+    OMA_SHARE: Warehousing                  # aeropuertos
+    VOLAR_SHARE: Air transport              # aerolinea
+    AGUA_SHARE: Rubber and plastic products # Rotoplas — polyethylene water storage/pipes
+    GRUMA_SHARE: Consumer Goods Industries  # agroalimentos — corn flour/tortilla
+    HERDEZ_SHARE: Consumer Goods Industries # agroalimentos — packaged food
+    CULTIBA_SHARE: Consumer Goods Industries  # bebidas
+    QUALITAS_SHARE: Market Services         # seguros — GEM-E3 folds finance/insurance here
+    PENAVERDE_SHARE: Market Services        # reaseguro
+    FUNO_SHARE: Market Services             # fibra — diversified real estate
+    CEMEX_SHARE: Non-metallic minerals      # cemento
+    GCC_SHARE: Non-metallic minerals        # cemento
+    GMEXICO_SHARE: Non-ferrous metals       # mineria — copper mining & smelting
+    PENOLES_SHARE: Non-ferrous metals       # mineria — silver/zinc/gold
+    VISTA_SHARE: Crude Oil                  # energia — upstream oil E&P (Vaca Muerta)
+    AC_SHARE: Consumer Goods Industries     # bebidas
+    FEMSA_SHARE: Consumer Goods Industries  # bebidas (KOF-weighted; book sector 'bebidas')
+    WALMEX_SHARE: Market Services           # comercio — retail trade
+    ALSEA_SHARE: Market Services            # restaurantes — food service
+
+bond_leg:
+  variable_family: corporate_bond_spread_adjustment   # "pp vs BAU", EXCL. policy
+  bonds_file: portfolio_data/desks/DEBT/BONDS.csv     # col spread (decimal), keyed by issuer_name
+  sectors:
+    FIBRAHOTEL: Market Services
+    GRUPO_POSADAS: Market Services
+    ASUR: Warehousing
+    GAP: Warehousing
+    OMA: Warehousing
+    ROTOPLAS: Rubber and plastic products
+    GRUMA: Consumer Goods Industries
+    GRUPO_HERDEZ: Consumer Goods Industries
+    FIBRA_UNO: Market Services
+    TERRAFINA: Market Services              # industrial real-estate fibra
+    CEMEX: Non-metallic minerals
+    GRUPO_MEXICO: Non-ferrous metals
+    PENOLES: Non-ferrous metals
+    ARCA_CONTINENTAL: Consumer Goods Industries
+    FEMSA: Consumer Goods Industries
+    ALSEA: Market Services
+    PEMEX: Crude Oil    # upstream-dominant integrated NOC; the refining
+                        # alternative `Oil` peaks larger (HWTP +16.8 vs +9.6 pp)
+                        # — Crude Oil is the business-mix-faithful pick, noted
+                        # as a sensitivity in the readout nota
+    CFE: Power Supply   # electric utility
 
 # --- pipelines/17_ngfs_epe_readout.py ---
 # Book-EPE deltas across the scenario run matrix (each run_name a

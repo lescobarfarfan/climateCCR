@@ -2,7 +2,7 @@
 
 import pandas as pd
 import pytest
-from climateCCR.data.scenarios import anchor_peaks, load_short_term, policy_rate_delta
+from climateCCR.data.scenarios import anchor_peaks, load_short_term, policy_rate_delta, sector_peak
 from climateCCR.data.scenarios.ngfs import SOVEREIGN_INCL_POLICY, sovereign_adjustment
 
 REGION = "EIRIN 1.0|North America"
@@ -74,6 +74,29 @@ def test_anchor_peaks_signed_max_within_window(tmp_path):
     assert deltas.short_peak_time == pytest.approx(2026.25)
     assert deltas.long_pp == pytest.approx(-1.5)  # sign preserved
     assert deltas.long_peak_time == pytest.approx(2026.5)  # 'Year' maps mid-year
+
+
+def test_sector_peak_signed_max_of_already_delta_series(tmp_path):
+    frame = tidy_fixture()
+    for year, value in [(2025, -3.0), (2026, 8.5), (2027, -2.0)]:  # |peak| 8.5 at 2026
+        frame.loc[len(frame)] = {
+            "model": "CLIMACRED",
+            "scenario": "HWTP",
+            "region": "Mexico - MEX",
+            "variable": "equity_relative_adjustment|Crude Oil",
+            "unit": "% vs BAU",
+            "year": year,
+            "subannual": "Year",
+            "value": value,
+        }
+    frame = with_time(frame, tmp_path)
+    peak, when = sector_peak(
+        frame, "HWTP", variable="equity_relative_adjustment|Crude Oil", window=(2025.0, 2027.0)
+    )
+    assert peak == pytest.approx(8.5)  # sign preserved, max |value|
+    assert when == pytest.approx(2026.5)
+    with pytest.raises(KeyError):
+        sector_peak(frame, "SWUC", variable="equity_relative_adjustment|Crude Oil")
 
 
 def test_unknown_scenario_raises(tmp_path):
