@@ -84,6 +84,13 @@ def main() -> None:
         default=FIXTURE_CONFIG,
         help="book layout config (default: configs/pimpa_fixture.yaml)",
     )
+    parser.add_argument(
+        "--etiqueta",
+        "--label",
+        default=None,
+        help="run-name suffix distinguishing runs that share a config but not a "
+        "data root (e.g. an NGFS scenario overlay: --etiqueta ngfs_hwtp)",
+    )
     args = parser.parse_args()
 
     from climateCCR.infra import RunManifest, get_logger, load_config
@@ -102,6 +109,8 @@ def main() -> None:
     run_name = (
         args.config.stem if args.horizonte == "largo" else f"{args.config.stem}_{args.horizonte}"
     )
+    if args.etiqueta:
+        run_name = f"{run_name}_{args.etiqueta}"
     out_dir = config.paths.results / run_name
     out_csv = out_dir / "ee_pe_climate_shift.csv"
     if out_csv.exists() and not args.forzar:
@@ -146,12 +155,17 @@ def main() -> None:
 
     out_dir.mkdir(parents=True, exist_ok=True)
     comparison.to_csv(out_csv, index=False)
-    # Record the horizon actually run, so the manifest pins the reporting grid.
+    # Record the horizon actually run, so the manifest pins the reporting grid —
+    # and the data root + label, so scenario-overlay runs (--etiqueta) are
+    # distinguishable in the manifest from the config alone.
     config.extra["selected_horizon"] = {
         "name": args.horizonte,
         "b3_grid": gp["B3_grid"],
         "max_step_days": max_step_days,
     }
+    config.extra["data_root"] = str(args.data_root)
+    if args.etiqueta:
+        config.extra["run_label"] = args.etiqueta
     manifest = RunManifest.create(seed=config.seed, config=config, project_root=config.paths.root)
     manifest_path = manifest.write(config.paths.manifests)
 
