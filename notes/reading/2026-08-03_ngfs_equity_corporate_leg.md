@@ -1,0 +1,14 @@
+# Read-log — NGFS ST equity/corporate leg (2026-08-03)
+
+Readings to fully understand today's decisions (`MKT-NGFS-08`, `INT-31`, the `INT-30` correction), in priority order.
+
+1. **`[NGFS2025ST]` — the financial-risk-metrics chapter and the sector-classification annex.** Read the definitions of the CLIMACRED variables (`equity_relative_adjustment`, `corporate_bond_spread_adjustment` incl./excl. policy, `pd_adjustment`, `baseline_pd`) and the GEM-E3 50-sector list. **Why:** `MKT-NGFS-08` rests on reading these as deltas-vs-BAU at Mexico grain and on the incl-vs-excl-policy distinction that decides the no-double-count rule; the sector annex is the ground truth for the 44-name crosswalk.
+2. **`[Battiston2025CLIMACRED]` — the model sections (expectations repricing, scenario-contingent valuation of equity and corporate bonds).** **Why:** it is the generating model of every adjustment we applied; understanding that the adjustments are *anticipatory expectations repricing* — not realized-loss estimates — is the entire epistemic argument of `INT-31` (e) for comparing, never summing, the NGFS channel and the HAZ jump.
+3. **`[Gregory_xVA]` — the wrong-way-risk chapter and the EE/EPE/CVA definitions.** **Why:** `INT-31`'s wrong-way caveat (book EPE falls while counterparty PDs double) is only readable with the CVA integrand in mind: exposure and default probability move together under climate states, and an exposure-only readout is one leg of the credit-loss story; this also frames why the pulled PD families matter for `OQ-CCR-04`.
+4. **`[BanxicoREF]` — REF diciembre 2024, Recuadro 6 («Piloto de análisis de escenarios climáticos del Comité de Finanzas Sostenibles»), plus REF junio 2023 Recuadro 5.** **Why:** the supervisory-practice anchor of the whole transition channel — what a Mexican-authority climate scenario exercise looks like, and where our internal-framework quantification sits relative to it (`MKT-NGFS-04/08` framing).
+5. **`[Vermeulen2021]` §§ on equity risk-factor shocks and `[BoE2022CBES]` traded-risk results.** **Why:** the instantaneous-revaluation convention (`S0 × (1+Δ)`, dynamics untouched) that `MKT-NGFS-08` adopts is their template; read for the defense of applying peak shocks to current values rather than drift paths.
+6. **`[CLIMAFIN2019]` — the climate-spread and climate-VaR chapters (context).** **Why:** the lineage from the CLIMAFIN pricing framework to the CLIMACRED variables the database publishes; useful background for the manuscript's methodology-genealogy paragraph.
+
+## Related
+Session note: [[2026-08-03_ngfs_equity_corporate_leg_explained]] · decisions: [[DECISIONS]] (`MKT-NGFS-08`, `INT-31`) · contracts: [[DATA_CONTRACTS]] (`DC-MKT-NGFS-2`) · prior read-log: [[2026-08-02_ngfs_short_term_connector]] · Home: [[_INDEX]] · MOC: [[MKT_MOC]]
+#arm/mkt #arm/int #type/reading
