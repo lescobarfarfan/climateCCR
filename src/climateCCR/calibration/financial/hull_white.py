@@ -66,6 +66,22 @@ def exclude_windows(series: pd.Series, windows: Iterable[tuple[str, str]] | None
     return series[keep]
 
 
+def sample_weekly_last(series: pd.Series, anchor: str = "W-WED") -> pd.Series:
+    """Last observation of each calendar week, keeping its true date.
+
+    Weekly sampling is the MKT-CALIB-06 cure for the daily policy-step
+    microstructure (zero-change runs, weekend ``Delta t``): at weekly spacing
+    the AR(1) and exact-MLE estimators agree again, so the pair passes the
+    MKT-CALIB-02 specification check that daily F-TIIE flunks. ``anchor`` is a
+    pandas weekly alias (``W-WED``, ``W-FRI``); empty weeks drop out and the
+    surviving index keeps the true observation dates, so the MLE's per-pair
+    ``Delta t`` stays honest.
+    """
+    clean = series.dropna().sort_index()
+    idx = [sub.index[-1] for _, sub in clean.groupby(pd.Grouper(freq=anchor)) if len(sub)]
+    return clean.loc[idx]
+
+
 def _pairs(
     series: pd.Series, max_gap_days: float
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:

@@ -15,8 +15,10 @@ step_days: 7 # weekly grid; HW1F transitions are exact at any spacing (CCR-SIM-0
 
 calibration_dir: results/market_calibration
 
-# Which hw1f_by_window.csv cell to compare (both methods of it).
-compare: { proxy: FTIIE, window: full_2006, crisis_excluded: true }
+# Which hw1f_by_window.csv cell to compare (both methods of it). The daily
+# sampling keeps the MKT-CALIB-06 estimator-disagreement story these figures
+# illustrate (weekly rows agree by construction, GEN-31 adoption 2026-08-02).
+compare: { proxy: FTIIE, window: full_2006, crisis_excluded: true, sampling: daily }
 
 # Context for the jump-decay panel: the engine fixture's mean reversion, the
 # value INT-18's S_rate_eff conversion used (configs/loss_to_rate_scale.yaml).

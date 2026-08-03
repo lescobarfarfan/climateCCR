@@ -55,6 +55,7 @@ def main() -> None:
         exclude_windows,
         fit_vasicek_ar1,
         fit_vasicek_mle,
+        sample_weekly_last,
         simple_to_continuous,
     )
     from climateCCR.calibration.financial.yield_curve import fit_nelson_siegel, strip_zero_curve
@@ -126,8 +127,9 @@ def main() -> None:
         start, end = windows[name]
         return series.loc[pd.Timestamp(start) : pd.Timestamp(end) if end else None]
 
-    # --- (a) HW1F a/sigma across proxies x windows x exclusions ----------
+    # --- (a) HW1F a/sigma across samplings x proxies x windows x exclusions
     hw_rows = []
+    samplings = config.extra["hw1f"].get("samplings") or {"daily": None}
     for proxy, spec in config.extra["hw1f"]["proxies"].items():
         quotes = tiies[proxy].dropna() / 100.0
         z = pd.Series(
@@ -136,42 +138,53 @@ def main() -> None:
         for window in spec["windows"]:
             sub = window_slice(z, window)
             for crisis_excluded in (True, False):
-                series = exclude_windows(sub, crisis if crisis_excluded else None)
-                for method, fitter in (("ar1", fit_vasicek_ar1), ("mle", fit_vasicek_mle)):
-                    try:
-                        fit = fitter(series)
-                    except ValueError as error:
-                        logger.warning(
-                            "%s/%s/excl=%s/%s failed: %s",
-                            proxy,
-                            window,
-                            crisis_excluded,
-                            method,
-                            error,
+                base = exclude_windows(sub, crisis if crisis_excluded else None)
+                for sampling, samp in samplings.items():
+                    series = base if samp is None else sample_weekly_last(base, str(samp["anchor"]))
+                    for method, fitter in (("ar1", fit_vasicek_ar1), ("mle", fit_vasicek_mle)):
+                        try:
+                            if method == "ar1" and samp is not None:
+                                fit = fit_vasicek_ar1(
+                                    series,
+                                    dt_years=float(samp["ar1_dt_years"]),
+                                    max_gap_days=float(samp["ar1_max_gap_days"]),
+                                )
+                            else:
+                                fit = fitter(series)
+                        except ValueError as error:
+                            logger.warning(
+                                "%s/%s/excl=%s/%s/%s failed: %s",
+                                proxy,
+                                window,
+                                crisis_excluded,
+                                sampling,
+                                method,
+                                error,
+                            )
+                            continue
+                        hw_rows.append(
+                            {
+                                "proxy": proxy,
+                                "window": window,
+                                "sampling": sampling,
+                                "start": str(series.index.min().date()),
+                                "end": str(series.index.max().date()),
+                                "crisis_excluded": crisis_excluded,
+                                "method": method,
+                                "alpha": fit.alpha,
+                                "level": fit.level,
+                                "sigma": fit.sigma,
+                                "half_life_years": fit.half_life_years,
+                                "n_pairs": fit.n_pairs,
+                                "n_pairs_dropped": fit.n_pairs_dropped,
+                            }
                         )
-                        continue
-                    hw_rows.append(
-                        {
-                            "proxy": proxy,
-                            "window": window,
-                            "start": str(series.index.min().date()),
-                            "end": str(series.index.max().date()),
-                            "crisis_excluded": crisis_excluded,
-                            "method": method,
-                            "alpha": fit.alpha,
-                            "level": fit.level,
-                            "sigma": fit.sigma,
-                            "half_life_years": fit.half_life_years,
-                            "n_pairs": fit.n_pairs,
-                            "n_pairs_dropped": fit.n_pairs_dropped,
-                        }
-                    )
     hw_table = pd.DataFrame(hw_rows)
     # MKT-CALIB-02 agreement check: MLE vs AR(1) alpha, same cell.
     ar1_alpha = hw_table[hw_table["method"] == "ar1"].set_index(
-        ["proxy", "window", "crisis_excluded"]
+        ["proxy", "window", "sampling", "crisis_excluded"]
     )["alpha"]
-    keys = pd.MultiIndex.from_frame(hw_table[["proxy", "window", "crisis_excluded"]])
+    keys = pd.MultiIndex.from_frame(hw_table[["proxy", "window", "sampling", "crisis_excluded"]])
     matched = ar1_alpha.reindex(keys).to_numpy()
     hw_table["alpha_rel_diff_vs_ar1"] = np.where(
         hw_table["method"] == "mle", hw_table["alpha"] / matched - 1.0, np.nan
@@ -181,6 +194,7 @@ def main() -> None:
     headline = hw_table[
         (hw_table["proxy"] == head["proxy"])
         & (hw_table["window"] == head["window"])
+        & (hw_table["sampling"] == head.get("sampling", "daily"))
         & (hw_table["method"] == head["method"])
         & (hw_table["crisis_excluded"] == bool(head["crisis_excluded"]))
     ]
@@ -188,9 +202,10 @@ def main() -> None:
         sys.exit(f"Headline HW1F cell {head} produced no fit; see the log.")
     headline = headline.iloc[0]
     logger.info(
-        "HW1F headline (%s, %s, excl=%s, %s): a=%.4f (half-life %.2fy), sigma=%.4f, n=%d",
+        "HW1F headline (%s, %s, %s, excl=%s, %s): a=%.4f (half-life %.2fy), sigma=%.4f, n=%d",
         head["proxy"],
         head["window"],
+        head.get("sampling", "daily"),
         head["crisis_excluded"],
         head["method"],
         headline["alpha"],

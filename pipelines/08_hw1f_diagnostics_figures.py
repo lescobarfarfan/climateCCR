@@ -64,6 +64,8 @@ def main() -> None:
     # --- the two parameter sets for the same sample ----------------------
     cell = config.extra["compare"]
     table = pd.read_csv(by_window_csv)
+    if "sampling" in table.columns:
+        table = table[table["sampling"] == cell.get("sampling", "daily")]
     selected = table[
         (table["proxy"] == cell["proxy"])
         & (table["window"] == cell["window"])

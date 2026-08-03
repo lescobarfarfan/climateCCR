@@ -46,7 +46,21 @@ hw1f:
   proxies:
     FTIIE: { tenor_days: 1, windows: [full_2006, post_gfc_2010, last10y_2016] }
     TIIE28: { tenor_days: 28, windows: [full_2001, full_2006] } # cross-check (MKT-CALIB-01)
-  headline: { proxy: FTIIE, window: full_2006, method: mle, crisis_excluded: true }
+  # Sampling grids (GEN-31 living calibration, adopted 2026-08-02): weekly
+  # sampling repairs the MKT-CALIB-02 agreement check that daily F-TIIE flunks
+  # (|MLE/AR1 - 1| a: 26.9% daily -> 0.2% weekly — the MKT-CALIB-06 policy-step
+  # microstructure, cured by its own diagnosis). ar1_dt_years = 7/365 (calendar
+  # week, the MLE's Act/365 convention); max_gap 9 tolerates holiday-shifted
+  # week ends; the exact-Delta-t MLE needs no dt override.
+  samplings:
+    daily: null
+    weekly_wed: { anchor: W-WED, ar1_dt_years: 0.019178082191780823, ar1_max_gap_days: 9.0 }
+    weekly_fri: { anchor: W-FRI, ar1_dt_years: 0.019178082191780823, ar1_max_gap_days: 9.0 }
+  # Headline = weekly-MLE, W-WED primary (W-FRI = the anchor sensitivity row);
+  # the pre-2026-08-02 daily exact-MLE headline (a=0.1221, sigma=0.0110) stays
+  # reported in hw1f_by_window.csv per the MKT-CALIB-06 rule.
+  headline:
+    { proxy: FTIIE, window: full_2006, method: mle, crisis_excluded: true, sampling: weekly_wed }
 
 curve:
   valuation_date: null # null = latest date with a full short block + bonos quotes

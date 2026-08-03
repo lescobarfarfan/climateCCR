@@ -10,6 +10,7 @@ from climateCCR.calibration.financial.hull_white import (
     exclude_windows,
     fit_vasicek_ar1,
     fit_vasicek_mle,
+    sample_weekly_last,
     simple_to_continuous,
 )
 from climateCCR.infra import get_rng
@@ -73,6 +74,27 @@ def test_exclude_windows_drops_closed_range(ou_series):
     assert not trimmed.index.to_series().between("2010-01-01", "2010-12-31").any()
     assert len(trimmed) < len(ou_series)
     assert exclude_windows(ou_series, None) is ou_series
+
+
+def test_sample_weekly_last_keeps_true_dates():
+    idx = pd.bdate_range("2024-01-01", periods=15)  # three full Mon-Fri weeks
+    s = pd.Series(np.arange(15.0), index=idx)
+    wk = sample_weekly_last(s, "W-FRI")
+    assert list(wk.index) == list(pd.to_datetime(["2024-01-05", "2024-01-12", "2024-01-19"]))
+    assert list(wk) == [4.0, 9.0, 14.0]
+    # an empty week drops out instead of emitting a stale label
+    holed = sample_weekly_last(s.drop(idx[5:10]), "W-FRI")
+    assert list(holed.index) == list(pd.to_datetime(["2024-01-05", "2024-01-19"]))
+
+
+def test_weekly_sampling_preserves_agreement(ou_series):
+    # On a correctly-specified OU sample, weekly sampling must not break the
+    # MKT-CALIB-02 agreement it is meant to restore on misspecified data.
+    wk = sample_weekly_last(ou_series, "W-WED")
+    ar1 = fit_vasicek_ar1(wk, dt_years=7.0 / 365.0, max_gap_days=9.0)
+    mle = fit_vasicek_mle(wk)
+    assert mle.alpha == pytest.approx(ar1.alpha, rel=0.05)
+    assert mle.sigma == pytest.approx(TRUE_SIGMA, rel=0.05)
 
 
 def test_non_stationary_sample_raises():
