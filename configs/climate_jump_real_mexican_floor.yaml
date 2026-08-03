@@ -10,9 +10,10 @@
 # Differences vs climate_jump_real.yaml (everything else transfers verbatim):
 # - valuation_date 2026-07-17 — the Mexican calibration anchor (MKT-CURVE-05
 #   curve date, MKT-CALIB-07 S0 date), not the fixture's 2020-01-01.
-# - rate_marks.median re-inverted with the MEXICAN HW1F alpha = 0.1221
-#   (MKT-CALIB-05): S_rate_eff_MX = 144,343,565 MDP-2025
-#   (results/loss_to_rate_scale_mx/scale.csv; -26.6% vs the engine-alpha
+# - rate_marks.median re-inverted with the MEXICAN HW1F alpha = 0.0758 (the
+#   GEN-31 weekly-sampling adoption 2026-08-02, superseding the daily
+#   MKT-CALIB-05 0.1221): S_rate_eff_MX = 175,293,784 MDP-2025
+#   (results/loss_to_rate_scale_mx/scale.csv; -10.9% vs the engine-alpha
 #   196,734,670 -> larger rate marks, direction pinned by INT-20). The
 #   [Anyfantaki2025] literature-scenario status of the rate channel is
 #   unchanged (INT-18/19 null gate).
@@ -38,7 +39,7 @@ horizons:
 climate_jumps:
   intensity: 7.2222  # events/year: mayores_200mdp 2016-2024 report regime (INT-20 floor)
   rate_marks:
-    median: 8.8267e-6 # sev_median 1,274.08 MDP-2025 / S_rate_eff_MX 144,343,565 -> +0.088 bp
+    median: 7.2683e-6 # sev_median 1,274.08 MDP-2025 / S_rate_eff_MX 175,293,784 -> +0.073 bp
     sigma: 1.0358     # transfers exactly from the report-regime lognormal severity fit
     sign: 1.0         # adverse event -> yields UP (decays through HW1F mean reversion)
     targets: [MXN_ZERO_YIELD_CURVE]
