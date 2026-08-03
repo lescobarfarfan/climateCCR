@@ -1,8 +1,6 @@
 # OPEN_QUESTIONS — Integrated open items
 
-Only what is genuinely open. When something is resolved, move it to `DECISIONS.md` (dated) and delete
-it here (or drop it to "Recently resolved" for brief traceability). IDs follow `OQ-<ARM>-NN`;
-integration questions `OQ-INT-NN` come first because they gate the others.
+Only what is genuinely open. When something is resolved, move it to `DECISIONS.md` (dated) and delete it here (or drop it to "Recently resolved" for brief traceability). IDs follow `OQ-<ARM>-NN`; integration questions `OQ-INT-NN` come first because they gate the others.
 
 ## Table of contents
 - **Integration (decide first)** — `OQ-INT-01`–`OQ-INT-11`

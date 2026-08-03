@@ -1,14 +1,8 @@
 # REFERENCES — Verified bibliography
 
-Each entry below was checked against a primary/authoritative source (or carried over verified from an
-origin project) and, where applicable, carries a DOI or stable URL. Each lists the decision ID(s) it
-backs. Citation keys (e.g. `[Holland1980]`) are used throughout the canon.
+Each entry below was checked against a primary/authoritative source (or carried over verified from an origin project) and, where applicable, carries a DOI or stable URL. Each lists the decision ID(s) it backs. Citation keys (e.g. `[Holland1980]`) are used throughout the canon.
 
-Entries under **§99 To confirm** are cited in the project but their exact edition/DOI/URL has not been
-independently re-verified in this consolidation; do not cite them in the manuscript until checked
-(tracked in `OPEN_QUESTIONS.md`). The full **climate-finance bibliography (47 entries)** travels with
-the repo at `literature/refs.bib` (from the MKT-arm LaTeX writeup); §6 lists the load-bearing keys and
-points there for exact DOIs rather than risk transcribing them imperfectly here.
+Entries under **§99 To confirm** are cited in the project but their exact edition/DOI/URL has not been independently re-verified in this consolidation; do not cite them in the manuscript until checked (tracked in `OPEN_QUESTIONS.md`). The full **climate-finance bibliography (47 entries)** travels with the repo at `literature/refs.bib` (from the MKT-arm LaTeX writeup); §6 lists the load-bearing keys and points there for exact DOIs rather than risk transcribing them imperfectly here.
 
 ---
 
@@ -73,17 +67,9 @@ points there for exact DOIs rather than risk transcribing them imperfectly here.
 
 ## 9. Climate–finance literature (MKT LaTeX writeup — full list in `literature/refs.bib`, 47 entries)
 
-Load-bearing keys (give author/year here; **exact DOIs in `literature/refs.bib`**):
-`[Battiston2017]` (climate stress-test, Nature Climate Change) · `[Bolton2020]` ("green swan", BIS) ·
-`[Carney2015]` ("Tragedy of the Horizon") · `[Campiglio2023]` · `[Monasterolo2020]` ·
-`[Giglio2021]` (climate finance review) · `[Kotz2024]` (macroeconomic damage) ·
-`[Nordhaus2017]` (DICE) · `[TCFD2017]` · `[NGFS2024]` (also §5) · `[Semieniuk2022]` (stranded assets) ·
-`[Gorgen2024]` (carbon risk factor) · `[Klusak2023]` (climate sovereign ratings; full entry §10) ·
-`[Dietz2018]` (climate value-at-risk) · `[Acharya2023]` · `[Stock2025]` · plus standard asset-pricing
-anchors `[Sharpe1964]`, `[Fama1995]`, `[Carhart1997]`, `[Engle2002]`.
+Load-bearing keys (give author/year here; **exact DOIs in `literature/refs.bib`**): `[Battiston2017]` (climate stress-test, Nature Climate Change) · `[Bolton2020]` ("green swan", BIS) · `[Carney2015]` ("Tragedy of the Horizon") · `[Campiglio2023]` · `[Monasterolo2020]` · `[Giglio2021]` (climate finance review) · `[Kotz2024]` (macroeconomic damage) · `[Nordhaus2017]` (DICE) · `[TCFD2017]` · `[NGFS2024]` (also §5) · `[Semieniuk2022]` (stranded assets) · `[Gorgen2024]` (carbon risk factor) · `[Klusak2023]` (climate sovereign ratings; full entry §10) · `[Dietz2018]` (climate value-at-risk) · `[Acharya2023]` · `[Stock2025]` · plus standard asset-pricing anchors `[Sharpe1964]`, `[Fama1995]`, `[Carhart1997]`, `[Engle2002]`.
 
-> Treat `literature/refs.bib` as authoritative for these — it is the BibTeX the thesis writeup
-> compiles against. Do not hand-transcribe their DOIs into the manuscript; cite from the `.bib`.
+> Treat `literature/refs.bib` as authoritative for these — it is the BibTeX the thesis writeup compiles against. Do not hand-transcribe their DOIs into the manuscript; cite from the `.bib`.
 
 ## 10. Disaster → sovereign-rate channel (INT-18 / OQ-INT-09)
 

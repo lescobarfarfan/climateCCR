@@ -1,15 +1,9 @@
 # GLOSSARY — Integrated glossary & retrieval index
 
-Terms, acronyms, and proper nouns. One line each. Spanish identifiers (column names, peril names,
-institutions, CLI flags) are kept **verbatim** because they are literal artifacts in the data/code.
-Reference keys in brackets resolve in `REFERENCES.md`. A **content-word retrieval index** for recalling
-history across chats is at the end (§J).
+Terms, acronyms, and proper nouns. One line each. Spanish identifiers (column names, peril names, institutions, CLI flags) are kept **verbatim** because they are literal artifacts in the data/code. Reference keys in brackets resolve in `REFERENCES.md`. A **content-word retrieval index** for recalling history across chats is at the end (§J).
 
 ## Categories
-A. Project & architecture · B. Reproducibility & engineering · C. Stochastic models & math ·
-D. Counterparty credit risk · E. Market / rate & curve (Mexico) · F. Climate & scenarios ·
-G. Hazard concepts (physical) · H. Impact modelling & calibration · I. CNSF / insurance-loss conventions ·
-J. Content-word retrieval index
+A. Project & architecture · B. Reproducibility & engineering · C. Stochastic models & math · D. Counterparty credit risk · E. Market / rate & curve (Mexico) · F. Climate & scenarios · G. Hazard concepts (physical) · H. Impact modelling & calibration · I. CNSF / insurance-loss conventions · J. Content-word retrieval index
 
 ---
 

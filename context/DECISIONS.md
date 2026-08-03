@@ -1,12 +1,8 @@
 # DECISIONS — Integrated decision log
 
-One line per decision. Format: `[ID] [date] decision — rationale. [RefKey | [eng]]`.
-`[eng]` = engineering decision, no academic reference expected. `[ref?]` = reference still to confirm
-(see `OPEN_QUESTIONS.md`). Superseded decisions are **edited** in place, not appended. Reference keys
-resolve in `REFERENCES.md`. ID scheme in `00_README_CONTEXT.md` §3.
+One line per decision. Format: `[ID] [date] decision — rationale. [RefKey | [eng]]`. `[eng]` = engineering decision, no academic reference expected. `[ref?]` = reference still to confirm (see `OPEN_QUESTIONS.md`). Superseded decisions are **edited** in place, not appended. Reference keys resolve in `REFERENCES.md`. ID scheme in `00_README_CONTEXT.md` §3.
 
-> Dates predating 2026-06-15 are original where the origin project recorded them; **MKT-arm dates are
-> reconstructed from document vintages and are approximate** (flagged per the origin project).
+> Dates predating 2026-06-15 are original where the origin project recorded them; **MKT-arm dates are reconstructed from document vintages and are approximate** (flagged per the origin project).
 
 ## Table of contents
 - `GEN-*` — Cross-cutting standards (reproducibility, provenance, version control) — **shared**
@@ -19,8 +15,7 @@ resolve in `REFERENCES.md`. ID scheme in `00_README_CONTEXT.md` §3.
 
 ## GEN — Cross-cutting standards (shared across all arms)
 
-These unify the HAZ-arm reproducibility rules and the CCR-arm infra/reproducibility rules into one
-standard the whole project obeys.
+These unify the HAZ-arm reproducibility rules and the CCR-arm infra/reproducibility rules into one standard the whole project obeys.
 
 - `GEN-01` [2026-06-15] Every analytical/design decision carries a real, checkable reference, or is explicitly marked `[eng]`. No invented citations; unconfirmed refs go to `REFERENCES.md` §99. [standard]
 - `GEN-02` [2026-06-15] Raw data is version-pinned with a provenance record per artifact — URL/dataset, sha256, bytes, date, and version/DOI/request where applicable (HAZ uses `_procedencia.json`; the new repo standardises this; see `DC-CONV-2`). [eng]

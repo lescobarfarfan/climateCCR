@@ -1,26 +1,18 @@
 # WORKFLOW — Keeping the canon alive & the project reproducible
 
-This file states the working discipline for the integrated project. It folds in the original
-`END_OF_CHAT_RITUAL.md` (the step that prevents fragmentation) and extends it with the unified
-reproducibility / version-control standard (`DECISIONS.md` → `GEN-*`). It is part of the **context
-canon** so the discipline is itself version-controlled. ~2 minutes per chat beats reconstructing
-context from scratch later.
+This file states the working discipline for the integrated project. It folds in the original `END_OF_CHAT_RITUAL.md` (the step that prevents fragmentation) and extends it with the unified reproducibility / version-control standard (`DECISIONS.md` → `GEN-*`). It is part of the **context canon** so the discipline is itself version-controlled. ~2 minutes per chat beats reconstructing context from scratch later.
 
 ---
 
 ## 0. The one rule that makes the rest work
 
-**Keep the whole thesis in ONE project.** Chat search is scoped to the current project. The entire
-reason for this consolidation is that the work was scattered across three projects and their
-histories couldn't see each other. Do not spin off sub-projects again. If you ever must, run the
-ritual (§2) inside each and merge by hand into this canon.
+**Keep the whole thesis in ONE project.** Chat search is scoped to the current project. The entire reason for this consolidation is that the work was scattered across three projects and their histories couldn't see each other. Do not spin off sub-projects again. If you ever must, run the ritual (§2) inside each and merge by hand into this canon.
 
 ---
 
 ## 1. The canon (what these files are)
 
-The `context/` folder is the **single source of truth for context** — decisions, contracts,
-vocabulary, references, open items, and this workflow. They are **living** documents:
+The `context/` folder is the **single source of truth for context** — decisions, contracts, vocabulary, references, open items, and this workflow. They are **living** documents:
 
 | File | Holds |
 |---|---|
@@ -32,8 +24,7 @@ vocabulary, references, open items, and this workflow. They are **living** docum
 | `OPEN_QUESTIONS.md` | Open items, integration questions first. |
 | `WORKFLOW.md` | This file. |
 
-**Code is not consolidated here.** The repository is its own source of truth — connect it to the
-project so code is read directly. Theory docs live in `notes/theory/`; papers in `literature/`.
+**Code is not consolidated here.** The repository is its own source of truth — connect it to the project so code is read directly. Theory docs live in `notes/theory/`; papers in `literature/`.
 
 ---
 
@@ -45,25 +36,15 @@ project so code is read directly. Theory docs live in `notes/theory/`; papers in
 4. If a **term** appeared, add it to `GLOSSARY.md`.
 5. If a **reference** was used or confirmed, add/verify it in `REFERENCES.md` (unconfirmed → §99).
 6. If something is **open** (or got closed), update `OPEN_QUESTIONS.md`.
-7. Write the **session read-log** — `notes/reading/YYYY-MM-DD_<slug>.md`: per decision made, *what
-   to read* (work + specific chapters/sections) and *why* (which decision/code it backs), using
-   `REFERENCES.md` citation keys; linked from its arm MOC(s). Always, even if not asked (`GEN-21`).
-8. Write the **summary-explanation note(s)** — `notes/summary_explanations/YYYY-MM-DD_<slug>_explained.md`:
-   per methodological decision made, *what each calibrated parameter means*, *how to interpret the
-   results obtained*, and *the theoretical/empirical justification* (with `REFERENCES.md` keys);
-   linked from its arm MOC(s) and cross-linked with the read-log (`GEN-26`). Skip only if the
-   session made no methodological decisions.
+7. Write the **session read-log** — `notes/reading/YYYY-MM-DD_<slug>.md`: per decision made, *what to read* (work + specific chapters/sections) and *why* (which decision/code it backs), using `REFERENCES.md` citation keys; linked from its arm MOC(s). Always, even if not asked (`GEN-21`).
+8. Write the **summary-explanation note(s)** — `notes/summary_explanations/YYYY-MM-DD_<slug>_explained.md`: per methodological decision made, *what each calibrated parameter means*, *how to interpret the results obtained*, and *the theoretical/empirical justification* (with `REFERENCES.md` keys); linked from its arm MOC(s) and cross-linked with the read-log (`GEN-26`). Skip only if the session made no methodological decisions.
 9. Commit in git with a message naming the module/arm touched.
 
-> **Promote, don't duplicate.** If a decision supersedes another, **edit** the old line (or mark it
-> `→ SUPERSEDED by [date]` only when the history matters); do not append a second. One source of
-> truth per fact, or the stale version resurfaces in retrieval.
+> **Promote, don't duplicate.** If a decision supersedes another, **edit** the old line (or mark it `→ SUPERSEDED by [date]` only when the history matters); do not append a second. One source of truth per fact, or the stale version resurfaces in retrieval.
 
 ### Digest template (request it verbatim)
 
-> Before we close: give me a 5–10 line digest of this chat with three sections — **Decided**,
-> **Changed**, **Open** — as one-line statements, each decision with a stable arm-prefixed ID, a
-> date, and a reference key (or `[ref?]` if missing), naming the files/modules touched. No filler.
+> Before we close: give me a 5–10 line digest of this chat with three sections — **Decided**, **Changed**, **Open** — as one-line statements, each decision with a stable arm-prefixed ID, a date, and a reference key (or `[ref?]` if missing), naming the files/modules touched. No filler.
 
 Expected shape:
 
@@ -80,8 +61,7 @@ Open:
 
 ## 3. Recalling context in a new chat (search by content words)
 
-Retrieval matches on **content**, not on the act of conversing. Name the real topic. A ready-made
-list of phrases is the **content-word index** at the end of `GLOSSARY.md` (§J). Examples:
+Retrieval matches on **content**, not on the act of conversing. Name the real topic. A ready-made list of phrases is the **content-word index** at the end of `GLOSSARY.md` (§J). Examples:
 
 - ✅ "recall the **state↔storm crosswalk** decision and the **CENAPRED multi-state** handling"
 - ✅ "what's left of the **Holland wind-profile bug** and the **Kaplan-DeMaria decay**"
@@ -91,11 +71,9 @@ list of phrases is the **content-word index** at the end of `GLOSSARY.md` (§J).
 
 For a cross-cutting synthesis:
 
-> Search our past chats in this project and produce a consolidated summary of every decision about
-> **[module: e.g. the IBTrACS wind field / the Hull–White calibration / the randomized-signature reservoir]**.
+> Search our past chats in this project and produce a consolidated summary of every decision about **[module: e.g. the IBTrACS wind field / the Hull–White calibration / the randomized-signature reservoir]**.
 
-You can also point at an ID directly: "expand on `HAZ-IBTRACS-05` and its reference," or
-"what's blocking `OQ-INT-01`?"
+You can also point at an ID directly: "expand on `HAZ-IBTRACS-05` and its reference," or "what's blocking `OQ-INT-01`?"
 
 ---
 
@@ -139,9 +117,7 @@ Every result a thesis figure depends on must be reconstructible from raw inputs 
 
 Every few chats:
 
-> Read `00_README_CONTEXT.md`, `DECISIONS.md`, `DATA_CONTRACTS.md`, `GLOSSARY.md`,
-> `OPEN_QUESTIONS.md`, and `REFERENCES.md` plus recent chats in this project, and emit a
-> deduplicated, reorganized version of each. Flag what you superseded.
+> Read `00_README_CONTEXT.md`, `DECISIONS.md`, `DATA_CONTRACTS.md`, `GLOSSARY.md`, `OPEN_QUESTIONS.md`, and `REFERENCES.md` plus recent chats in this project, and emit a deduplicated, reorganized version of each. Flag what you superseded.
 
 Replace the old docs with the result and update "Last compaction" in `00_README_CONTEXT.md`.
 
@@ -151,42 +127,21 @@ Replace the old docs with the result and update "Last compaction" in `00_README_
 
 When opening a fresh working chat, paste or point Claude at the canon and state the focus:
 
-> Context is in `context/`. Today I'm working on **[module/arm]**. Before we start, recall the
-> relevant decisions (by ID or content words) and the open questions that gate this work, then
-> we'll proceed. At the end I'll ask for the closing digest.
+> Context is in `context/`. Today I'm working on **[module/arm]**. Before we start, recall the relevant decisions (by ID or content words) and the open questions that gate this work, then we'll proceed. At the end I'll ask for the closing digest.
 
-This puts the decisions, contracts, and open items in front of the model up front, and sets the
-expectation of the end-of-chat digest so nothing is lost.
+This puts the decisions, contracts, and open items in front of the model up front, and sets the expectation of the end-of-chat digest so nothing is lost.
 
 ## 9. Working in Claude Code (operating mode)
 
-Claude Code is the primary interface (`GEN-15`); claude.ai is the rollback path
-(`/handoff-to-claude-ai`). Setup steps live in `CLAUDE_CODE_ONBOARDING.md`; the **durable discipline**
-is:
+Claude Code is the primary interface (`GEN-15`); claude.ai is the rollback path (`/handoff-to-claude-ai`). Setup steps live in `CLAUDE_CODE_ONBOARDING.md`; the **durable discipline** is:
 
-- **Launch at the repo root** so both `src/climateCCR/…` and `context/` are in scope. Keep a root
-  `CLAUDE.md` that points at the canon and restates the load-bearing rules (`GEN-01/07/09`,
-  `INT-01/07`); it is loaded automatically each session.
-- **The canon is the memory.** With project chat-search no longer the retrieval path, `context/`
-  *is* the retrieval mechanism — so the end-of-chat ritual (§2) matters more, not less. Open a working
-  session with the §8 warm-start (have Claude read the relevant canon), close it with the digest
-  folded back in.
-- **Single writer for the canon.** Edit `context/` from **one** Claude Code session at a time
-  (`GEN-16`). Parallel agents run in **git worktrees created outside the Obsidian-indexed folder**,
-  reserved for code-heavy arm work; never let two checkouts edit the same note.
-- **External data** goes to a drive exposed via `additionalDirectories`, with output roots resolved
-  through `infra.ProjectPaths`/`configs` (`GEN-08/10/15`); the repo stays on the primary disk.
-- **Model per task.** Run the main session on an Opus-tier model for integration/migration reasoning;
-  delegate fast lookups to a Haiku-tier subagent (`.claude/agents/`). Switching the main model
-  mid-session reprocesses the conversation, so prefer a fresh session over a switch in long chats.
-- **Effort per task.** Effort — the adaptive-reasoning / thinking-budget dial, a *separate* knob from
-  the model — is set with `/effort`. Default the project to `high` (or `xhigh`) via `effortLevel` in
-  `.claude/settings.json`; bump to `max` / `ultracode` per-session for hard reasoning (the `INT-10`
-  jump-diffusion wiring, the randomized-signature solver, `calibration` design); drop to `low` /
-  `medium` for mechanical migration edits. Thinking tokens bill like output tokens, so escalate where
-  being wrong is costly, not by default. (`GEN-20`)
-- **Commit discipline unchanged** (§5): small commits, behaviour separated from packaging/moves
-  (`GEN-09`); `data/`/`results/` git-ignored, `context/`/`notes/`/`literature/*.md` tracked.
+- **Launch at the repo root** so both `src/climateCCR/…` and `context/` are in scope. Keep a root `CLAUDE.md` that points at the canon and restates the load-bearing rules (`GEN-01/07/09`, `INT-01/07`); it is loaded automatically each session.
+- **The canon is the memory.** With project chat-search no longer the retrieval path, `context/` *is* the retrieval mechanism — so the end-of-chat ritual (§2) matters more, not less. Open a working session with the §8 warm-start (have Claude read the relevant canon), close it with the digest folded back in.
+- **Single writer for the canon.** Edit `context/` from **one** Claude Code session at a time (`GEN-16`). Parallel agents run in **git worktrees created outside the Obsidian-indexed folder**, reserved for code-heavy arm work; never let two checkouts edit the same note.
+- **External data** goes to a drive exposed via `additionalDirectories`, with output roots resolved through `infra.ProjectPaths`/`configs` (`GEN-08/10/15`); the repo stays on the primary disk.
+- **Model per task.** Run the main session on an Opus-tier model for integration/migration reasoning; delegate fast lookups to a Haiku-tier subagent (`.claude/agents/`). Switching the main model mid-session reprocesses the conversation, so prefer a fresh session over a switch in long chats.
+- **Effort per task.** Effort — the adaptive-reasoning / thinking-budget dial, a *separate* knob from the model — is set with `/effort`. Default the project to `high` (or `xhigh`) via `effortLevel` in `.claude/settings.json`; bump to `max` / `ultracode` per-session for hard reasoning (the `INT-10` jump-diffusion wiring, the randomized-signature solver, `calibration` design); drop to `low` / `medium` for mechanical migration edits. Thinking tokens bill like output tokens, so escalate where being wrong is costly, not by default. (`GEN-20`)
+- **Commit discipline unchanged** (§5): small commits, behaviour separated from packaging/moves (`GEN-09`); `data/`/`results/` git-ignored, `context/`/`notes/`/`literature/*.md` tracked.
 
 
 ---

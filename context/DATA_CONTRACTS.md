@@ -1,11 +1,8 @@
 # DATA_CONTRACTS — Integrated data contracts
 
-What each module produces and consumes: name, grain, key columns, units, encoding, source of truth.
-If a contract changes, **edit it here** (do not append) and log it in `DECISIONS.md`. IDs follow
-`DC-<ARM>-<MODULE>-N`; cross-cutting conventions `DC-CONV-*`; joins between modules `DC-XWALK-*`.
+What each module produces and consumes: name, grain, key columns, units, encoding, source of truth. If a contract changes, **edit it here** (do not append) and log it in `DECISIONS.md`. IDs follow `DC-<ARM>-<MODULE>-N`; cross-cutting conventions `DC-CONV-*`; joins between modules `DC-XWALK-*`.
 
-**Status tags:** `FIRM` (decided / observed in code) · `PROPOSED` (recommended default, confirm in
-`OPEN_QUESTIONS.md`) · `TBD` (genuinely unspecified).
+**Status tags:** `FIRM` (decided / observed in code) · `PROPOSED` (recommended default, confirm in `OPEN_QUESTIONS.md`) · `TBD` (genuinely unspecified).
 
 ## Table of contents
 - `DC-CONV-*` — Cross-cutting conventions (shared)
