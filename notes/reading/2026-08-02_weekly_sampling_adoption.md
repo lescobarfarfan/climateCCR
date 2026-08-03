@@ -2,6 +2,8 @@
 
 Session decisions: `MKT-CALIB-08` (weekly-sampling HW1F fit adopted as headline under the `GEN-31` adopt-if-material policy), `MKT-CURVE-06` (Svensson evaluated under a pre-registered gate and rejected), the `INT-22`/`INT-23` re-base, `GEN-32` (canon unwrap). Readings in priority order.
 
+**Why these readings are load-bearing:** the weekly-sampling fit is now the headline calibration basis — every downstream risk number (`θ(t)`, the engine's rate dynamics, `S_rate_eff_MX`, the jump configs' rate marks, the `INT-23` band) and the entire NGFS transition channel about to be built on top inherit these parameters — and the adoption is the first executed instance of the `GEN-31` living-calibration policy, the template every future recalibration will follow. These readings are what make that basis defensible rather than merely computed.
+
 1. **`[JamesWebber2000]`** — *Interest Rate Modelling*, the short-rate estimation chapters (Vasicek/CIR parameter estimation; the discrete AR(1) regression vs the exact transition-density likelihood). **Why:** `MKT-CALIB-08` rests on the fact that these are two estimators of the *same* model that must agree on well-specified data (`MKT-CALIB-02`); without this the 26.9%→0.2% agreement collapse reads as a coincidence instead of a verdict on the daily sample.
 
 2. **`[Hausman1978]`** (§99, confirm before citing) — *Specification Tests in Econometrics*, the core theorem pages (1251–1256): two estimators consistent under the null, divergent under misspecification, and the test built from their difference. **Why:** the formal frame that turns the AR(1)-vs-MLE gap into a specification *test* — the adoption's validity gate W1 is exactly this logic applied at two sampling frequencies.

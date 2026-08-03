@@ -24,6 +24,13 @@ Re-banded book-EPE deltas: **−8.40 / −5.07 / −4.53%** vs −8.36/−5.05/�
 
 The pre-registered gate demanded rmse ≤ 6.0 bp (halving NS's 12.0); Svensson delivered 10.3 bp with its second hump ($\tau_2$ = 0.71y) chasing the *short* end, while the dominant miss (−23 bp at the 16.3y `BonosM_10_20` pillar) persisted. Diagnosis: the misfit is **long-end pillar sparsity** — 2 pillars beyond 10y — not missing curvature; a 6-parameter family cannot buy what more pillars would. Consequence: Nelson–Siegel's parsimony stands (`[NelsonSiegel1987]`), and `OQ-MKT-03` is now densification-only (off-the-run Bonos M via CF300).
 
+## Why this adoption is load-bearing
+
+- **It is the first executed `GEN-31` living-calibration cycle** — pre-registered gates, adopt-if-material, the full consequence chain (`pipelines/07` → `09` → jump configs → the band) run in one session — and thereby the template for every future recalibration of the package: refresh the data, re-run pipeline 07, and the sampling × proxy × window × method table plus the same gates decide the headline.
+- **It settles the baseline the NGFS transition channel lands on.** The next build translates NGFS scenarios into $\Delta r$ shocks on the HW1F leg (`MKT-NGFS-01`); every scenario delta will be simulated under this $(a, \sigma, \theta(t))$. Adopting *before* that build — the whole point of the `GEN-31` scheduling — means the transition-channel results never need re-basing for a calibration reason.
+- **It sets the climate channel's decay clock.** How long a climate event's rate shock lingers is governed by $a$ alone: half-life 9.1y under the weekly fit vs 5.7y daily. `MKT-CALIB-06` flagged persistence as the *fragile* consumer of $a$; the adoption moves that fragile number onto the sample that passes the specification test — exactly where a fragile number should live.
+- **It converts the headline from a computed number into a defensible measurement.** The manuscript can now state that the calibration sample passes the model's own specification check (`MKT-CALIB-02`, 0.2%) instead of carrying the daily-data disagreement as an unresolved caveat; and the weekly seam (`sample_weekly_last`, the `sampling` column, the config switch) is permanent infrastructure, not a one-off analysis.
+
 ## Standing caveats
 
 `a` remains weakly identified (`MKT-CALIB-04`): the weekly anchor choice spreads it 0.076 (W-WED, the pre-registered primary) to 0.086 (W-FRI), and the informative TIIE-28 weekly fit sits near 0.32. The three-point `a` sensitivity (weekly-MLE / daily-MLE / daily-AR1) is the standing discipline for anything consuming `a` alone.
