@@ -34,8 +34,18 @@ pulls:
     regions: ["EIRIN 1.0|North America"]
   - model: CLIMACRED
     scenarios: [HWTP, SWUC, DAPS_NAM]   # CLIMACRED has no Baseline run: its
-    variables:                           # variables are already deltas vs BAU
-      - "sovereign_spread_adjustment|MEX"
-      - "sovereign_spread_adjustment_incl_policy|MEX"
-      - "sovereign_bond_price_rel_adjustment|MEX"
+    variables: []                        # variables are already deltas vs BAU
     regions: ["Mexico - MEX"]
+    # variables: [] = every variable published at the Mexico grain (the region
+    # filter is the scope). Extended for the equity/corporate leg (OQ-MKT-13 c):
+    # besides the three sovereign_* series of the first build, this lands the
+    # 50-sector CLIMACRED families equity_relative_adjustment|<sector> (% vs
+    # BAU), corporate_bond_spread_adjustment{,_incl_policy}|<sector> and
+    # corporate_bond_price_rel_adjustment|<sector> (pp / % vs BAU), plus the
+    # baseline_pd/pd_adjustment/scenario_wacc/wacc_adjustment families (unused
+    # today; the PD inputs a future CVA build would consume, OQ-CCR-04).
+    # The empty list is deliberate, not lazy: the REST variables filter matches
+    # exact full names only — family prefixes and globs fall through to the
+    # unfiltered set (verified against the API 2026-08-03) — so enumerating
+    # 150 sector names in this file would buy no additional pinning; the
+    # vintage pin is the run_id+version in _procedencia.json either way.
