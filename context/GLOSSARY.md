@@ -82,9 +82,10 @@ A. Project & architecture · B. Reproducibility & engineering · C. Stochastic m
 - **CNBV** — Mexican banking/securities regulator (stress-test rules, incl. Art. 282). **Banxico** — central bank. **BMV** — Bolsa Mexicana de Valores (the small target equity universe; pipeline source-agnostic).
 
 ## F. Climate & scenarios
-- **NGFS** — Network for Greening the Financial System; macro/policy-rate scenario paths (not full curves). **Short-term scenarios (May 2025)** — 3–5y, quarterly, ~50 sectors, direct PD.
+- **NGFS** — Network for Greening the Financial System; macro/policy-rate scenario paths (not full curves). **Short-term scenarios (May 2025)** — quarterly 2025–2030, ~50 sectors, 46 countries, direct PD; four narratives: **HWTP** (Highway to Paris, orderly), **SWUC** (Sudden Wake-Up Call, disorderly), **DAPS** (Disasters & Policy Stagnation, physical, regionalized `DAPS_NAM/SAM/…`), **DIRE** (Diverging Realities, compound). **GEM-E3 / EIRIN / CLIMACRED** — the coupled ST model trio: CGE real economy (country×sector grain) / stock-flow-consistent monetary block (5 macro-regions, the `Policy rate` producer) / climate credit-risk valuation (country-grain sovereign + sector-grain corporate adjustments).
 - **IIASA** — hosts the NGFS scenario database. **IPCC** — AR6 pathways. **SSP / RCP** — Shared Socioeconomic Pathways / Representative Concentration Pathways (SSP2-4.5 middle, SSP5-8.5 high). **Copernicus C3S / ERA5** — observational climate / reanalysis (drought indices via `cdsapi`).
 - **Policy rate vs market rate** — the NGFS policy rate is a *model-simulated* central-bank rate; used as a **shock source**, never a direct F-TIIE substitute.
+- **Scenario anchors (short/long)** — the two tenor points a curve shock interpolates between (`MKT-NGFS-02/06`): short = Δ policy rate at ~1M, long = the total sovereign-yield Δ at 10Y (`incl_policy`); flat outside. **Transition-only delta** — scenario jump-off EPE vs base jump-off EPE (the pure NGFS rate channel); **combined delta** — scenario jump-on vs base jump-off (transition + HAZ physical jump). **Scenario overlay** — a per-scenario copy of the book data-root differing only in the shocked HW1F curve CSVs (`data/ccr_book_mx_ngfs/<scen>/`, `DC-MKT-NGFS-2`). **Channel separation** — NGFS physical-embedding narratives never combine with the HAZ jump (`INT-29`).
 - **Physical vs transition vs liability risk** — hazard damage / low-carbon-transition / litigation channels. **Acute vs chronic** — extreme events vs slow shifts.
 - **R1–R4** — hazard risk bands in the dashboard (thresholds `TBD`).
 - **Climate VaR / climate-adjusted Merton** — portfolio climate-loss metric / PD model with climate-shocked asset values. `[Battiston2017]` `[Bolton2020]`
@@ -160,6 +161,7 @@ A. Project & architecture · B. Reproducibility & engineering · C. Stochastic m
 | Per-peril severity & the Phase C null | **per-peril severity mean-matched sigma truncation ciclon 1.33 Phase C sector event study FALLA tau episode bootstrap canonical env climateCCR manifests** |
 | The knowledge-graph tooling + its versioning | **understand-anything /understand dashboard .ua knowledge graph understandignore scope tracked GEN-29** |
 | The weekly-sampling adoption + Svensson rejection | **weekly sampling W-WED W-FRI anchor sample_weekly_last agreement check restored policy-step microstructure MKT-CALIB-08 GEN-31 adopt-if-material S_rate_eff 175 million Svensson rejected long-end sparsity densification** |
+| The NGFS short-term connector + first transition results | **NGFS short term connector IIASA guest token EIRIN North America region proxy sovereign spread incl policy two anchor peak shock overlay etiqueta transition-only delta non-monotone exposure kink DAPS_NAM counterpoint channel separation** |
 
 
 ---
