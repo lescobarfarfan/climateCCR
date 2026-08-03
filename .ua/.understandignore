@@ -12,8 +12,10 @@
 .mypy_cache/
 .ruff_cache/
 .ipynb_checkpoints/
-data/
-results/
+# Root-anchored (the GEN-18 lesson): unanchored `data/` matches ANY data/ path
+# segment and silently drops src/climateCCR/data/** and tests/data/** from scans.
+/data/
+/results/
 .DS_Store
 .claude/
 .obsidian/
