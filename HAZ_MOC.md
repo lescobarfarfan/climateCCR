@@ -54,6 +54,9 @@ the intensity `λ` and the per-event **impact/jump-mark** that drive the climate
 - Explanation: [[2026-08-01_per_peril_severity_phase_c_explained]] — the per-peril σ estimates in plain terms, why cyclone means don't rise (the c_ip double-count guard), and the Phase C null read against the HAZ construction evidence (`notes/summary_explanations/`, `GEN-26`).
 - Reading: [[2026-08-01_storm_cluster_robustness]] — the storm-cluster read-log (`INT-28`/`HAZ-CENAPRED-12`): compound-Poisson aggregation as the exact λ·E[L] invariance, the Jensen wedge in refitted severity, and the reporting-grain caveat behind the triage rule (`notes/reading/`, `GEN-21`).
 - Explanation: [[2026-08-01_storm_cluster_robustness_explained]] — what clustering re-defines, why the band holds while the CT anchor is the grain-sensitive leg, why tails ease, and the MDP/MDD resolution verdicts in plain terms (`notes/summary_explanations/`, `GEN-26`).
+- Reading: [[2026-08-07_viz_validation_layer]] — the validation-layer read-log: point-process diagnostics (staircase, marked arrivals) and actuarial GOF for the jump channel's Exponential/lognormal legs (`GEN-33`; `notes/reading/`, `GEN-21`).
+- Explanation: [[2026-08-07_validation_figures_explained]] — the jump-channel diagnostics read against the HAZ record: the per-regime staircase across the 2016 break, the within-registry arrivals convexity, the severity QQ, and the daily jump-path concentration reading (`GEN-33`; `notes/summary_explanations/`, `GEN-26`).
+- Explanation: [[2026-08-07_physical_channel_in_ngfs_results_explained]] — the HAZ jump's four roles in the NGFS result set and the wrong-way/CVA reading (`INT-29/31`; `notes/summary_explanations/`, `GEN-26`).
 - Review: [[PONYTAIL_AUDIT_2026-07-11]] — over-engineering sweep; the CNSF normalizer dedup + the two deliberately rejected HAZ cuts (`HAZ-SCRAPER-CNSF-10`).
 
 ## Wires to the other arms

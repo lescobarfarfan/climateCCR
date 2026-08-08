@@ -1,0 +1,13 @@
+# Read-log — model-vs-observed validation layer (2026-08-07)
+
+Readings to fully understand today's decision (`GEN-33`, the `OQ-GEN-02` a+b build), in priority order.
+
+1. **`[ECB2624FanCharts]` — ECB WP 2624, *Fan charts 2.0*, the sections on nested prediction intervals and forecast-density evaluation.** **Why:** the presentation convention `GEN-33` adopts (central 50/80/95 bands + median) and the discipline behind the coverage annotation — a fan is a *forecast density*, and the honest question is whether realized data lands inside the nominal bands at the nominal rate; without this reading the 54 %/47 % F-TIIE coverage findings look like a defect instead of a density-calibration statement. (§99 — confirm authors/year before citing.)
+2. **`[Klugman2019]` — the goodness-of-fit chapters (QQ plots, probability plots) and the frequency–severity material already backing `INT-16/17`.** **Why:** the jump QQ pair (`jump_qq_interarrival` vs Exponential($\lambda$), `jump_qq_severity` vs the fitted lognormal in log space) is the standard actuarial GOF reading; the plotting positions $(i-0.5)/n$ and the interpretation of tail departures come straight from here.
+3. **`[ContTankov2004]` — the chapters on Poisson processes and statistical estimation of jump processes.** **Why:** the staircase diagnostic ($N(t)$ vs $\lambda t$ with Poisson quantile bands) and the marked-point-process view behind `jump_marked_arrivals`; also the honest reading of the within-registry convexity — a homogeneous $\lambda$ is the adopted simplification and the trend is the documented `INT-16` residual, not a surprise.
+4. **`[BrigoMercurio2006]` and `[Hull1990]` — the Vasicek/Hull–White sections on the real-world vs risk-neutral distinction.** **Why:** the measure rule `GEN-33` fixes for captions: the historical overlay simulates the fitted P-measure Vasicek $(a, b, \sigma)$ via `VasicekFit.simulate`, while the engine's HW1F with $\theta(t)$ is the pricing object (`pipelines/08`); conflating the two fans is the classic examiner trap.
+5. **`[Gregory_xVA]` — the EE/EPE definitions chapter.** **Why:** the (b) family reads exposure metrics across runs; the delta matrix and the per-NAID strips are only meaningful with the exposure-metric semantics (time-averaged $E[\max(V,0)]$, own-baseline percentages) in mind.
+
+## Related
+Session notes: [[2026-08-07_validation_figures_explained]] · [[2026-08-07_physical_channel_in_ngfs_results_explained]] · decisions: [[DECISIONS]] (`GEN-33`) · prior read-log: [[2026-08-03_ngfs_equity_corporate_leg]] · Home: [[_INDEX]] · MOCs: [[MKT_MOC]] · [[HAZ_MOC]]
+#arm/mkt #arm/haz #arm/int #type/reading

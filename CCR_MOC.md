@@ -51,6 +51,7 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 - Explanation: [[2026-08-01_per_peril_severity_phase_c_explained]] — what per-label σ and mean-matched medians mean, how to read the re-based band (−8.36/−5.05/−4.51%), what the Phase C FALLA does and does not say, and the canonical-env byte-identity lesson (`notes/summary_explanations/`, `GEN-26`).
 - Reading: [[2026-08-01_knowledge_graph_tooling]] — tooling read-log, no analytical decisions (`GEN-29` adopts the understand-anything knowledge graph + dashboard, `.ua/` git-ignored; `notes/reading/`, `GEN-21`).
 - Reading: [[2026-08-01_ua_config_tracking]] — housekeeping read-log, no analytical decisions (`GEN-29` amended: the UA scope config `.ua/.understandignore` + `config.json` git-tracked, manual-incremental update policy documented; `notes/reading/`, `GEN-21`).
+- Explanation: [[2026-08-07_validation_figures_explained]] — the cross-run EPE comparison family on the CCR results: the scenario × λ-band delta matrix, the per-counterparty shift strips (own-baseline convention, the exposure-kink outlier), and the to-the-digit reproduction of the `INT-23/31` chain from stored frames (`GEN-33`; `notes/summary_explanations/`, `GEN-26`).
 
 ## Literature
 - [[Compagnoni_2023_RandomizedSignatures]] — randomized signatures as a reservoir (`CCR-SIG-01`).

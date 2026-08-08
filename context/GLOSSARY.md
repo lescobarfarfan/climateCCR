@@ -26,6 +26,7 @@ A. Project & architecture · B. Reproducibility & engineering · C. Stochastic m
 - **ProjectPaths** — the `infra` resolver anchoring paths to the repo root (replaces CWD-relative paths).
 - **DoD** — Definition of Done.
 - **Comparison frame** — the tidy EE/PE climate-vs-baseline result table (`<metric>_baseline/_climate/_shift` per counterparty × default date, `DC-CCR-RISK-3`); the `viz` layer's input contract for CCR figures (`INT-15`).
+- **Band coverage** — the share of observed points lying inside a nominal central quantile band of simulated paths (the fan-chart backtest); annotated on every `viz.validation` model-vs-observed fan (`GEN-33`).
 - **Grid densification (`simulation_max_step_days`)** — optional cap on the simulation-grid spacing (1 = daily paths) separating the *sampling* grid from the B3 *reporting* grid; law-preserving because the diffusions are exact-transition (`CCR-SIM-01`).
 - **Claude Code** — Anthropic's agentic CLI/IDE coding tool; the project's primary working interface (`GEN-15`). Scoped to the directory it launches in; the context canon serves as its memory.
 - **git worktree** — a second working-tree checkout of one repo on a separate branch; used for parallel Claude Code agents, created **outside** the Obsidian-indexed vault to avoid duplicate-note / wikilink clashes (`GEN-16`).
