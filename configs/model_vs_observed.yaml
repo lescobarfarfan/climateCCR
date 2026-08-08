@@ -1,0 +1,66 @@
+# Model-vs-observed validation figures (OQ-GEN-02 a — the backtest overlays).
+#
+# Drives pipelines/18_model_vs_observed_figures.py: simulations from the ADOPTED
+# calibrations overlaid on the observed series they model, plus the climate-jump
+# point-process diagnostics against the CENAPRED record.
+#
+# Two framings per diffusion model (user decision 2026-08-07):
+# - in-sample envelope: headline params (weekly-MLE a/level/sigma from
+#   hw1f_by_window.csv; per-name mu/sigma from the book RFE CSV), cone from the
+#   fit-window start, initial value = first observation — captions say so;
+# - holdout backtest: refit on data <= holdout cutoff (same sampling + crisis
+#   exclusions), simulate cutoff -> today, overlay the realized path.
+# Every fan annotates empirical band coverage (the fan-chart backtest).
+#
+# The rate overlay simulates the P-measure Vasicek (alpha, level, sigma) — the
+# fitted dynamics of the short-rate series itself; the pricing-side HW1F with
+# theta(t) is pipelines/08's fan. Captions must keep the distinction.
+
+seed: 233423
+n_paths: 1000 # per fan; all-trajectory renders stay legible at this count
+run_name: model_vs_observed
+
+# Crisis windows + the HW1F headline cell + weekly anchor are read from here
+# (one source of truth, MKT-CALIB-03/08).
+market_calibration_config: configs/market_calibration.yaml
+
+rates:
+  tiies_csv: data/market_mx/sie/tiies.csv
+  proxy: FTIIE # percent, simple Act/360 at 1 day -> continuous decimals (MKT-SIE-04)
+  tenor_days: 1.0
+  by_window_csv: results/market_calibration/hw1f_by_window.csv
+  # No true rate-leg holdout: a <= cutoff refit is unidentified (the truncated
+  # window ends mid-hiking-cycle; alpha -> 0 near-unit-root degeneracy). The
+  # second rate fan is the adopted fit's CONDITIONAL cone from r(this date).
+  conditional_start: "2022-12-30"
+
+equities:
+  book_dir: data/market_mx/yahoo/book
+  params_csv: data/ccr_book_mx/calibration_data/RFE_models/RFE_GBM_Calibration.csv
+  price_column: Close
+  headline: # 6-name climate core + diversifiers (chapter panel; any list works)
+    [VISTA_SHARE, CEMEX_SHARE, ASUR_SHARE, AGUA_SHARE, WALMEX_SHARE, FEMSA_SHARE]
+  appendix_all: true # 26-name grid for the appendix
+  holdout_cutoff: "2022-12-30"
+  ipc: # the index panel rides the market-calibration GBM fit (pipelines/07)
+    csv: data/market_mx/yahoo/ipc_mxx.csv
+    params_csv: results/market_calibration/direct_input/RFE_GBM_Calibration_MX.csv
+    name: IPC_EQUITY_INDEX
+
+jumps:
+  events_csv: data/hazard_mx/datos_CENAPRED/consolidados/eventos_cenapred_climada.csv
+  deflator: configs/inpc_anual.yaml # thresholds in constant 2025 pesos (GEN-13)
+  min_damage_mdp: 200.0 # the mayores_200mdp trigger set (INT-20)
+  parameters_csv: results/hazard_jump_calibration_2000_2024/parameters.csv
+  # Each regime is judged against its own fitted lambda (HAZ-CENAPRED-10: the
+  # 2016 drop is the registry -> annual-report publication break, not climate).
+  regimes:
+    - { start: "2002-01-01", end: "2015-12-31", row: mayores_200mdp_2002_2015, label: "Registry regime" }
+    - { start: "2016-01-01", end: "2024-12-31", row: mayores_200mdp_2016_2024, label: "Report regime" }
+  # Marked-stems + QQ diagnostics stay on the registry window — the window the
+  # adopted severity/scale calibration fits (INT-17/20 measurement consistency).
+  diagnostics_row: mayores_200mdp_2002_2015
+  envelope: 0.95
+
+quantiles: [0.5, 0.8, 0.95] # nested central fan bands
+coverage_band: 0.95 # the band the coverage annotation scores

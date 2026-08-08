@@ -9,9 +9,10 @@ is plottable with no change here.
 
 Modules: ``style`` (palette + matplotlib defaults + saving), ``ccr`` (EE/PE
 profiles and climate shifts), ``processes`` (simulated paths, fans, jump
-diagnostics), ``market`` (rate-path fans, calibration diagnostics). Planned:
-``hazard`` (λ panels, impact functions) as that arm produces artifacts
-(Phase 5, PROJECT_PLAN).
+diagnostics), ``market`` (rate-path fans, calibration diagnostics),
+``validation`` (model-vs-observed fans, arrival staircases, marked stems, QQ).
+Planned: ``hazard`` (λ panels, impact functions) as that arm produces
+artifacts (Phase 5, PROJECT_PLAN).
 """
 
 from .ccr import (
@@ -25,6 +26,14 @@ from .ccr import (
 from .market import plot_estimator_fan_comparison, plot_jump_decay, plot_rate_path_fan
 from .processes import plot_event_arrivals, plot_fan_comparison, plot_sample_paths
 from .style import apply_style, save_figure
+from .validation import (
+    band_coverage,
+    plot_arrival_staircase,
+    plot_marked_arrivals,
+    plot_paths_vs_observed,
+    plot_paths_vs_observed_grid,
+    plot_qq,
+)
 
 __all__ = [
     "apply_style",
@@ -41,4 +50,10 @@ __all__ = [
     "plot_rate_path_fan",
     "plot_estimator_fan_comparison",
     "plot_jump_decay",
+    "band_coverage",
+    "plot_paths_vs_observed",
+    "plot_paths_vs_observed_grid",
+    "plot_arrival_staircase",
+    "plot_marked_arrivals",
+    "plot_qq",
 ]

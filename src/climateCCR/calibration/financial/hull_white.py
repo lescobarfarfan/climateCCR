@@ -27,8 +27,9 @@ Outputs are plain decimals ready for the ``'direct_input'`` seam
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -111,6 +112,39 @@ class VasicekFit:
     def half_life_years(self) -> float:
         """Time for a rate displacement to decay by half: ``ln(2)/alpha``."""
         return float(np.log(2.0) / self.alpha)
+
+    def simulate(
+        self,
+        dates: Sequence[datetime] | pd.DatetimeIndex,
+        n_paths: int,
+        rng: np.random.Generator,
+        r0: float | None = None,
+    ) -> np.ndarray:
+        """Exact-transition OU sample paths on ``dates`` (path-major, decimals).
+
+        Draws from the same conditional density the MLE maximizes —
+        ``r_{t+D} | r_t ~ N(b + (r_t - b)e^{-aD}, sigma^2 (1 - e^{-2aD}) / (2a))``
+        with per-step Act/365 ``Delta t`` — so the paths *are* the fitted
+        P-measure model, exact on any grid (this is the historical/backtest
+        view; the pricing-side HW1F with ``theta(t)`` lives in the engine).
+        ``r0`` defaults to ``level``. Returns ``(n_paths, len(dates))``.
+        """
+        grid = pd.DatetimeIndex(pd.to_datetime(list(dates)))
+        if len(grid) < 2:
+            raise ValueError("need at least two dates to simulate")
+        dt = (np.diff(grid.to_numpy()) / np.timedelta64(1, "D")) / DAYS_PER_YEAR
+        if np.any(dt <= 0):
+            raise ValueError("dates must be strictly increasing")
+        decay = np.exp(-self.alpha * dt)
+        sd = self.sigma * np.sqrt((1.0 - decay**2) / (2.0 * self.alpha))
+        paths = np.empty((int(n_paths), len(grid)))
+        paths[:, 0] = self.level if r0 is None else float(r0)
+        shocks = rng.standard_normal((int(n_paths), len(grid) - 1))
+        for i in range(len(grid) - 1):
+            paths[:, i + 1] = (
+                self.level + (paths[:, i] - self.level) * decay[i] + sd[i] * shocks[:, i]
+            )
+        return paths
 
 
 def fit_vasicek_ar1(

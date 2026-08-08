@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 from climateCCR.calibration.financial.hull_white import (
     DAYS_PER_YEAR,
+    VasicekFit,
     exclude_windows,
     fit_vasicek_ar1,
     fit_vasicek_mle,
@@ -109,3 +110,39 @@ def test_too_few_observations_raises():
     short = pd.Series([0.05, 0.06], index=pd.bdate_range("2020-01-01", periods=2))
     with pytest.raises(ValueError, match=">= 3"):
         fit_vasicek_ar1(short)
+
+
+def _fit_for_simulation() -> VasicekFit:
+    return VasicekFit(
+        alpha=0.6, level=0.08, sigma=0.01, method="mle", n_pairs=100, n_pairs_dropped=0
+    )
+
+
+def test_simulate_matches_exact_transition_moments():
+    fit = _fit_for_simulation()
+    dates = pd.bdate_range("2020-01-01", periods=260)
+    paths = fit.simulate(dates, n_paths=20_000, rng=get_rng(42), r0=0.04)
+    assert paths.shape == (20_000, 260)
+    horizon = (dates[-1] - dates[0]).days / 365.0
+    expected_mean = fit.level + (0.04 - fit.level) * np.exp(-fit.alpha * horizon)
+    expected_var = fit.sigma**2 * (1.0 - np.exp(-2.0 * fit.alpha * horizon)) / (2.0 * fit.alpha)
+    assert paths[:, 0] == pytest.approx(0.04)
+    assert paths[:, -1].mean() == pytest.approx(expected_mean, abs=4.0 * fit.sigma / 100.0)
+    assert paths[:, -1].var() == pytest.approx(expected_var, rel=0.05)
+
+
+def test_simulate_is_seed_deterministic_and_defaults_r0_to_level():
+    fit = _fit_for_simulation()
+    dates = pd.bdate_range("2021-01-01", periods=30)
+    first = fit.simulate(dates, n_paths=5, rng=get_rng(7))
+    again = fit.simulate(dates, n_paths=5, rng=get_rng(7))
+    np.testing.assert_array_equal(first, again)
+    assert first[:, 0] == pytest.approx(fit.level)
+
+
+def test_simulate_rejects_degenerate_grids():
+    fit = _fit_for_simulation()
+    with pytest.raises(ValueError, match="two dates"):
+        fit.simulate(pd.DatetimeIndex(["2020-01-01"]), n_paths=2, rng=get_rng(1))
+    with pytest.raises(ValueError, match="increasing"):
+        fit.simulate(pd.DatetimeIndex(["2020-01-02", "2020-01-01"]), n_paths=2, rng=get_rng(1))
