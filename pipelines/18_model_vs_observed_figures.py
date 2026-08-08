@@ -17,7 +17,12 @@ diagnostics against the CENAPRED record:
   bands across the 2016 publication break (HAZ-CENAPRED-10);
 - ``jump_marked_arrivals`` — observed vs one simulated marked path;
 - ``jump_qq_interarrival`` / ``jump_qq_severity`` — Exponential(lambda) and
-  fitted-lognormal QQ on the registry trigger set.
+  fitted-lognormal QQ on the registry trigger set;
+- ``jump_paths_daily`` / ``jump_fan_daily`` — jump-on vs jump-off price
+  trajectories at DAILY grain for one book name, using the engine's own
+  ``ClimateJumpProcess`` (peril scaling included) and the multiplicative
+  overlay convention — the fine-grain companion to pipelines/02's B3-ladder
+  paths, whose sparse far pillars turn trajectories into multi-year chords.
 
 Same config + seed -> same figures (GEN-06/07); idempotent, rerun with
 ``--forzar``. ``--root`` points data/results at another checkout (worktree runs).
@@ -79,6 +84,7 @@ def main() -> None:
     )
     from climateCCR.calibration.impact.hazard_jump import load_climate_events
     from climateCCR.infra import ProjectPaths, RunManifest, get_logger, get_rng, load_config
+    from climateCCR.processes.jumps.climate_jump_process import ClimateJumpProcess
     from scipy import stats
 
     config = load_config(args.config)
@@ -444,6 +450,65 @@ def main() -> None:
                 title="Severity QQ — registry trigger set",
             ),
             out_dir / "jump_qq_severity",
+        )
+    )
+
+    # --- daily-grain jump-on/off price trajectories (engine jump channel) --
+    illus = jump_cfg["path_illustration"]
+    jump_yaml = yaml.safe_load((root / illus["jump_config"]).read_text())
+    target = str(illus["target"])
+    process = ClimateJumpProcess.from_config(jump_yaml["climate_jumps"])
+    anchor = pd.Timestamp(str(jump_yaml["valuation_date"]))
+    daily = pd.date_range(anchor, anchor + pd.Timedelta(days=round(float(illus["years"]) * 365)))
+    scenario = process.generate(list(daily), n_paths, config.seed)
+    step_marks = scenario.step_marks[target]
+    gbm_row = params.loc[target]
+    baseline_paths = _simulate_gbm(
+        float(gbm_row["initial_value"]),
+        float(gbm_row["drift"]),
+        float(gbm_row["volatility"]),
+        daily,
+        n_paths,
+        get_rng(config.seed),
+    )
+    # The engine's equity overlay convention (INT-14): multiplicative in price.
+    climate_paths = baseline_paths * np.exp(np.cumsum(np.pad(step_marks, ((0, 0), (1, 0))), axis=1))
+    event_rate = float(scenario.event_counts.sum()) / n_paths / float(illus["years"])
+    logger.info(
+        "jump paths %s: engine lambda %.2f/yr realized %.2f/yr | mean 3y jump-on/off ratio %.4f",
+        target,
+        float(jump_yaml["climate_jumps"]["intensity"]),
+        event_rate,
+        float(climate_paths[:, -1].mean() / baseline_paths[:, -1].mean()),
+    )
+    label = target.removesuffix("_SHARE")
+    written.extend(
+        viz.save_figure(
+            viz.plot_sample_paths(
+                daily,
+                baseline_paths,
+                climate_paths,
+                event_counts=scenario.event_counts,
+                n_show=int(illus["n_show"]),
+                ylabel=f"{label} share price",
+                title=(
+                    f"{label} — daily jump-diffusion paths, climate jump-on vs baseline "
+                    f"($\\lambda$={float(jump_yaml['climate_jumps']['intensity']):.2f}/yr)"
+                ),
+            ),
+            out_dir / "jump_paths_daily",
+        )
+    )
+    written.extend(
+        viz.save_figure(
+            viz.plot_fan_comparison(
+                daily,
+                baseline_paths,
+                climate_paths,
+                ylabel=f"{label} share price",
+                title=f"{label} — daily jump-on vs baseline distribution fan",
+            ),
+            out_dir / "jump_fan_daily",
         )
     )
 

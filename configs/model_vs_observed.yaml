@@ -61,6 +61,15 @@ jumps:
   # adopted severity/scale calibration fits (INT-17/20 measurement consistency).
   diagnostics_row: mayores_200mdp_2002_2015
   envelope: 0.95
+  # Daily-grain jump-on/off price trajectories: the engine's own jump channel
+  # (ClimateJumpProcess from the adopted config, peril scaling included) on a
+  # DAILY grid — the fine-grain companion to pipelines/02's B3-ladder paths,
+  # whose sparse far pillars turn trajectories into multi-year chords.
+  path_illustration:
+    jump_config: configs/climate_jump_real_mexican.yaml
+    target: HOTEL_SHARE # largest ciclon sensitivity (c_ip = 11.4) — jumps visible
+    years: 3.0
+    n_show: 8
 
 quantiles: [0.5, 0.8, 0.95] # nested central fan bands
 coverage_band: 0.95 # the band the coverage annotation scores
