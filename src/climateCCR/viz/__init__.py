@@ -17,6 +17,8 @@ artifacts (Phase 5, PROJECT_PLAN).
 
 from .ccr import (
     epe_summary,
+    plot_epe_delta_matrix,
+    plot_epe_shift_distribution,
     plot_exposure_profiles,
     plot_exposure_shift,
     plot_mean_shift_summary,
@@ -44,6 +46,8 @@ __all__ = [
     "plot_exposure_shift",
     "plot_mean_shift_summary",
     "plot_scenario_band",
+    "plot_epe_delta_matrix",
+    "plot_epe_shift_distribution",
     "plot_sample_paths",
     "plot_fan_comparison",
     "plot_event_arrivals",

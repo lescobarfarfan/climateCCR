@@ -234,3 +234,42 @@ def test_jump_decay_halves_at_half_life():
     assert _np.interp(half_life, t, y) == pytest.approx(50.0, rel=1e-3)
     with pytest.raises(ValueError, match="empty"):
         viz.plot_jump_decay({})
+
+
+def test_epe_delta_matrix_annotates_all_cells_and_dashes_undefined():
+    deltas = pd.DataFrame(
+        {
+            "scenario": ["A", "A", "B"],
+            "band": ["headline", "floor", "headline"],
+            "transition_pct": [-3.0, -3.0, -13.0],
+            "combined_pct": [-11.0, -8.0, np.nan],
+            "jump_within_pct": [-8.0, -4.0, np.nan],
+        }
+    )
+    fig = viz.plot_epe_delta_matrix(deltas)
+    ax = fig.axes[0]
+    texts = [t.get_text() for t in ax.texts]
+    # 2 scenarios x (transition + 2 bands x 2 metrics) = 10 annotated cells.
+    assert len(texts) == 10
+    assert "—" in texts and "-11.00" in texts
+    with pytest.raises(ValueError, match="empty"):
+        viz.plot_epe_delta_matrix(pd.DataFrame(columns=deltas.columns))
+
+
+def test_epe_shift_distribution_strip_plus_book_diamond_per_run():
+    summary = pd.DataFrame(
+        {
+            "netting_agreement_id": ["1", "2", "BOOK"],
+            "epe_baseline": [10.0, 20.0, 30.0],
+            "epe_climate": [9.0, 19.0, 28.0],
+            "epe_shift": [-1.0, -1.0, -2.0],
+            "epe_shift_pct": [-10.0, -5.0, -6.7],
+        }
+    )
+    fig = viz.plot_epe_shift_distribution({"run A": summary, "run B": summary})
+    ax = fig.axes[0]
+    # zero line + (strip + diamond) per run.
+    assert len(ax.lines) == 1 + 2 * 2
+    assert [t.get_text() for t in ax.get_yticklabels()] == ["run A", "run B"]
+    with pytest.raises(ValueError, match="empty"):
+        viz.plot_epe_shift_distribution({})

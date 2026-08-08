@@ -279,3 +279,139 @@ def plot_scenario_band(
         fontweight="bold",
     )
     return fig
+
+
+def plot_epe_delta_matrix(deltas: pd.DataFrame) -> Figure:
+    """Annotated scenario × band matrix of book-EPE deltas (%) vs base jump-off.
+
+    Input: the NGFS readout artifact (``book_epe_deltas.csv`` — one row per
+    ``scenario`` × ``band`` with ``transition_pct`` / ``combined_pct`` /
+    ``jump_within_pct``). Renders the INT-30/31 results table as a figure:
+    transition-only per scenario, then combined and jump-within per lambda
+    band. Cells the matrix does not define (physical-embedding narratives run
+    jump-off only, INT-29) print an em dash. Diverging color around zero uses
+    the shift poles: orange = exposure up, green = down.
+    """
+    if deltas.empty:
+        raise ValueError("deltas is empty: pass the book_epe_deltas readout frame")
+    from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
+
+    scenarios = list(dict.fromkeys(deltas["scenario"]))
+    bands = list(dict.fromkeys(deltas["band"]))
+    columns: list[tuple[str, str]] = [("transition_pct", "")]
+    columns += [("combined_pct", b) for b in bands]
+    columns += [("jump_within_pct", b) for b in bands]
+    titles = {
+        "transition_pct": "Transition\nonly",
+        "combined_pct": "Combined",
+        "jump_within_pct": "Jump within",
+    }
+    matrix = np.full((len(scenarios), len(columns)), np.nan)
+    for i, scen in enumerate(scenarios):
+        block = deltas[deltas["scenario"] == scen]
+        for j, (metric, band) in enumerate(columns):
+            rows = block if band == "" else block[block["band"] == band]
+            values = rows[metric].dropna().unique()
+            if len(values):
+                matrix[i, j] = float(values[0])
+
+    cmap = LinearSegmentedColormap.from_list(
+        "epe_delta", [COLOR_SHIFT_DOWN, "#ffffff", COLOR_SHIFT_UP]
+    )
+    bound = float(np.nanmax(np.abs(matrix))) or 1.0
+    norm = TwoSlopeNorm(vcenter=0.0, vmin=-bound, vmax=bound)
+    fig, ax = plt.subplots(figsize=(1.6 + 1.15 * len(columns), 1.2 + 0.6 * len(scenarios)))
+    ax.imshow(matrix, cmap=cmap, norm=norm, aspect="auto")
+    ax.set_xticks(range(len(columns)))
+    ax.set_xticklabels([f"{titles[m]}\n{b}" if b else titles[m] for m, b in columns], fontsize=8)
+    ax.set_yticks(range(len(scenarios)))
+    ax.set_yticklabels(scenarios, fontsize=9)
+    ax.grid(False)
+    for i in range(len(scenarios)):
+        for j in range(len(columns)):
+            value = matrix[i, j]
+            dark = not np.isnan(value) and abs(value) > 0.6 * bound
+            ax.text(
+                j,
+                i,
+                "—" if np.isnan(value) else f"{value:+.2f}",
+                ha="center",
+                va="center",
+                fontsize=8,
+                color="white" if dark else TEXT_SECONDARY,
+            )
+    ax.set_title("Book-EPE delta vs base jump-off (%)")
+    return fig
+
+
+def plot_epe_shift_distribution(summaries: Mapping[str, pd.DataFrame]) -> Figure:
+    """Per-counterparty EPE-shift distributions across labelled runs.
+
+    Input: ``label -> epe_summary frame`` (:func:`epe_summary` output — per-NAID
+    rows plus a ``BOOK`` row). Each run is one horizontal strip of per-NAID
+    ``epe_shift_pct`` points with the BOOK shift as a diamond, so the chapter
+    can compare how the whole cross-section — not just the book mean — moves
+    across mark states, lambda bands, and NGFS legs. Percentages are vs each
+    run's own contemporaneous baseline (the INT-23 chain convention).
+    """
+    if not summaries:
+        raise ValueError("summaries is empty: pass at least one labelled epe_summary frame")
+    from matplotlib.lines import Line2D
+
+    fig, ax = plt.subplots(figsize=(7.2, 1.0 + 0.55 * len(summaries)))
+    ax.axvline(0.0, color=TEXT_SECONDARY, linewidth=0.8)
+    labels = list(summaries)
+    for y, label in enumerate(labels):
+        summary = summaries[label]
+        naids = summary[summary["netting_agreement_id"] != "BOOK"]
+        values = naids["epe_shift_pct"].dropna().to_numpy(dtype=float)
+        ax.plot(
+            values,
+            np.full(values.shape, y),
+            linestyle="none",
+            marker="o",
+            markersize=4,
+            color=COLOR_BASELINE,
+            alpha=0.45,
+        )
+        book = summary.loc[summary["netting_agreement_id"] == "BOOK", "epe_shift_pct"]
+        if book.notna().any():
+            ax.plot(
+                float(book.iloc[0]),
+                y,
+                linestyle="none",
+                marker="D",
+                markersize=7,
+                color=COLOR_CLIMATE,
+                markeredgecolor="white",
+                markeredgewidth=0.8,
+            )
+    ax.set_yticks(range(len(labels)))
+    ax.set_yticklabels(labels, fontsize=9)
+    ax.invert_yaxis()
+    ax.set_xlabel("EPE shift vs own baseline (%)")
+    ax.legend(
+        handles=[
+            Line2D(
+                [],
+                [],
+                linestyle="none",
+                marker="o",
+                color=COLOR_BASELINE,
+                alpha=0.45,
+                label="Counterparty",
+            ),
+            Line2D(
+                [],
+                [],
+                linestyle="none",
+                marker="D",
+                color=COLOR_CLIMATE,
+                markeredgecolor="white",
+                label="BOOK",
+            ),
+        ],
+        loc="lower left",
+    )
+    ax.set_title("Per-counterparty EPE shifts across runs")
+    return fig

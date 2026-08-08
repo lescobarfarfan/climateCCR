@@ -1,0 +1,33 @@
+# Cross-run results-distribution figures (OQ-GEN-02 b).
+#
+# Drives pipelines/19_results_distribution_figures.py, which reads STORED
+# artifacts only — per-run comparison frames (results/<run>/ee_pe_climate_shift
+# .csv, summarized via viz.epe_summary) and the NGFS readout CSV — and renders:
+# - epe_delta_matrix: the INT-30/31 scenario x lambda-band table as a figure;
+# - epe_shift_distribution_<group>: per-counterparty EPE-shift strips, one row
+#   per labelled run, BOOK as a diamond.
+#
+# Percentages are vs each run's own contemporaneous baseline (the INT-23 chain
+# convention: the mark-state runs were archived under their era's calibration
+# basis, and each re-base moved the % against its own baseline).
+
+seed: 233423 # deterministic pipeline; the seed only stamps the manifest
+run_name: results_distributions
+
+readout_csv: results/ngfs_epe_readout/book_epe_deltas.csv
+
+groups:
+  # The INT-23 -> INT-26 mark-state chain (uniform -> sector gamma -> peril-typed
+  # -> adopted per-peril severity on the weekly-a basis).
+  mark_states:
+    "Uniform marks (INT-21, archived)": climate_jump_real_mexican_uniforme
+    "Sector gamma (fase A, archived)": climate_jump_real_mexican_fase_a
+    "Peril-typed (fase B, archived)": climate_jump_real_mexican_fase_b
+    "Adopted (per-peril severity)": climate_jump_real_mexican
+  # The INT-20 lambda band and the NGFS combined legs (INT-31).
+  scenarios:
+    "Headline (lambda 19.29/yr)": climate_jump_real_mexican
+    "CT anchor (lambda 9.96/yr)": climate_jump_real_mexican_ct_anchor
+    "Floor (lambda 7.22/yr)": climate_jump_real_mexican_floor
+    "NGFS HWTP, jump-on": climate_jump_real_mexican_ngfs_hwtp
+    "NGFS SWUC, jump-on": climate_jump_real_mexican_ngfs_swuc
