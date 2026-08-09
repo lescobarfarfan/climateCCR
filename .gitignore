@@ -24,7 +24,7 @@ data/processed/*
 data/hazard_mx
 data/market_mx
 data/ccr_book_mx
-data/ccr_book_mx_ngfs
+data/ccr_book_mx_ngfs*
 data/scenarios_mx
 !data/**/.gitkeep
 
