@@ -31,3 +31,19 @@ groups:
     "Floor (lambda 7.22/yr)": climate_jump_real_mexican_floor
     "NGFS HWTP, jump-on": climate_jump_real_mexican_ngfs_hwtp
     "NGFS SWUC, jump-on": climate_jump_real_mexican_ngfs_swuc
+
+# The INT-23 -> INT-26 re-base chain as one walk (OQ-GEN-02 c): BOOK EPE shift
+# per lambda leg across the mark-state stages. Run dir = base + leg + stage
+# suffix (e.g. climate_jump_real_mexican_ct_anchor_uniforme). Archived states
+# keep their era's calibration basis — the INT-23 chain convention above.
+stage_walk:
+  base: climate_jump_real_mexican
+  legs:
+    "Headline (lambda 19.29/yr)": ""
+    "CT anchor (lambda 9.96/yr)": "_ct_anchor"
+    "Floor (lambda 7.22/yr)": "_floor"
+  stages:
+    "Uniform\n(INT-21, archived)": "_uniforme"
+    "Sector gamma\n(fase A, archived)": "_fase_a"
+    "Peril-typed\n(fase B, archived)": "_fase_b"
+    "Adopted\n(per-peril severity)": ""

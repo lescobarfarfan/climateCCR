@@ -23,6 +23,7 @@ from .ccr import (
     plot_exposure_shift,
     plot_mean_shift_summary,
     plot_scenario_band,
+    plot_stage_walk_epe,
     with_supervisory_pfe,
 )
 from .market import plot_estimator_fan_comparison, plot_jump_decay, plot_rate_path_fan
@@ -48,6 +49,7 @@ __all__ = [
     "plot_scenario_band",
     "plot_epe_delta_matrix",
     "plot_epe_shift_distribution",
+    "plot_stage_walk_epe",
     "plot_sample_paths",
     "plot_fan_comparison",
     "plot_event_arrivals",

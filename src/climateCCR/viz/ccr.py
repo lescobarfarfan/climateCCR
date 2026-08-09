@@ -344,6 +344,53 @@ def plot_epe_delta_matrix(deltas: pd.DataFrame) -> Figure:
     return fig
 
 
+def plot_stage_walk_epe(walk: Mapping[str, Mapping[str, pd.DataFrame]]) -> Figure:
+    """Book EPE shift walked across methodology stages, one line per lambda leg.
+
+    Input: ``stage -> (leg -> epe_summary frame)`` (:func:`epe_summary`
+    output), both orderings the caller's — stages left to right in re-base
+    order, legs one line each. Every stage must carry the same legs. Each
+    point is that stage's BOOK ``epe_shift_pct`` vs its *own contemporaneous
+    baseline* (the INT-23 chain convention: archived states keep their era's
+    calibration basis), so the walk shows how each methodology step moved the
+    headline number — not a same-basis re-run.
+    """
+    if not walk:
+        raise ValueError("walk is empty: pass stage -> (leg -> epe_summary frame)")
+    stages = list(walk)
+    legs = list(next(iter(walk.values())))
+    for stage, by_leg in walk.items():
+        if list(by_leg) != legs:
+            raise ValueError(f"Stage {stage!r} legs {list(by_leg)} != {legs}")
+
+    fig, ax = plt.subplots(figsize=(7.2, 3.8))
+    x = np.arange(len(stages))
+    ax.axhline(0.0, color=TEXT_SECONDARY, linewidth=0.8)
+    for color, leg in zip(SERIES_COLORS, legs, strict=False):
+        y = []
+        for stage in stages:
+            summary = walk[stage][leg]
+            book = summary.loc[summary["netting_agreement_id"] == "BOOK", "epe_shift_pct"]
+            y.append(float(book.iloc[0]))
+        ax.plot(x, y, marker="o", markersize=5, color=color, label=leg)
+        for xi, yi in zip(x, y, strict=False):
+            ax.annotate(
+                f"{yi:+.2f}",
+                (xi, yi),
+                textcoords="offset points",
+                xytext=(0, 6),
+                fontsize=7.5,
+                color=TEXT_SECONDARY,
+                ha="center",
+            )
+    ax.set_xticks(x, stages, fontsize=8.5)
+    ax.margins(x=0.06)
+    ax.set_ylabel("Book EPE shift vs own baseline (%)")
+    ax.legend(title="Arrival-intensity leg")
+    ax.set_title("Book-EPE climate delta across mark-state stages")
+    return fig
+
+
 def plot_epe_shift_distribution(summaries: Mapping[str, pd.DataFrame]) -> Figure:
     """Per-counterparty EPE-shift distributions across labelled runs.
 

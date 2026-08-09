@@ -273,3 +273,32 @@ def test_epe_shift_distribution_strip_plus_book_diamond_per_run():
     assert [t.get_text() for t in ax.get_yticklabels()] == ["run A", "run B"]
     with pytest.raises(ValueError, match="empty"):
         viz.plot_epe_shift_distribution({})
+
+
+def test_stage_walk_one_line_per_leg_with_annotations():
+    def summary(pct):
+        return pd.DataFrame(
+            {
+                "netting_agreement_id": ["1", "BOOK"],
+                "epe_baseline": [10.0, 10.0],
+                "epe_climate": [10.0 + pct / 10.0, 10.0 + pct / 10.0],
+                "epe_shift": [pct / 10.0, pct / 10.0],
+                "epe_shift_pct": [pct, pct],
+            }
+        )
+
+    walk = {
+        "stage 1": {"leg A": summary(-11.0), "leg B": summary(-5.6)},
+        "stage 2": {"leg A": summary(-8.4), "leg B": summary(-4.5)},
+    }
+    fig = viz.plot_stage_walk_epe(walk)
+    ax = fig.axes[0]
+    assert len(ax.lines) == 1 + 2  # zero line + one line per leg
+    leg_a = ax.lines[1]
+    np.testing.assert_allclose(leg_a.get_ydata(), [-11.0, -8.4])
+    assert [t.get_text() for t in ax.get_xticklabels()] == ["stage 1", "stage 2"]
+    assert len(ax.texts) == 4  # one annotation per stage x leg
+    with pytest.raises(ValueError, match="empty"):
+        viz.plot_stage_walk_epe({})
+    with pytest.raises(ValueError, match="legs"):
+        viz.plot_stage_walk_epe({"s1": {"leg A": summary(1.0)}, "s2": {"leg B": summary(1.0)}})

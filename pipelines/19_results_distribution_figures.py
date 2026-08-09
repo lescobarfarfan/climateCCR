@@ -7,7 +7,10 @@ Reads STORED artifacts only (no engine re-runs): each configured run's
 - ``epe_delta_matrix`` — the INT-30/31 scenario x lambda-band book-EPE table
   as an annotated matrix (transition-only / combined / jump-within);
 - ``epe_shift_distribution_<group>`` — per-counterparty EPE-shift strips per
-  labelled run (BOOK as a diamond), one figure per config group.
+  labelled run (BOOK as a diamond), one figure per config group;
+- ``epe_stage_walk`` — the INT-23 -> INT-26 re-base chain as one walk: BOOK
+  EPE shift per lambda leg across the mark-state stages (``stage_walk``
+  config block; each state vs its own contemporaneous baseline).
 
 Deterministic; the manifest records the config (GEN-06). Idempotent, rerun
 with ``--forzar``. ``--root`` points data/results at another checkout.
@@ -86,6 +89,22 @@ def main() -> None:
                 out_dir / f"epe_shift_distribution_{group}",
             )
         )
+
+    walk_cfg = extra.get("stage_walk")
+    if walk_cfg:
+        walk: dict[str, dict[str, pd.DataFrame]] = {}
+        for stage_label, stage_suffix in dict(walk_cfg["stages"]).items():
+            legs: dict[str, pd.DataFrame] = {}
+            for leg_label, leg_suffix in dict(walk_cfg["legs"]).items():
+                run_dir = f"{walk_cfg['base']}{leg_suffix}{stage_suffix}"
+                frame_csv = config.paths.results / run_dir / "ee_pe_climate_shift.csv"
+                if not frame_csv.exists():
+                    sys.exit(
+                        f"Missing comparison frame for stage walk '{stage_label}': {frame_csv}"
+                    )
+                legs[str(leg_label)] = viz.epe_summary(pd.read_csv(frame_csv))
+            walk[str(stage_label)] = legs
+        written.extend(viz.save_figure(viz.plot_stage_walk_epe(walk), out_dir / "epe_stage_walk"))
 
     manifest = RunManifest.create(seed=config.seed, config=config, project_root=config.paths.root)
     manifest_path = manifest.write(config.paths.manifests)
