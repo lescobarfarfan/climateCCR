@@ -13,8 +13,11 @@ The analysis horizon (--horizonte largo|corto, a key of the config's `horizons`
 block) selects the B3 default grid the EE/PE profile is reported on; the short
 grid serves risk-management horizons, the long one the regulatory/climate view.
 Idempotent (GEN-*): skips if the output exists, rerun with --forzar/--force.
+With ``--trayectorias``, both legs also materialize the per-path portfolio
+values at the reporting dates (``per_path_values_{baseline,climate}.npz``,
+the OQ-GEN-02 c artifact) — the profiles themselves are byte-identical.
 
-    python pipelines/01_climate_jump_demo.py [--forzar] [--horizonte corto]
+    python pipelines/01_climate_jump_demo.py [--forzar] [--horizonte corto] [--trayectorias]
 """
 
 from __future__ import annotations
@@ -33,8 +36,21 @@ FIXTURE_CONFIG = REPO_ROOT / "configs" / "pimpa_fixture.yaml"
 VALUE_COLS = ["uncollateralized_ee", "uncollateralized_pe_0.99"]
 
 
-def run_book(global_parameters: dict, today_date: str, data_root: Path = FIXTURE) -> pd.DataFrame:
-    """EE/PE profiles for every counterparty in the book's ledger."""
+def run_book(
+    global_parameters: dict,
+    today_date: str,
+    data_root: Path = FIXTURE,
+    per_path_store: dict | None = None,
+) -> pd.DataFrame:
+    """EE/PE profiles for every counterparty in the book's ledger.
+
+    With ``per_path_store`` a dict, each counterparty's per-path netted
+    portfolio values at the reporting dates land there as
+    ``naid -> (dates, values)`` — the OQ-GEN-02 c artifact seam. The engine
+    run is unchanged either way (the values are read off the session after
+    ``run``, no extra draws).
+    """
+    from climateCCR.risk.ccr.evaluators.artifacts import grid_dates, reporting_slice
     from climateCCR.risk.ccr.evaluators.ccr_valuation_session import CCR_Valuation_Session
     from climateCCR.risk.ccr.trade_models.portfolio import Portfolio
 
@@ -50,6 +66,15 @@ def run_book(global_parameters: dict, today_date: str, data_root: Path = FIXTURE
         exposures = session.get_exposures().copy()
         exposures.insert(0, "netting_agreement_id", naid)
         frames.append(exposures)
+        if per_path_store is not None:
+            per_path_store[str(naid)] = (
+                grid_dates(session.b3_default_grid),
+                reporting_slice(
+                    session.simulation_dates,
+                    session.b3_default_grid,
+                    session.scenarios_portfolio_values,
+                ),
+            )
     return pd.concat(frames, ignore_index=True)
 
 
@@ -77,6 +102,12 @@ def main() -> None:
         default=FIXTURE,
         help="book data root (default: the PIMPA fixture; "
         "data/ccr_book_mx = the Mexican book, OQ-INT-04)",
+    )
+    parser.add_argument(
+        "--trayectorias",
+        action="store_true",
+        help="materializa además los valores de cartera por trayectoria en las fechas de "
+        "reporte (per_path_values_{baseline,climate}.npz por corrida; OQ-GEN-02 c)",
     )
     parser.add_argument(
         "--book-config",
@@ -141,11 +172,13 @@ def main() -> None:
         max_step_days or "event-driven",
     )
 
+    baseline_store: dict | None = {} if args.trayectorias else None
+    jumped_store: dict | None = {} if args.trayectorias else None
     logger.info("Running jump-OFF (baseline) ...")
-    baseline = run_book(gp, today_date, data_root=args.data_root)
+    baseline = run_book(gp, today_date, data_root=args.data_root, per_path_store=baseline_store)
     logger.info("Running jump-ON (climate) ...")
     gp["climate_jumps"] = jump_process
-    jumped = run_book(gp, today_date, data_root=args.data_root)
+    jumped = run_book(gp, today_date, data_root=args.data_root, per_path_store=jumped_store)
 
     comparison = baseline[["netting_agreement_id", "default_times"]].copy()
     for col in VALUE_COLS:
@@ -155,6 +188,12 @@ def main() -> None:
 
     out_dir.mkdir(parents=True, exist_ok=True)
     comparison.to_csv(out_csv, index=False)
+    if args.trayectorias:
+        from climateCCR.risk.ccr.evaluators.artifacts import write_per_path_values
+
+        for leg, store in (("baseline", baseline_store), ("climate", jumped_store)):
+            leg_path = write_per_path_values(store, out_dir / f"per_path_values_{leg}.npz")
+            logger.info("Per-path portfolio values (%s) -> %s", leg, leg_path)
     # Record the horizon actually run, so the manifest pins the reporting grid —
     # and the data root + label, so scenario-overlay runs (--etiqueta) are
     # distinguishable in the manifest from the config alone.

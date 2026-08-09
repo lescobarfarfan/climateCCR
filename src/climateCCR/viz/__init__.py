@@ -17,6 +17,7 @@ artifacts (Phase 5, PROJECT_PLAN).
 
 from .ccr import (
     epe_summary,
+    plot_book_exposure_distribution,
     plot_epe_delta_matrix,
     plot_epe_shift_distribution,
     plot_exposure_profiles,
@@ -27,7 +28,12 @@ from .ccr import (
     with_supervisory_pfe,
 )
 from .market import plot_estimator_fan_comparison, plot_jump_decay, plot_rate_path_fan
-from .processes import plot_event_arrivals, plot_fan_comparison, plot_sample_paths
+from .processes import (
+    plot_annual_aggregate_loss,
+    plot_event_arrivals,
+    plot_fan_comparison,
+    plot_sample_paths,
+)
 from .style import apply_style, save_figure
 from .validation import (
     band_coverage,
@@ -47,12 +53,14 @@ __all__ = [
     "plot_exposure_shift",
     "plot_mean_shift_summary",
     "plot_scenario_band",
+    "plot_book_exposure_distribution",
     "plot_epe_delta_matrix",
     "plot_epe_shift_distribution",
     "plot_stage_walk_epe",
     "plot_sample_paths",
     "plot_fan_comparison",
     "plot_event_arrivals",
+    "plot_annual_aggregate_loss",
     "plot_rate_path_fan",
     "plot_estimator_fan_comparison",
     "plot_jump_decay",

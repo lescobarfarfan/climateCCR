@@ -344,6 +344,44 @@ def plot_epe_delta_matrix(deltas: pd.DataFrame) -> Figure:
     return fig
 
 
+def plot_book_exposure_distribution(
+    panels: Mapping[str, Mapping[str, np.ndarray]], quantile: float = 0.99
+) -> Figure:
+    """Per-path book exposure distributions, baseline vs climate, per horizon.
+
+    Input: ``horizon label -> {"baseline": values, "climate": values}`` — the
+    per-path whole-book exposure (sum over counterparties of ``max(V, 0)``,
+    settlement currency) at one reporting date, from the ``pipelines/01
+    --trayectorias`` artifact. Overlaid histograms with each leg's ``quantile``
+    marked — the aggregate-loss-quantile robustness read next to the EE-family
+    headline (INT-23).
+    """
+    if not panels:
+        raise ValueError("panels is empty: pass horizon -> {leg -> per-path values}")
+    # No shared y: horizons live on very different value/density scales.
+    fig, axes = plt.subplots(1, len(panels), figsize=(4.4 * len(panels), 3.1), squeeze=False)
+    legs = ((LABEL_BASELINE, "baseline", COLOR_BASELINE), (LABEL_CLIMATE, "climate", COLOR_CLIMATE))
+    for ax, (horizon, values) in zip(axes.flat, panels.items(), strict=False):
+        combined = np.concatenate([np.asarray(values[key], dtype=float) for _, key, _ in legs])
+        bins = np.histogram_bin_edges(combined, bins=60)
+        for label, key, color in legs:
+            sample = np.asarray(values[key], dtype=float)
+            ax.hist(sample, bins=bins, density=True, histtype="stepfilled", alpha=0.35, color=color)
+            q = float(np.quantile(sample, quantile))
+            ax.axvline(q, color=color, linestyle="--", linewidth=1.1)
+            ax.plot([], [], color=color, label=f"{label} — q{quantile:.0%} {q:,.0f}")
+        ax.set_title(horizon)
+        ax.set_xlabel("Book exposure")
+        ax.legend(fontsize=7.5, loc="upper right")
+    axes.flat[0].set_ylabel("Density")
+    fig.suptitle(
+        f"Per-path book exposure — baseline vs climate (q{quantile:.0%} marked)",
+        fontsize=11,
+        fontweight="bold",
+    )
+    return fig
+
+
 def plot_stage_walk_epe(walk: Mapping[str, Mapping[str, pd.DataFrame]]) -> Figure:
     """Book EPE shift walked across methodology stages, one line per lambda leg.
 

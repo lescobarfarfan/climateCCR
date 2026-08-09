@@ -9,7 +9,7 @@ or jump model that emits these shapes is plottable unchanged.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 
 import numpy as np
@@ -20,7 +20,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
 from .ccr import LABEL_BASELINE, LABEL_CLIMATE
-from .style import COLOR_BASELINE, COLOR_CLIMATE, TEXT_SECONDARY
+from .style import COLOR_BASELINE, COLOR_CLIMATE, SERIES_COLORS, TEXT_SECONDARY
 
 
 def _as_datetime_index(dates: Sequence[datetime]) -> pd.DatetimeIndex:
@@ -156,4 +156,50 @@ def plot_event_arrivals(
     ax.legend(loc="upper left")
     ax.set_ylabel("Cumulative climate events per path")
     ax.set_title("Climate jump arrivals — simulated vs expected")
+    return fig
+
+
+def plot_annual_aggregate_loss(
+    losses: Mapping[str, np.ndarray], quantiles: Sequence[float] = (0.5, 0.99)
+) -> Figure:
+    """Simulated annual aggregate climate-loss distributions, one per scenario.
+
+    Input: ``label -> per-simulation annual aggregate loss`` (the
+    compound-Poisson ``S = sum of severities`` in real MDP, [Klugman2019]).
+    Step histograms share log-spaced bins; each ``quantiles`` entry is marked
+    per scenario and quoted in the legend — the aggregate-loss-quantile
+    robustness read of the results chapter (INT-23). Zero-loss simulations
+    (no events that year) are dropped from the log axis and disclosed in the
+    legend when present.
+    """
+    if not losses:
+        raise ValueError("losses is empty: pass label -> per-simulation aggregate losses")
+    positives = {
+        k: np.asarray(v, dtype=float)[np.asarray(v, dtype=float) > 0] for k, v in losses.items()
+    }
+    lo = min(v.min() for v in positives.values())
+    hi = max(v.max() for v in positives.values())
+    bins = np.geomspace(lo, hi, 70)
+    fig, ax = plt.subplots(figsize=(7.2, 3.4))
+    for color, (label, sample) in zip(SERIES_COLORS, losses.items(), strict=False):
+        sample = np.asarray(sample, dtype=float)
+        zeros = int((sample <= 0).sum())
+        marks = ", ".join(f"q{q:.0%} {float(np.quantile(sample, q)):,.0f}" for q in quantiles)
+        note = f"; P(S=0) {zeros / sample.size:.2%}" if zeros else ""
+        ax.hist(
+            positives[label],
+            bins=bins,
+            density=True,
+            histtype="step",
+            linewidth=1.4,
+            color=color,
+            label=f"{label} — {marks}{note}",
+        )
+        for q in quantiles:
+            ax.axvline(float(np.quantile(sample, q)), color=color, linestyle="--", linewidth=0.9)
+    ax.set_xscale("log")
+    ax.set_xlabel("Annual aggregate loss (MDP 2025)")
+    ax.set_ylabel("Density")
+    ax.legend(fontsize=8)
+    ax.set_title("Annual aggregate climate loss — compound-Poisson simulation")
     return fig

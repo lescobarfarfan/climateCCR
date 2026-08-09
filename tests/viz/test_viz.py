@@ -275,6 +275,37 @@ def test_epe_shift_distribution_strip_plus_book_diamond_per_run():
         viz.plot_epe_shift_distribution({})
 
 
+def test_book_exposure_distribution_marks_quantiles_per_leg():
+    rng = np.random.default_rng(3)
+    panels = {
+        "1y": {"baseline": rng.normal(100, 5, 500), "climate": rng.normal(95, 6, 500)},
+        "5y": {"baseline": rng.normal(120, 8, 500), "climate": rng.normal(110, 9, 500)},
+    }
+    fig = viz.plot_book_exposure_distribution(panels, quantile=0.99)
+    assert len(fig.axes) == 2
+    for ax in fig.axes:
+        assert len(ax.patches) > 0  # two stepfilled histograms
+        assert sum(line.get_linestyle() == "--" for line in ax.lines) == 2  # one q per leg
+    with pytest.raises(ValueError, match="empty"):
+        viz.plot_book_exposure_distribution({})
+
+
+def test_annual_aggregate_loss_shared_log_bins_and_quantiles():
+    rng = np.random.default_rng(4)
+    losses = {
+        "leg A": rng.lognormal(6.8, 1.2, 2000) * (rng.random(2000) > 0.01),  # a few zeros
+        "leg B": rng.lognormal(7.0, 1.0, 2000),
+    }
+    fig = viz.plot_annual_aggregate_loss(losses, quantiles=(0.5, 0.99))
+    ax = fig.axes[0]
+    assert ax.get_xscale() == "log"
+    assert sum(line.get_linestyle() == "--" for line in ax.lines) == 4  # 2 legs x 2 quantiles
+    legend_texts = " ".join(t.get_text() for t in ax.get_legend().get_texts())
+    assert "P(S=0)" in legend_texts  # zero simulations disclosed
+    with pytest.raises(ValueError, match="empty"):
+        viz.plot_annual_aggregate_loss({})
+
+
 def test_stage_walk_one_line_per_leg_with_annotations():
     def summary(pct):
         return pd.DataFrame(

@@ -1,0 +1,40 @@
+# Aggregate-loss distribution figures (OQ-GEN-02 c — the INT-23 robustness
+# reads next to the EE-family headline).
+#
+# Drives pipelines/20_aggregate_loss_figures.py:
+# - per_path: whole-book per-path exposure distributions (baseline vs climate,
+#   quantile marked) at the configured horizons, from the pipelines/01
+#   --trayectorias npz artifacts — re-run a leg with that flag (+ --forzar)
+#   before pointing at it here.
+# - compound_poisson: the annual aggregate loss S per lambda leg simulated
+#   from the fitted jump parameters (results/hazard_jump_calibration_
+#   2000_2024/parameters.csv, real MDP-2025) [Klugman2019]. Leg provenance
+#   mirrors INT-20: headline and CT anchor carry the registry severity
+#   (measurement-consistent with the INT-17 scale), the report floor its own
+#   severity fit.
+
+seed: 233423
+n_sims: 100000
+run_name: aggregate_loss
+
+per_path:
+  quantile: 0.99
+  horizons_years: [1.0, 5.0, 10.0]
+  runs:
+    "Headline (lambda 19.29/yr)": climate_jump_real_mexican
+    "CT anchor (lambda 9.96/yr)": climate_jump_real_mexican_ct_anchor
+    "Floor (lambda 7.22/yr)": climate_jump_real_mexican_floor
+
+compound_poisson:
+  parameters_csv: results/hazard_jump_calibration_2000_2024/parameters.csv
+  quantiles: [0.5, 0.99]
+  legs:
+    "Headline (lambda 19.29/yr)":
+      intensity_row: mayores_200mdp_2002_2015
+      severity_row: mayores_200mdp_2002_2015
+    "CT anchor (lambda 9.96/yr)":
+      intensity_row: ciclon_tropical_2002_2024
+      severity_row: mayores_200mdp_2002_2015
+    "Floor (lambda 7.22/yr)":
+      intensity_row: mayores_200mdp_2016_2024
+      severity_row: mayores_200mdp_2016_2024
