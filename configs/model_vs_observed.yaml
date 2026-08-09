@@ -40,7 +40,8 @@ equities:
   price_column: Close
   headline: # 6-name climate core + diversifiers (chapter panel; any list works)
     [VISTA_SHARE, CEMEX_SHARE, ASUR_SHARE, AGUA_SHARE, WALMEX_SHARE, FEMSA_SHARE]
-  appendix_all: true # 26-name grid for the appendix
+  appendix_all: true # 26-name in-sample grid for the appendix
+  holdout_all: true # 26-name holdout grid (per-name <= cutoff refits), appendix
   holdout_cutoff: "2022-12-30"
   ipc: # the index panel rides the market-calibration GBM fit (pipelines/07)
     csv: data/market_mx/yahoo/ipc_mxx.csv

@@ -56,6 +56,16 @@ def test_paths_vs_observed_grid_one_panel_per_item(fan_data):
     assert all("cov" in ax.get_title(loc="left") for ax in visible)
 
 
+def test_paths_vs_observed_grid_scales_to_the_full_book(fan_data):
+    dates, paths, observed = fan_data
+    panels = [
+        {"dates": dates, "paths": paths, "observed": observed, "label": f"P{i}"} for i in range(26)
+    ]
+    fig = viz.plot_paths_vs_observed_grid(panels, ncols=4)
+    visible = [ax for ax in fig.axes if ax.get_visible()]
+    assert len(visible) == 26  # 7x4 grid, two trailing axes hidden
+
+
 def test_paths_vs_observed_grid_rejects_empty():
     with pytest.raises(ValueError, match="empty"):
         viz.plot_paths_vs_observed_grid([])

@@ -11,7 +11,8 @@ diagnostics against the CENAPRED record:
   ``r(conditional_start)`` (a true <= cutoff refit is unidentified — see the
   config note). ``*_all`` = the all-trajectory render (PNG-only, 600 dpi,
   GEN-22);
-- ``fan_equities_headline`` / ``fan_equities_holdout`` / ``fan_equities_all`` —
+- ``fan_equities_headline`` / ``fan_equities_holdout`` / ``fan_equities_all``
+  / ``fan_equities_holdout_all`` —
   per-name GBM cones (book RFE params) vs observed closes, panel grids;
 - ``jump_staircase`` — observed cumulative arrivals vs per-regime Poisson
   bands across the 2016 publication break (HAZ-CENAPRED-10);
@@ -294,8 +295,8 @@ def main() -> None:
         )
 
     eq_cutoff = pd.Timestamp(str(eq_cfg["holdout_cutoff"]))
-    holdout_panels = []
-    for name in headline_names:
+
+    def holdout_panel(name: str) -> dict:
         closes = closes_for(name)
         pre = exclude_windows(closes[closes.index <= eq_cutoff], crisis_windows)
         refit = fit_gbm(pre)
@@ -318,18 +319,17 @@ def main() -> None:
             float(params.loc[name, "drift"]),
             float(params.loc[name, "volatility"]),
         )
-        holdout_panels.append(
-            {
-                "dates": grid,
-                "paths": paths,
-                "observed": closes,
-                "label": name.removesuffix("_SHARE"),
-            }
-        )
+        return {
+            "dates": grid,
+            "paths": paths,
+            "observed": closes,
+            "label": name.removesuffix("_SHARE"),
+        }
+
     written.extend(
         viz.save_figure(
             viz.plot_paths_vs_observed_grid(
-                holdout_panels,
+                [holdout_panel(name) for name in headline_names],
                 ncols=3,
                 quantiles=quantiles,
                 coverage_band=coverage_band,
@@ -342,6 +342,25 @@ def main() -> None:
             out_dir / "fan_equities_holdout",
         )
     )
+
+    if bool(eq_cfg.get("holdout_all", False)):
+        all_names = [n for n in params.index if (book_dir / f"{n}.csv").exists()]
+        written.extend(
+            viz.save_figure(
+                viz.plot_paths_vs_observed_grid(
+                    [holdout_panel(name) for name in all_names],
+                    ncols=4,
+                    quantiles=quantiles,
+                    coverage_band=coverage_band,
+                    yscale="log",
+                    title=(
+                        "Observed prices vs GBM cones refit on data "
+                        f"$\\leq$ {eq_cutoff.date()} (holdout, full book)"
+                    ),
+                ),
+                out_dir / "fan_equities_holdout_all",
+            )
+        )
 
     # --- jumps: point-process diagnostics vs the CENAPRED record ----------
     jump_cfg = extra["jumps"]
