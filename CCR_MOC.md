@@ -54,6 +54,7 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 - Explanation: [[2026-08-07_validation_figures_explained]] — the cross-run EPE comparison family on the CCR results: the scenario × λ-band delta matrix, the per-counterparty shift strips (own-baseline convention, the exposure-kink outlier), and the to-the-digit reproduction of the `INT-23/31` chain from stored frames (`GEN-33`; `notes/summary_explanations/`, `GEN-26`).
 - Reading: [[2026-08-08_frn_book_v2_trajectory]] — the FRN/book-v2 read-log: floater discount-margin mechanics behind `BOND_FRN`, the collective-risk-model chapter behind the aggregate-loss panel, ST-path semantics behind maturity dating, and the exposure-metric semantics of the per-path artifact (`CCR-RISK-04`/`INT-32`/`MKT-NGFS-09`/`GEN-34`; `notes/reading/`, `GEN-21`).
 - Explanation: [[2026-08-08_frn_book_v2_and_trajectory_explained]] — sobretasa vs discount margin, why the band re-based to −8.28/−5.00/−4.46% (FRNs damp the rate-jump channel), how to read nivel vs trajectory, and the two non-comparable aggregate-loss routes (`notes/summary_explanations/`, `GEN-26`).
+- Reading: [[2026-08-09_ua_graph_repair]] — tooling read-log, no analytical decisions (`GEN-35`: the corrupted UA graph rolled back and rebuilt via the plugin's own `/understand` flow; hand-rolled merges banned, stale-inventory + batch-coverage traps codified; `notes/reading/`, `GEN-21`).
 
 ## Literature
 - [[Compagnoni_2023_RandomizedSignatures]] — randomized signatures as a reservoir (`CCR-SIG-01`).
