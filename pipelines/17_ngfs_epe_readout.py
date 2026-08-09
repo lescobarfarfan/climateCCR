@@ -16,11 +16,12 @@ DAPS_NAM reports the transition column only (jump-off comparison, never
 combined — combining NGFS physical narratives with the HAZ jump would
 double-count physical risk; see the OQ-INT-03 c channel-separation ruling).
 
-    python pipelines/17_ngfs_epe_readout.py
+    python pipelines/17_ngfs_epe_readout.py [--config configs/ngfs_shock_trayectoria.yaml]
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -42,9 +43,18 @@ def book_epe(results_root: Path, run: str) -> tuple[float, float]:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=SHOCK_CONFIG,
+        help="shock config carrying the readout block (default: configs/ngfs_shock.yaml)",
+    )
+    args = parser.parse_args()
+
     from climateCCR.infra import RunManifest, get_logger, load_config
 
-    config = load_config(SHOCK_CONFIG)
+    config = load_config(args.config)
     config.paths.ensure()
     logger = get_logger("climateCCR.ngfs_epe_readout", log_dir=config.paths.logs)
     readout = config.extra["readout"]

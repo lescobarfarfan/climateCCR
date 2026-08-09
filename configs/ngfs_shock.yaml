@@ -17,10 +17,11 @@
 # CLIMACRED's sovereign basket references. Flat beyond each anchor, linear in
 # tenor between (scenario_shock.shock_zero_pillars).
 #
-# Flavor: fixed — the peak (max |delta|, sign kept) over the scenario window,
-# the stress-standard most-adverse point [FedCSA2024] [BoE2022CBES]. The
-# trajectory flavor (quarterly path absorbed into f(0,t), held constant after
-# 2030) is the documented build-2 seam, not yet wired.
+# Flavor: fixed/nivel — the peak (max |delta|, sign kept) over the scenario
+# window, the stress-standard most-adverse point [FedCSA2024] [BoE2022CBES].
+# The trajectory flavor (build 2, OQ-MKT-13 a) is wired: the sibling config
+# ngfs_shock_trayectoria.yaml sets `flavor: trayectoria` (maturity-dated
+# anchor paths, held constant beyond the window; rates-only by design).
 
 ngfs_dir: data/scenarios_mx/ngfs_short_term
 book_root: data/ccr_book_mx

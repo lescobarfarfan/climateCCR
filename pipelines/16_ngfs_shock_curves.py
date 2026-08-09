@@ -20,9 +20,15 @@ semantics; floors are logged and reported). Absent blocks = the curve-only
 first build, bit for bit. Per-name applications land in
 ``sector_shock_summary.csv``.
 
+Two flavors via the config's ``flavor`` key (INT-12): ``nivel`` (default —
+the signed-peak deltas above) and ``trayectoria`` (OQ-MKT-13 a — every zero
+pillar absorbs the anchor *paths at its own maturity date*, held constant
+beyond the scenario window; ``scenario_shock.shock_zero_pillars_trajectory``).
+
 Idempotent (GEN-05): existing overlays are skipped, rerun with ``--forzar``.
 
-    python pipelines/16_ngfs_shock_curves.py [--forzar]
+    python pipelines/16_ngfs_shock_curves.py [--forzar] \
+        [--config configs/ngfs_shock_trayectoria.yaml]
 """
 
 from __future__ import annotations
@@ -72,6 +78,70 @@ def shock_direct_input_csv(
             "tenor_years": tenors,
             "zero": zeros,
             "zero_shocked": shocked,
+        }
+    )
+
+
+def _decimal_year(date_str: str) -> float:
+    """Calendar date -> decimal year on the NGFS time axis (year + day fraction). [eng]"""
+    ts = pd.Timestamp(date_str)
+    return ts.year + (ts.dayofyear - 1) / 365.0
+
+
+def shock_direct_input_csv_trajectory(
+    path: Path,
+    curve_name: str,
+    short_path: pd.DataFrame,
+    long_path: pd.DataFrame,
+    t0_decimal_year: float,
+    anchors: dict,
+    window: tuple[float, float],
+) -> pd.DataFrame:
+    """Trajectory-flavor rewrite: V* pillars absorb the maturity-dated anchor deltas."""
+    from climateCCR.calibration.financial.scenario_shock import (
+        maturity_dated_deltas,
+        shock_zero_pillars_trajectory,
+    )
+    from climateCCR.utils.calendar_utils import translate_tenor_to_years
+
+    table = pd.read_csv(path, index_col=0)
+    if curve_name not in table.index:
+        raise KeyError(f"{curve_name!r} not in {path}")
+    row = table.loc[curve_name]
+    value_cols = sorted(
+        (c for c in table.columns if c.startswith("rate_curve_V")), key=lambda c: int(c[12:])
+    )
+    tenor_cols = [c.replace("_V", "_T") for c in value_cols]
+    tenors = np.asarray([translate_tenor_to_years(row[c]) for c in tenor_cols])
+    zeros = row[value_cols].to_numpy(dtype=float)
+    paths = {
+        "short_times": short_path["time"].to_numpy(),
+        "short_pp_path": short_path["delta_pp"].to_numpy(),
+        "long_times": long_path["time"].to_numpy(),
+        "long_pp_path": long_path["delta_pp"].to_numpy(),
+    }
+    shocked = shock_zero_pillars_trajectory(
+        tenors,
+        zeros,
+        **paths,
+        t0_decimal_year=t0_decimal_year,
+        short_tenor=anchors["short_tenor_years"],
+        long_tenor=anchors["long_tenor_years"],
+        window=window,
+    )
+    table.loc[curve_name, value_cols] = shocked
+    table.to_csv(path)
+    short_at, long_at = maturity_dated_deltas(
+        tenors, **paths, t0_decimal_year=t0_decimal_year, window=window
+    )
+    return pd.DataFrame(
+        {
+            "tenor": row[tenor_cols].to_numpy(),
+            "tenor_years": tenors,
+            "zero": zeros,
+            "zero_shocked": shocked,
+            "short_pp": short_at,  # maturity-dated, per pillar (vs the nivel constant)
+            "long_pp": long_at,
         }
     )
 
@@ -138,12 +208,24 @@ def main() -> None:
     parser.add_argument(
         "--forzar", "--force", action="store_true", help="rebuild overlays even if they exist"
     )
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=SHOCK_CONFIG,
+        help="shock config (default: the nivel flavor; "
+        "configs/ngfs_shock_trayectoria.yaml = the trajectory flavor)",
+    )
     args = parser.parse_args()
 
-    from climateCCR.data.scenarios import anchor_peaks, load_short_term
+    from climateCCR.data.scenarios import (
+        anchor_peaks,
+        load_short_term,
+        policy_rate_delta,
+        sovereign_adjustment,
+    )
     from climateCCR.infra import RunManifest, get_logger, load_config
 
-    config = load_config(SHOCK_CONFIG)
+    config = load_config(args.config)
     config.paths.ensure()
     logger = get_logger("climateCCR.ngfs_shock_curves", log_dir=config.paths.logs)
 
@@ -156,6 +238,9 @@ def main() -> None:
 
     equity_leg = extra.get("equity_leg")
     bond_leg = extra.get("bond_leg")
+    flavor = extra.get("flavor", "nivel")
+    if flavor not in ("nivel", "trayectoria"):
+        raise ValueError(f"flavor must be 'nivel' or 'trayectoria', got {flavor!r}")
 
     summaries = []
     sector_rows = []
@@ -165,30 +250,59 @@ def main() -> None:
         if overlay.exists() and not args.forzar:
             logger.info("Overlay exists, skipping (rerun with --forzar): %s", overlay)
             continue
-        deltas = anchor_peaks(frame, scenario, region=extra["region"], window=window)
-        logger.info(
-            "%s: short anchor %+.3f pp (policy rate, %.2f), long anchor %+.3f pp "
-            "(sovereign incl. policy, %.0f)",
-            scenario,
-            deltas.short_pp,
-            deltas.short_peak_time,
-            deltas.long_pp,
-            deltas.long_peak_time,
-        )
+        if flavor == "trayectoria":
+            short_path = policy_rate_delta(frame, scenario, region=extra["region"])
+            long_path = sovereign_adjustment(frame, scenario)
+            t0 = _decimal_year(extra["valuation_date"])
+            logger.info(
+                "%s: trajectory flavor — short path %d pts [%+.3f, %+.3f] pp, "
+                "long path %d pts [%+.3f, %+.3f] pp, t0=%.3f",
+                scenario,
+                len(short_path),
+                short_path["delta_pp"].min(),
+                short_path["delta_pp"].max(),
+                len(long_path),
+                long_path["delta_pp"].min(),
+                long_path["delta_pp"].max(),
+                t0,
+            )
+        else:
+            deltas = anchor_peaks(frame, scenario, region=extra["region"], window=window)
+            logger.info(
+                "%s: short anchor %+.3f pp (policy rate, %.2f), long anchor %+.3f pp "
+                "(sovereign incl. policy, %.0f)",
+                scenario,
+                deltas.short_pp,
+                deltas.short_peak_time,
+                deltas.long_pp,
+                deltas.long_peak_time,
+            )
         if overlay.exists():
             shutil.rmtree(overlay)
         shutil.copytree(book_root, overlay)
         for rel in extra["hw1f_files"]:
-            pillars = shock_direct_input_csv(
-                overlay / rel,
-                extra["curve_name"],
-                deltas.short_pp,
-                deltas.long_pp,
-                extra["anchors"],
-            )
+            if flavor == "trayectoria":
+                pillars = shock_direct_input_csv_trajectory(
+                    overlay / rel,
+                    extra["curve_name"],
+                    short_path,
+                    long_path,
+                    t0,
+                    extra["anchors"],
+                    window,
+                )
+            else:
+                pillars = shock_direct_input_csv(
+                    overlay / rel,
+                    extra["curve_name"],
+                    deltas.short_pp,
+                    deltas.long_pp,
+                    extra["anchors"],
+                )
         pillars.insert(0, "scenario", scenario)
-        pillars["short_pp"] = deltas.short_pp
-        pillars["long_pp"] = deltas.long_pp
+        if flavor == "nivel":
+            pillars["short_pp"] = deltas.short_pp
+            pillars["long_pp"] = deltas.long_pp
         summaries.append(pillars)
 
         if equity_leg:

@@ -1,0 +1,53 @@
+# NGFS short-term shocks -> per-scenario Mexican book overlays — TRAJECTORY
+# flavor (OQ-MKT-13 a; INT-12 build 2). Sibling of ngfs_shock.yaml, which
+# carries the fixed/nivel flavor and the full config commentary.
+#
+# flavor: trayectoria — instead of the single signed-peak delta, every zero
+# pillar absorbs the anchor paths AT ITS OWN MATURITY DATE: pillar tenor T
+# reads the quarterly EIRIN policy-rate delta and the annual CLIMACRED
+# sovereign delta at calendar time valuation_date + T (linear in time between
+# published points, held constant beyond the last in-window observation — the
+# hold-constant rule). The tenor blend between the anchors is unchanged, so
+# flat paths reduce exactly to the nivel flavor (the unit-test invariant in
+# tests/calibration_financial/test_scenario_shock.py).
+#
+# RATES-ONLY by design: no equity_leg/bond_leg blocks. The flavor choice only
+# touches the curve, so the adopt-if-material comparison (GEN-31) runs against
+# the archived rate-only nivel readout (results/ngfs_epe_readout_solo_tasas:
+# transition HWTP -0.36 / SWUC +1.50 / DAPS_NAM +4.28 %). Phased equity/spread
+# applications need in-simulation scheduling — the open question minted this
+# session, future work.
+
+flavor: trayectoria
+valuation_date: "2026-07-17" # curve anchor (MKT-CURVE-05); the t0 of the maturity dating
+
+ngfs_dir: data/scenarios_mx/ngfs_short_term
+book_root: data/ccr_book_mx
+out_root: data/ccr_book_mx_ngfs_trayectoria
+
+scenarios: [HWTP, SWUC, DAPS_NAM]
+region: "EIRIN 1.0|North America" # Mexico's EIRIN macro-region (see ngfs_short_term.yaml)
+window: [2025.0, 2030.0]          # the ST scenario horizon
+
+anchors:
+  short_tenor_years: 0.0833
+  long_tenor_years: 10.0
+
+curve_name: MXN_ZERO_YIELD_CURVE
+hw1f_files: # book-root-relative CSVs whose curve row gets the shock
+  - calibration_data/RFE_models/RFE_HW1F_Calibration.csv
+  - calibration_data/pricing_models/Pricing_HW1F_Calibration.csv
+
+summary_dir: results/ngfs_shock_curves_trayectoria
+
+# --- pipelines/17_ngfs_epe_readout.py --config configs/ngfs_shock_trayectoria.yaml
+# Transition deltas are band-independent (jump-off legs), so the headline-band
+# runs suffice; jump_within on HWTP/SWUC doubles as the overlay-invariance
+# check under trajectory-shocked curves.
+readout:
+  out_dir: results/ngfs_epe_readout_trayectoria
+  base_run: climate_jump_real_mexican
+  scenario_runs:
+    - {scenario: HWTP, band: headline, run: climate_jump_real_mexican_ngfs_hwtp_trayectoria}
+    - {scenario: SWUC, band: headline, run: climate_jump_real_mexican_ngfs_swuc_trayectoria}
+    - {scenario: DAPS_NAM, band: headline, run: climate_jump_real_mexican_ngfs_daps_nam_trayectoria}

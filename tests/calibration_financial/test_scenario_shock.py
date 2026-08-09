@@ -7,7 +7,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from climateCCR.calibration.financial.scenario_shock import shock_zero_pillars
+from climateCCR.calibration.financial.scenario_shock import (
+    shock_zero_pillars,
+    shock_zero_pillars_trajectory,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -35,6 +38,103 @@ def test_shock_preserves_sign_and_shape():
         shock_zero_pillars(TENORS, ZEROS[:-1], short_pp=1.0, long_pp=1.0)
     with pytest.raises(ValueError):
         shock_zero_pillars(TENORS, ZEROS, short_pp=1.0, long_pp=1.0, short_tenor=10, long_tenor=1)
+
+
+def test_trajectory_flat_paths_reduce_to_level():
+    """The INT-12 build-2 invariant: flat anchor paths = the fixed flavor."""
+    short_t = np.arange(2025.0, 2031.0, 0.25)
+    long_t = np.arange(2025.5, 2031.0, 1.0)
+    traj = shock_zero_pillars_trajectory(
+        TENORS,
+        ZEROS,
+        short_times=short_t,
+        short_pp_path=np.full_like(short_t, 1.0),
+        long_times=long_t,
+        long_pp_path=np.full_like(long_t, 3.0),
+        t0_decimal_year=2026.54,
+    )
+    level = shock_zero_pillars(TENORS, ZEROS, short_pp=1.0, long_pp=3.0)
+    np.testing.assert_allclose(traj, level, rtol=1e-12)
+
+
+def test_trajectory_maturity_dating_and_hold_constant():
+    """Identical anchors collapse the tenor blend: each pillar reads the path
+    at its own maturity date, held constant beyond the last observation."""
+    path_t = np.array([2026.0, 2028.0])  # ramp 0 -> +2 pp over two years, then hold
+    path_v = np.array([0.0, 2.0])
+    tenors = np.array([0.0833, 1.0, 2.0, 10.0, 30.0])
+    shocked = shock_zero_pillars_trajectory(
+        tenors,
+        np.zeros(5),
+        short_times=path_t,
+        short_pp_path=path_v,
+        long_times=path_t,
+        long_pp_path=path_v,
+        t0_decimal_year=2026.0,
+    )
+    np.testing.assert_allclose(shocked, np.array([0.0833, 1.0, 2.0, 2.0, 2.0]) / 100.0)
+
+
+def test_trajectory_clips_post_window_observations():
+    """Observations at/beyond window hi + 1 never leak into the held value."""
+    short_t = np.array([2026.0, 2030.5, 2035.0])  # the 2035 point (+99) must be discarded
+    short_v = np.array([1.0, 1.0, 99.0])
+    long_t = np.array([2026.5])
+    long_v = np.array([1.0])
+    tenors = np.array([10.0, 30.0])  # maturities 2036.5 / 2056.5 — far beyond the window
+    shocked = shock_zero_pillars_trajectory(
+        tenors,
+        np.zeros(2),
+        short_times=short_t,
+        short_pp_path=short_v,
+        long_times=long_t,
+        long_pp_path=long_v,
+        t0_decimal_year=2026.5,
+    )
+    np.testing.assert_allclose(shocked, 0.01)
+
+
+def test_trajectory_zero_paths_are_a_no_op():
+    zeros_path = np.zeros(3)
+    times = np.array([2025.0, 2027.0, 2030.0])
+    shocked = shock_zero_pillars_trajectory(
+        TENORS,
+        ZEROS,
+        short_times=times,
+        short_pp_path=zeros_path,
+        long_times=times,
+        long_pp_path=zeros_path,
+        t0_decimal_year=2026.5,
+    )
+    np.testing.assert_array_equal(shocked, ZEROS)
+
+
+def test_trajectory_validation_errors():
+    times = np.array([2025.0, 2026.0])
+    values = np.array([1.0, 1.0])
+    kwargs = dict(
+        short_times=times,
+        short_pp_path=values,
+        long_times=times,
+        long_pp_path=values,
+        t0_decimal_year=2026.5,
+    )
+    with pytest.raises(ValueError):  # shape mismatch
+        shock_zero_pillars_trajectory(TENORS, ZEROS[:-1], **kwargs)
+    with pytest.raises(ValueError):  # inverted anchors
+        shock_zero_pillars_trajectory(TENORS, ZEROS, short_tenor=10, long_tenor=1, **kwargs)
+    with pytest.raises(ValueError):  # non-increasing path times
+        shock_zero_pillars_trajectory(
+            TENORS, ZEROS, **{**kwargs, "short_times": times[::-1].copy()}
+        )
+    with pytest.raises(ValueError):  # every observation beyond the window clip
+        shock_zero_pillars_trajectory(TENORS, ZEROS, **{**kwargs, "short_times": times + 10.0})
+    with pytest.raises(ValueError):  # empty path
+        shock_zero_pillars_trajectory(
+            TENORS,
+            ZEROS,
+            **{**kwargs, "short_times": np.array([]), "short_pp_path": np.array([])},
+        )
 
 
 def _load_pipeline_16():
@@ -72,6 +172,47 @@ def test_shock_direct_input_csv_rewrites_only_the_pillars(tmp_path):
 
     with pytest.raises(KeyError):
         pipeline.shock_direct_input_csv(csv, "NO_SUCH_CURVE", 1.0, 3.0, anchors)
+
+
+def test_shock_direct_input_csv_trajectory_matches_level_on_flat_paths(tmp_path):
+    """The trajectory rewrite: flat paths reproduce the nivel rewrite, V*-only."""
+    pipeline = _load_pipeline_16()
+    tenors = ["1D", "28D", "2Y", "10Y", "30Y"]
+    zeros = [0.066, 0.068, 0.074, 0.094, 0.100]
+    row = {f"rate_curve_V{i + 1}": z for i, z in enumerate(zeros)}
+    row |= {f"rate_curve_T{i + 1}": t for i, t in enumerate(tenors)}
+    row |= {"alpha": 0.0758, "volatility": 0.0081}
+    frame = pd.DataFrame([row], index=pd.Index(["MXN_ZERO_YIELD_CURVE"], name="name"))
+    nivel_csv = tmp_path / "nivel.csv"
+    traj_csv = tmp_path / "trayectoria.csv"
+    frame.to_csv(nivel_csv)
+    frame.to_csv(traj_csv)
+
+    anchors = {"short_tenor_years": 0.0833, "long_tenor_years": 10.0}
+    pipeline.shock_direct_input_csv(nivel_csv, "MXN_ZERO_YIELD_CURVE", 1.0, 3.0, anchors)
+    short_path = pd.DataFrame({"time": [2025.0, 2030.75], "delta_pp": [1.0, 1.0]})
+    long_path = pd.DataFrame({"time": [2025.5, 2030.5], "delta_pp": [3.0, 3.0]})
+    pillars = pipeline.shock_direct_input_csv_trajectory(
+        traj_csv,
+        "MXN_ZERO_YIELD_CURVE",
+        short_path,
+        long_path,
+        pipeline._decimal_year("2026-07-17"),
+        anchors,
+        (2025.0, 2030.0),
+    )
+
+    nivel = pd.read_csv(nivel_csv, index_col=0).loc["MXN_ZERO_YIELD_CURVE"]
+    traj = pd.read_csv(traj_csv, index_col=0).loc["MXN_ZERO_YIELD_CURVE"]
+    value_cols = [f"rate_curve_V{i + 1}" for i in range(5)]
+    np.testing.assert_allclose(
+        traj[value_cols].astype(float), nivel[value_cols].astype(float), rtol=1e-12
+    )
+    assert traj["alpha"] == pytest.approx(0.0758)  # dynamics untouched
+    assert traj["volatility"] == pytest.approx(0.0081)
+    assert {"short_pp", "long_pp"} <= set(pillars.columns)  # per-pillar maturity-dated deltas
+    np.testing.assert_allclose(pillars["short_pp"], 1.0)
+    np.testing.assert_allclose(pillars["long_pp"], 3.0)
 
 
 EQUITY_LEG = {
