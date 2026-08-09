@@ -18,7 +18,7 @@ won't clutter the graph. (If you prefer a leaner vault, open a folder containing
 
 - **Wikilinks by note name:** `[[DECISIONS]]`, `[[GLOSSARY]]`, `[[CCR_MOC]]`. Obsidian resolves them
   across folders by filename, so links survive moving a note between `notes/theory/` and elsewhere.
-- **Heading links** where a specific section matters: `[[OPEN_QUESTIONS#Integration — decide first]]`.
+- **Heading links** where a specific section matters: `[[OPEN_QUESTIONS#Integration — decide before drafting the methodology chapter]]`.
 - **The ID scheme is the fine-grained anchor.** Decisions/contracts/questions carry stable IDs
   (`CCR-MIG-02`, `DC-CCR-SIM-2`, `OQ-INT-07`). Obsidian's full-text search (`Ctrl/Cmd-Shift-F`)
   jumps to any ID instantly — lighter than block links. If you want hard links to a single line, add
