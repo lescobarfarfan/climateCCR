@@ -73,6 +73,7 @@ A. Project & architecture · B. Reproducibility & engineering · C. Stochastic m
 - **Bonos M** — fixed-rate peso government bonds; coupon every 182 days, `c·182/360` per 100 face.
 - **Cetes** — zero-coupon Treasury bills (Act/360 simple). **364-day Cetes** = the chosen 1Y zero pillar.
 - **Udibonos** — inflation-linked (UDI-denominated) government bonds. **Bondes** — floating-rate development bonds.
+- **Sobretasa** — the contractual spread over 28-day TIIE on a floating-rate cebur (the `BOND_FRN` `coupon` column — part of the promised cashflow, never shocked). Distinct from the **discount margin**: the static spread the market demands to *discount* the floater (the `spread` column — the NGFS `shock_bond_spreads` target). At issuance the two coincide and the note prices near par (`CCR-RISK-04`).
 - **F-TIIE / TIIE de Fondeo** — transaction-based overnight interbank funding rate (market-observed); compounded 28/91/182-day tenors exist. **TIIE 28** — legacy term rate, restricted for new contracts from 2025-01-01.
 - **On-the-run / benchmark roll** — `Plazo`/`Cupon` drift then jump as the benchmark bond is replaced; a roll-date price jump is not a market move.
 - **CF300 / CA684 / CA766** — SIE on-the-run gov price/rate vector / TIIE de Fondeo overnight / F-TIIE compounded tenors.

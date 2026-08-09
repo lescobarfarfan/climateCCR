@@ -1,0 +1,12 @@
+# Read-log — FRN desk, book v2 & the trajectory flavor (2026-08-08)
+
+Readings to fully understand today's decisions (`CCR-RISK-04`, `INT-32`, `MKT-NGFS-09`, `GEN-34`), in priority order.
+
+1. **`[Fabozzi2000FRN]` — *Floating-Rate Securities*, the chapters on floater valuation and spread measures (discount margin vs quoted margin).** **Why:** `CCR-RISK-04` prices the cebur FRN as index-flat forward projection plus static-discount-margin discounting; without this reading the two spread columns collapse into one and the NGFS credit shock lands on the wrong leg — shocking the sobretasa would change the *promised cashflows*, not the credit discount. Also the near-par-at-issuance logic the unit tests assert (discount margin = quoted margin $\Rightarrow$ price $\approx$ par). (§99 — confirm edition before citing.)
+2. **`[Klugman2019]` — the aggregate-loss / collective-risk-model chapters (compound Poisson $S=\sum_{i=1}^{N} X_i$, moments, simulation).** **Why:** `pipelines/20`'s annual-$S$ panel is a textbook collective-risk simulation from the fitted $\lambda$ and lognormal severities; the $E[S]=\lambda\,E[X]$ sanity check and the reading of the q99 markers come straight from here (`GEN-34`), as does the $P(S=0)=e^{-\lambda}$ disclosure on the low-$\lambda$ legs.
+3. **`[NGFS2025ST]` — the short-term scenario technical documentation, the sections on the quarterly variable paths (EIRIN policy rate; CLIMACRED sovereign adjustment).** **Why:** `MKT-NGFS-09` prices each zero pillar at the shock prevailing at its own maturity date; the reading clarifies what the quarterly paths *are* (model-world deviations vs baseline, not forecasts) and why hold-constant beyond the window is the honest extrapolation — and why the peak (nivel) reading stays the stress-test headline.
+4. **`[Gregory_xVA]` — the exposure-metrics chapter (EE/EPE/PFE definitions).** **Why:** the per-path artifact (`DC-CCR-RISK-5`) stores the raw portfolio-value paths whose positive part *is* the exposure averaged everywhere else; the book-exposure quantile figures in `pipelines/20` are the distributional view of the same object, so the EE convention ($\Sigma_{\text{NAID}}\max(V,0)$) has to match (`GEN-34`, `INT-32`).
+
+## Related
+Session notes: [[2026-08-08_frn_book_v2_and_trajectory_explained]] · decisions: [[DECISIONS]] (`CCR-RISK-04`, `INT-32`, `MKT-NGFS-09`, `GEN-34`) · prior read-log: [[2026-08-07_viz_validation_layer]] · Home: [[_INDEX]] · MOCs: [[CCR_MOC]] · [[MKT_MOC]]
+#arm/ccr #arm/mkt #arm/int #type/reading
