@@ -259,6 +259,8 @@ calibration_parameters:
       calibration_method: direct_input
     BOND_FIXED_Pricer:
       calibration_method: direct_input
+    BOND_FRN_Pricer:
+      calibration_method: direct_input
   RFE_HW1F_calibration:
     MXN_ZERO_YIELD_CURVE:
       calibration_method: direct_input
@@ -297,3 +299,4 @@ pricer_mapping:
   IRS: InterestRateSwapPricer
   EQ_EUR_OPT: EquityEuropeanOptionPricer
   BOND_FIXED: FixedCouponBondPricer
+  BOND_FRN: FloatingRateNotePricer

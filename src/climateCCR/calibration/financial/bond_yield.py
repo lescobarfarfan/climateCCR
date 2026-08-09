@@ -43,6 +43,23 @@ def bono_cashflows(plazo_dias: float, cupon: float) -> tuple[np.ndarray, np.ndar
     return times, amounts
 
 
+FRN_PERIOD_DAYS = 28  # cebur FRN coupon period: 28-day TIIE reset (CCR-RISK-04)
+
+
+def frn_cashflow_times(plazo_dias: float, period_days: int = FRN_PERIOD_DAYS) -> np.ndarray:
+    """Remaining payment times (days) of a 28-day-reset FRN cebur.
+
+    Same back-from-maturity schedule as :func:`bono_cashflows` at the 28-day
+    period; amounts are path-dependent (index + sobretasa), so only the times
+    are schedulable here — the pricer projects the per-path coupons.
+    """
+    if plazo_dias <= 0:
+        raise ValueError(f"plazo_dias must be > 0, got {plazo_dias}")
+    n = math.ceil(plazo_dias / period_days)
+    d1 = plazo_dias - (n - 1) * period_days
+    return d1 + period_days * np.arange(n, dtype=float)
+
+
 def bono_dirty_price(y: float, plazo_dias: float, cupon: float) -> float:
     """Dirty price per 100 face of a Bonos M with ``plazo_dias`` to maturity.
 

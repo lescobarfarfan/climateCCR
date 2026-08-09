@@ -55,6 +55,49 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _parse_bond(bond) -> dict:
+    """Normalize one config bond row: legacy triple or explicit dict.
+
+    Legacy triple ``[cupon, vencimiento, spread_bp]`` -> fixed coupon
+    (``BOND_FIXED``, the INT-21 representative rows). Dict rows carry
+    ``tipo: fija|frn`` with press/prospectus-verified terms and a ``fuente``
+    provenance URL (OQ-INT-10): ``fija`` -> ``cupon`` + ``spread_bp``;
+    ``frn`` -> ``sobretasa`` (the contractual margin over the 28-day index,
+    stored in the coupon column per CCR-RISK-04) with the discount-margin
+    ``spread_bp`` defaulting to the sobretasa itself — the NGFS-shockable
+    column either way.
+    """
+    if isinstance(bond, dict):
+        tipo = str(bond["tipo"]).lower()
+        maturity = str(bond["vencimiento"])
+        if tipo == "fija":
+            return {
+                "feed": "BOND_FIXED",
+                "coupon": float(bond["cupon"]),
+                "spread": float(bond["spread_bp"]) / 10000.0,
+                "payments_frequency": "semi-annual",
+                "maturity": maturity,
+            }
+        if tipo == "frn":
+            sobretasa = float(bond["sobretasa"])
+            return {
+                "feed": "BOND_FRN",
+                "coupon": sobretasa,
+                "spread": float(bond.get("spread_bp", sobretasa * 10000.0)) / 10000.0,
+                "payments_frequency": "28-day",
+                "maturity": maturity,
+            }
+        raise ValueError(f"Unknown bond tipo {bond['tipo']!r}: {bond}")
+    coupon, maturity, spread_bp = bond
+    return {
+        "feed": "BOND_FIXED",
+        "coupon": float(coupon),
+        "spread": float(spread_bp) / 10000.0,
+        "payments_frequency": "semi-annual",
+        "maturity": str(maturity),
+    }
+
+
 def nearest_psd_correlation(corr: pd.DataFrame, floor: float = 1e-8) -> tuple[pd.DataFrame, float]:
     """Eigenvalue-clip a correlation matrix to PSD, unit diagonal preserved.
 
@@ -461,21 +504,22 @@ def main() -> None:
                 )
                 _ledger(option_id, "EQ_EUR_OPT", naid, vm_agreement)
 
-        for coupon, maturity, spread_bp in cp.get("bonds", []):
+        for bond in cp.get("bonds", []):
+            parsed = _parse_bond(bond)
             bond_rows.append(
                 {
                     "trade_id": bond_id,
                     "notional": rules["bonds"]["default_face"],
                     "currency": "MXN",
-                    "coupon": coupon,
-                    "spread": spread_bp / 10000.0,
-                    "payments_frequency": "semi-annual",
-                    "maturity": maturity,
+                    "coupon": parsed["coupon"],
+                    "spread": parsed["spread"],
+                    "payments_frequency": parsed["payments_frequency"],
+                    "maturity": parsed["maturity"],
                     "long/short": "long",
                     "issuer_name": cp["issuer"],
                 }
             )
-            _ledger(bond_id, "BOND_FIXED", naid, vm_agreement)
+            _ledger(bond_id, parsed["feed"], naid, vm_agreement)
             bond_id += 1
 
         cp_dir = book_root / "portfolio_data" / "counterparties" / str(naid)

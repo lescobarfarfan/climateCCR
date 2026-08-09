@@ -9,6 +9,7 @@ from climateCCR.simulation.multi_risk_factor_simulation import MultiRiskFactorSi
 
 from ..pricing_models.equity_european_option_pricer import EquityEuropeanOptionPricer
 from ..pricing_models.fixed_coupon_bond_pricer import FixedCouponBondPricer
+from ..pricing_models.floating_rate_note_pricer import FloatingRateNotePricer
 from ..pricing_models.interest_rate_swap_pricer import InterestRateSwapPricer
 
 
@@ -95,6 +96,11 @@ class CCR_Valuation_Session:
                 elif pricer_mapping[trade.trade_type] == "FixedCouponBondPricer":
                     self.trade_pricer_mapping[trade.trade_type] = [
                         FixedCouponBondPricer("BOND_FIXED_Pricer"),
+                        [],
+                    ]
+                elif pricer_mapping[trade.trade_type] == "FloatingRateNotePricer":
+                    self.trade_pricer_mapping[trade.trade_type] = [
+                        FloatingRateNotePricer("BOND_FRN_Pricer"),
                         [],
                     ]
 
