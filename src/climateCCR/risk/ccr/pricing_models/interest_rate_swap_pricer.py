@@ -4,7 +4,6 @@ import numpy as np
 
 from climateCCR.simulation.simulated_hw1f_curve import SimulatedHW1FCurve
 from climateCCR.utils.calendar_utils import (
-    payments_frequency_in_y,
     time_step_from_frequency,
     transform_dates_to_time_differences,
 )
@@ -46,6 +45,20 @@ class InterestRateSwapPricer(PricingModel):
         global_parameters,
         pricer_parameters=None,
     ):
+        """Price one IRS per (path, valuation date) off the simulated HW1F state.
+
+        Conventions (2026-08-12 audit, OQ-CCR-06): year fractions Act/365; each
+        period pays ``notional * accrual * (floating - K)`` at its payment date;
+        the floating rate is the valuation-date-conditional continuously-compounded
+        forward over the period's accrual window (both bond prices functions of the
+        same simulated short rate). The ``payer/receiver`` flag keeps the legacy
+        PIMPA sign: ``payer`` receives the fixed leg K and pays floating
+        (``MtM = sum N*accrual*(K - F)*DF``). Fixings that occurred before the
+        valuation date in simulated time are proxied by the valuation-date forward
+        over the same span (the engine stores no per-path fixing history); a
+        valuation date inside the trade's first period uses the real historical
+        fixing of the period's own (previous) fixing date.
+        """
         pr_factor = -1 if trade.get_attribute("payer/receiver") == "payer" else 1
         trade_mtms = np.empty((global_parameters["n_paths"], len(valuation_dates)))
         payments_frequency = trade.get_attribute("payments_frequency")
@@ -71,6 +84,12 @@ class InterestRateSwapPricer(PricingModel):
                 nonsimulated_underlying
             ]
 
+        time_step = time_step_from_frequency(payments_frequency)
+        t0 = valuation_dates[0]
+        strike = trade.get_attribute("K")
+        notional = trade.get_attribute("notional")
+        calibration = self.calibration[simulated_underlying]
+
         for i, valuation_date in enumerate(valuation_dates):
             if valuation_date > trade.get_attribute("maturity"):
                 trade_mtms[:, i] = 0
@@ -80,46 +99,87 @@ class InterestRateSwapPricer(PricingModel):
                     valuation_date, trade.get_attribute("payments_schedule")
                 )
                 residual_fixings_schedule = self.generate_residual_fixings_schedule(
-                    valuation_dates[0],
+                    t0,
                     trade.get_attribute("fixings_schedule"),
                     len(residual_payments_schedule),
                 )
-                shifted_residual_fixing_schedule = self.generate_shifted_payments_schedule(
-                    residual_fixings_schedule, payments_frequency
+                spliced = len(residual_fixings_schedule) == len(residual_payments_schedule) - 1
+                if not spliced and len(residual_fixings_schedule) != len(
+                    residual_payments_schedule
+                ):
+                    raise ValueError("Something is wrong with the residual fixing schedule.")
+
+                simulated_curve = SimulatedHW1FCurve(scenarios[simulated_underlying][:, i])
+                t_val = transform_dates_to_time_differences(t0, valuation_date)
+                pay_times = transform_dates_to_time_differences(
+                    t0, list(residual_payments_schedule)
+                )
+                fixing_times = transform_dates_to_time_differences(
+                    t0, list(residual_fixings_schedule)
+                )
+                accruals = np.reshape(
+                    transform_dates_to_time_differences(
+                        t0,
+                        self.generate_shifted_payments_schedule(
+                            residual_fixings_schedule, payments_frequency
+                        ),
+                    )
+                    - fixing_times,
+                    (1, -1),
                 )
 
-                # simulated quantities
-                discount_factors = SimulatedHW1FCurve(
-                    scenarios[simulated_underlying][:, i]
-                ).get_value(
-                    calibration=self.calibration[simulated_underlying],
-                    t_date=valuation_date,
-                    T_date=residual_payments_schedule,
-                    initial_date=valuation_dates[0],
+                # discounting off the valuation-date state, as before
+                discount_factors = simulated_curve.get_value(
+                    calibration=calibration,
+                    t_date=t_val,
+                    T_date=pay_times,
+                    initial_date=None,
                     return_log=False,
                 )
-                floating_rates = -SimulatedHW1FCurve(
-                    scenarios[simulated_underlying][:, i]
-                ).get_value(
-                    calibration=self.calibration[simulated_underlying],
-                    t_date=residual_fixings_schedule,
-                    T_date=shifted_residual_fixing_schedule,
-                    initial_date=valuation_dates[0],
+
+                # Each period's floating rate is the t_val-conditional continuously-
+                # compounded forward over its accrual window: -ln[P(t_val, end) /
+                # P(t_val, start)] / accrual, both bonds functions of r(t_val).
+                # A fixing that already occurred in *simulated* time (the engine keeps
+                # no per-path fixing history) is proxied by the valuation-date forward
+                # over the same accrual span.
+                effective_fixing_times = np.maximum(np.asarray(fixing_times), t_val)
+                log_p_start = simulated_curve.get_value(
+                    calibration=calibration,
+                    t_date=t_val,
+                    T_date=effective_fixing_times,
+                    initial_date=None,
                     return_log=True,
-                ) / payments_frequency_in_y(
-                    payments_frequency
                 )
+                log_p_end = simulated_curve.get_value(
+                    calibration=calibration,
+                    t_date=t_val,
+                    T_date=effective_fixing_times + accruals.ravel(),
+                    initial_date=None,
+                    return_log=True,
+                )
+                floating_rates = (log_p_start - log_p_end) / accruals
                 if nonsimulated_underlying is not None:
-                    floating_rates += spread_to_discount_curve_object.get_interpolated_rates(
-                        transform_dates_to_time_differences(
-                            valuation_dates[0], residual_fixings_schedule
-                        )
+                    floating_rates = (
+                        floating_rates
+                        + spread_to_discount_curve_object.get_interpolated_rates(
+                            np.asarray(fixing_times)
+                        ).reshape(1, -1)
                     )
 
-                # correcting for valuation date between a fixing and a payment
-                if len(residual_fixings_schedule) == len(residual_payments_schedule) - 1:
+                # pricing: each period pays notional * accrual * (floating - K)
+                future_discount_factors = discount_factors[:, 1:] if spliced else discount_factors
+                trade_mtms[:, i] = notional * np.sum(
+                    future_discount_factors * accruals * (floating_rates - strike) * pr_factor,
+                    axis=1,
+                )
+
+                # valuation date inside the first period: its floating rate fixed in
+                # real history at the fixing *preceding* the next scheduled one.
+                if spliced:
+                    previous_fixing = residual_fixings_schedule[0] - time_step
                     missing_date = datetime.strftime(
-                        residual_fixings_schedule[0], global_parameters["date_format"]
+                        previous_fixing, global_parameters["date_format"]
                     )
                     missing_fixing = market_data["historical_fixings"][simulated_underlying].loc[
                         missing_date
@@ -131,23 +191,16 @@ class InterestRateSwapPricer(PricingModel):
                                 missing_date
                             ]
                         )
-
-                    missing_fixing = (
-                        (missing_fixing - trade.get_attribute("K"))
+                    first_accrual = transform_dates_to_time_differences(
+                        previous_fixing, previous_fixing + time_step
+                    )
+                    trade_mtms[:, i] += (
+                        notional
+                        * first_accrual
+                        * (float(missing_fixing) - strike)
                         * discount_factors[:, 0]
                         * pr_factor
                     )
-                    discount_factors = np.delete(discount_factors, 0, 1)
-                elif len(residual_fixings_schedule) != len(residual_payments_schedule):
-                    raise ValueError("Something is wrong with the residual fixing schedule.")
-
-                # pricing
-                trade_mtms[:, i] = trade.get_attribute("notional") * np.sum(
-                    discount_factors * (floating_rates - trade.get_attribute("K")) * pr_factor,
-                    axis=1,
-                )
-                if len(residual_fixings_schedule) < len(residual_payments_schedule):
-                    trade_mtms[:, i] += missing_fixing
 
         return trade_mtms
 
