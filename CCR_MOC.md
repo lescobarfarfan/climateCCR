@@ -26,8 +26,8 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 
 ## Open questions → [[OPEN_QUESTIONS]]
 - `OQ-CCR-01` API name · `OQ-CCR-02` tidy-schema final form · `OQ-CCR-03` first scenario connector.
-- `OQ-CCR-04` where EPE/CVA live · `OQ-CCR-05` RQ1 design (labelling, CV split, go/no-go).
-- `OQ-CCR-06` fixture location + second code-review pass · **`OQ-CCR-07` where signatures fit now**.
+- `OQ-CCR-05` RQ1 design (labelling, CV split, go/no-go) · **`OQ-CCR-07` where signatures fit now**.
+- `OQ-CCR-10` IRS floating-rate convention (cc vs simple; the `CCR-RISK-05` deferred item). Resolved 2026-08-12: `OQ-CCR-04` → CVA built (`CCR-RISK-06`); `OQ-CCR-06` → audit done (`CCR-RISK-05`).
 
 ## Notes (import under `notes/`)
 - Plan: [[PROJECT_PLAN]], [[PHASE_0]] — `notes/plan/`.
@@ -56,6 +56,7 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 - Reading: [[2026-08-08_frn_book_v2_trajectory]] — the FRN/book-v2 read-log: floater discount-margin mechanics behind `BOND_FRN`, the collective-risk-model chapter behind the aggregate-loss panel, ST-path semantics behind maturity dating, and the exposure-metric semantics of the per-path artifact (`CCR-RISK-04`/`INT-32`/`MKT-NGFS-09`/`GEN-34`; `notes/reading/`, `GEN-21`).
 - Explanation: [[2026-08-08_frn_book_v2_and_trajectory_explained]] — sobretasa vs discount margin, why the band re-based to −8.28/−5.00/−4.46% (FRNs damp the rate-jump channel), how to read nivel vs trajectory, and the two non-comparable aggregate-loss routes (`notes/summary_explanations/`, `GEN-26`).
 - Reading: [[2026-08-09_ua_graph_repair]] — tooling read-log, no analytical decisions (`GEN-35`: the corrupted UA graph rolled back and rebuilt via the plugin's own `/understand` flow; hand-rolled merges banned, stale-inventory + batch-coverage traps codified; `notes/reading/`, `GEN-21`).
+- Reading: [[2026-08-12_ccr_audit_cva]] — the audit + CVA read-log: HW1F conditional bond reconstruction behind the IRS fix, the Gregory/Pykhtin-Zhu CVA discretization and LGD conventions, CLIMACRED PD semantics, and the proxy-acceptability basis of the real-world CVA (`CCR-RISK-05/06`; `notes/reading/`, `GEN-21`).
 - Explanation: [[2026-08-12_cva_extension_explained]] — the CVA build on the audited EE stack: the Gregory discretization and its inputs, base BOOK CVA 514k MXN vs EPE 255k, the exposure/credit/interaction decomposition (transition CVA nearly flat while EPE falls — the quantified wrong-way answer), the P-vs-Q cross-check wedge, and the deliberate limits (`OQ-CCR-04`; `notes/summary_explanations/`, `GEN-26`).
 
 ## Literature

@@ -1,0 +1,14 @@
+# Read-log — the pricing-internals audit + the CVA extension (2026-08-12)
+
+Session decisions: `CCR-RISK-05` (IRS pricer corrected, goldens + chain re-based), `CCR-RISK-06` (unilateral CVA at the reporting seam), `OQ-CCR-10` opened (floating-rate convention). Readings ordered by priority.
+
+1. **`[BrigoMercurio2006]` — Brigo & Mercurio, *Interest Rate Models*, §3.3 (Hull–White), esp. the ZCB reconstruction $P(t,T)=A(t,T)e^{-B(t,T)r(t)}$ and the conditional law of $r(T)\mid r(t)$.** Why: `CCR-RISK-05`'s core — the reconstruction demands the short rate *at* $t$; the audited bug plugged $r(t_{val})$ into the $(t_{fix},t_{pay})$ formula, which is neither the conditional forward nor $E[r(t_{fix})\mid r(t_{val})]$ (the $e^{-a(t_{fix}-t_{val})}$ decay and the drift are missing). Without this section the corrected floating-leg construction $-\ln[P(t_{val},end)/P(t_{val},start)]/\delta$ reads as arbitrary.
+2. **`[Gregory_xVA]` — Gregory, *The xVA Challenge* (4th ed.), the credit-exposure chapter (EE/EPE/PFE definitions) and the CVA chapter (the discretized formula, LGD/recovery conventions, wrong-way risk).** Why: `CCR-RISK-06`'s formula, the LGD 0.60 headline with sensitivity, and the WWR framing the decomposition quantifies; also the exposure conventions the audit tests lock (swap cashflow $= N\,\delta\,(F-K)$ per period).
+3. **`[PykhtinZhu2007]` — Pykhtin & Zhu, *A Guide to Modeling Counterparty Credit Risk*.** Why: the compact EE→CVA integral the discretization approximates, and the risk-management-vs-pricing role split that justifies computing CVA at the reporting seam off stored EE profiles rather than inside the engine.
+4. **`[Battiston2025CLIMACRED]` — Battiston, Mandel, Monasterolo & Roncoroni, *Climate Credit Risk and Corporate Valuation*.** Why: what `baseline_pd` and `pd_adjustment` *are* structurally (the CLIMACRED valuation model behind the NGFS ST PD families) — needed to defend using them as annual physical-measure PDs, and to state the country-level-baseline limitation honestly.
+5. **`[ECB2020Guide]` — ECB, *Guide on climate-related and environmental risks*, the quantification expectations.** Why: the proxy/expert-judgment acceptability that backs a scenario/real-world CVA under data scarcity (`OQ-CCR-04`'s "model risk" flag), against the `pd_crosscheck.csv` P-vs-Q wedge (spread-implied PDs 0.13–0.45× the CLIMACRED country PD).
+6. **`[Bressan2024]` — the coarse-proxy caveat pattern.** Why: the honesty note template for the country-level BAU PD (CVA cross-section EE-driven; sector differentiation only via scenario adjustments) — the same framing `INT-24` used for asset-state proxies.
+
+## Related
+Decisions: [[DECISIONS]] (`CCR-RISK-05`, `CCR-RISK-06`) · Findings: [[PRICING_INTERNALS_AUDIT_2026-08-12]] · Explanation: [[2026-08-12_cva_extension_explained]] · Contracts: [[DATA_CONTRACTS]] (`DC-CCR-RISK-6`) · Arm: [[CCR_MOC]] · Home: [[_INDEX]]
+#arm/ccr #type/reading
