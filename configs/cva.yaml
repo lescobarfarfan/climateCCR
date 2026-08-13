@@ -1,0 +1,58 @@
+# CVA readout over the stored EE runs (OQ-CCR-04; pipelines/21_cva_readout.py).
+#
+# Unilateral CVA per NAID + BOOK from the DC-CCR-RISK-3 comparison frames:
+# survival curves from the CLIMACRED annual PD families (baseline_pd is
+# country-level and scenario-invariant — verified 2026-08-12 — so the BAU
+# cross-section is EE-driven; sector differentiation enters via pd_adjustment
+# on the scenario legs), discounting off each leg's own pricing curve,
+# LGD 0.60 headline with 0.45/0.75 sensitivity columns (CVA is linear in LGD).
+# Channel separation per INT-29: DAPS_NAM runs jump-off only.
+
+seed: 233423                # readout is deterministic; recorded for the manifest
+
+book_config: configs/mexican_book.yaml        # valuation_date + naid -> issuer/equity_rf
+shock_config: configs/ngfs_shock.yaml         # equity_leg/bond_leg sector crosswalks
+sector_overrides:      # PD sector for book names outside the NGFS shock crosswalks (CVA only;
+  114: Consumer Goods Industries   # BACHOCO — poultry, the agro-food GEM-E3 assignment
+                       # the shock configs stay the authority for what gets *shocked*)
+ngfs_data_dir: data/scenarios_mx/ngfs_short_term
+pd_reference_scenario: HWTP  # run to read the (scenario-invariant) baseline_pd from
+
+lgd:
+  headline: 0.60
+  low: 0.45
+  high: 0.75
+recovery_crosscheck: 0.40    # credit triangle lambda = s/(1-R) [Gregory_xVA]
+
+discount_curves:             # per-leg pricing curve (the leg's own market world)
+  base: data/ccr_book_mx/calibration_data/pricing_models/Pricing_HW1F_Calibration.csv
+  hwtp: data/ccr_book_mx_ngfs/hwtp/calibration_data/pricing_models/Pricing_HW1F_Calibration.csv
+  swuc: data/ccr_book_mx_ngfs/swuc/calibration_data/pricing_models/Pricing_HW1F_Calibration.csv
+  daps_nam: data/ccr_book_mx_ngfs/daps_nam/calibration_data/pricing_models/Pricing_HW1F_Calibration.csv
+
+# column: which EE column of ee_pe_climate_shift.csv (baseline = jump-off,
+# climate = jump-on). pd: bau | a CLIMACRED scenario name. curve: discount key.
+legs:
+  - {name: base,               run: climate_jump_real_mexican,               column: baseline, pd: bau,      curve: base}
+  - {name: jump_headline,      run: climate_jump_real_mexican,               column: climate,  pd: bau,      curve: base}
+  - {name: jump_ct_anchor,     run: climate_jump_real_mexican_ct_anchor,     column: climate,  pd: bau,      curve: base}
+  - {name: jump_floor,         run: climate_jump_real_mexican_floor,         column: climate,  pd: bau,      curve: base}
+  - {name: ngfs_hwtp,          run: climate_jump_real_mexican_ngfs_hwtp,     column: baseline, pd: HWTP,     curve: hwtp}
+  - {name: ngfs_hwtp_combined, run: climate_jump_real_mexican_ngfs_hwtp,     column: climate,  pd: HWTP,     curve: hwtp}
+  - {name: ngfs_swuc,          run: climate_jump_real_mexican_ngfs_swuc,     column: baseline, pd: SWUC,     curve: swuc}
+  - {name: ngfs_swuc_combined, run: climate_jump_real_mexican_ngfs_swuc,     column: climate,  pd: SWUC,     curve: swuc}
+  - {name: ngfs_daps_nam,      run: climate_jump_real_mexican_ngfs_daps_nam, column: baseline, pd: DAPS_NAM, curve: daps_nam}
+
+# scenario-delta decompositions vs the base leg (headline LGD): the exposure
+# channel moves the *discounted* EE profile (market state incl. the scenario
+# curve), the credit channel moves the PD path, interaction = the exact
+# bilinear cross term (the wrong-way readout, INT-23/INT-31 caveat).
+decomposition:
+  - {label: JUMP_HEADLINE, leg: jump_headline}
+  - {label: JUMP_CT_ANCHOR, leg: jump_ct_anchor}
+  - {label: JUMP_FLOOR, leg: jump_floor}
+  - {label: HWTP, leg: ngfs_hwtp}
+  - {label: SWUC, leg: ngfs_swuc}
+  - {label: DAPS_NAM, leg: ngfs_daps_nam}
+
+out_dir: results/cva

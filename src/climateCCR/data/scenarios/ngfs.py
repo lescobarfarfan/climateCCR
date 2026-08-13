@@ -125,6 +125,19 @@ def anchor_peaks(
     return AnchorDeltas(scenario, short_pp, long_pp, short_time, long_time)
 
 
+def annual_series(frame: pd.DataFrame, scenario: str, *, variable: str) -> pd.DataFrame:
+    """Annual CLIMACRED series for one scenario, AS PUBLISHED: columns time, value.
+
+    Same row selection as :func:`sovereign_adjustment`, named for the level
+    families it also serves (``baseline_pd|<sector>``, ``scenario_wacc|<sector>``
+    are levels, not deltas — the CVA consumer, OQ-CCR-04). ``baseline_pd`` is
+    scenario-invariant across the CLIMACRED runs (verified 2026-08-12) and
+    country-level (identical across sector labels); pass any pulled scenario.
+    """
+    series = sovereign_adjustment(frame, scenario, variable=variable)
+    return series.rename(columns={"delta_pp": "value"})
+
+
 def sector_peak(
     frame: pd.DataFrame,
     scenario: str,
