@@ -33,6 +33,7 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 - Plan: [[PROJECT_PLAN]], [[PHASE_0]] — `notes/plan/`.
 - Review: [[CODE_REVIEW]] — `notes/reviews/` (PIMPA + randomized-signature bugs C1–C5).
 - Review: [[PONYTAIL_AUDIT_2026-07-11]] — over-engineering sweep: applied/rejected cuts + the `notebook_tools` inventory (`CCR-MIG-09`, `GEN-25`).
+- Review: [[PRICING_INTERNALS_AUDIT_2026-08-12]] — the `OQ-CCR-06` second pass: three ACTIVE IRS-pricer errors fixed (missing accrual, wrong-state forwards, spliced-period fixing), goldens deliberately re-based, Surface/Curve/CorrelationMatrix behaviour locked by tests; cc-vs-simple floating convention deferred (`notes/reviews/`).
 - Reading: [[2026-07-02_climate_jump_channel]] — the jump-channel read-log (`notes/reading/`, `GEN-21`).
 - Reading: [[2026-07-05_viz_layer_horizons]] — viz layer, horizons & grid-densification read-log (`notes/reading/`, `GEN-21`).
 - Reading: [[2026-07-05_vault_formatting]] — housekeeping read-log, no analytical decisions (the `GEN-23` formatting convention; `notes/reading/`, `GEN-21`).
