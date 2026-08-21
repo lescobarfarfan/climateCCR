@@ -27,13 +27,13 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 ## Open questions → [[OPEN_QUESTIONS]]
 - `OQ-CCR-01` API name · `OQ-CCR-02` tidy-schema final form · `OQ-CCR-03` first scenario connector.
 - `OQ-CCR-05` RQ1 design (labelling, CV split, go/no-go) · **`OQ-CCR-07` where signatures fit now**.
-- `OQ-CCR-10` IRS floating-rate convention (cc vs simple; the `CCR-RISK-05` deferred item). Resolved 2026-08-12: `OQ-CCR-04` → CVA built (`CCR-RISK-06`); `OQ-CCR-06` → audit done (`CCR-RISK-05`).
+- Resolved 2026-08-20: `OQ-CCR-10` → simple Act/360 + market payer semantics (`CCR-RISK-07`). Resolved 2026-08-12: `OQ-CCR-04` → CVA built (`CCR-RISK-06`); `OQ-CCR-06` → audit done (`CCR-RISK-05`).
 
 ## Notes (import under `notes/`)
 - Plan: [[PROJECT_PLAN]], [[PHASE_0]] — `notes/plan/`.
 - Review: [[CODE_REVIEW]] — `notes/reviews/` (PIMPA + randomized-signature bugs C1–C5).
 - Review: [[PONYTAIL_AUDIT_2026-07-11]] — over-engineering sweep: applied/rejected cuts + the `notebook_tools` inventory (`CCR-MIG-09`, `GEN-25`).
-- Review: [[PRICING_INTERNALS_AUDIT_2026-08-12]] — the `OQ-CCR-06` second pass: three ACTIVE IRS-pricer errors fixed (missing accrual, wrong-state forwards, spliced-period fixing), goldens deliberately re-based, Surface/Curve/CorrelationMatrix behaviour locked by tests; cc-vs-simple floating convention deferred (`notes/reviews/`).
+- Review: [[PRICING_INTERNALS_AUDIT_2026-08-12]] — the `OQ-CCR-06` second pass: three ACTIVE IRS-pricer errors fixed (missing accrual, wrong-state forwards, spliced-period fixing), goldens deliberately re-based, Surface/Curve/CorrelationMatrix behaviour locked by tests; cc-vs-simple floating convention deferred — resolved 2026-08-20 (`CCR-RISK-07`) (`notes/reviews/`).
 - Reading: [[2026-07-02_climate_jump_channel]] — the jump-channel read-log (`notes/reading/`, `GEN-21`).
 - Reading: [[2026-07-05_viz_layer_horizons]] — viz layer, horizons & grid-densification read-log (`notes/reading/`, `GEN-21`).
 - Reading: [[2026-07-05_vault_formatting]] — housekeeping read-log, no analytical decisions (the `GEN-23` formatting convention; `notes/reading/`, `GEN-21`).
@@ -57,6 +57,8 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 - Explanation: [[2026-08-08_frn_book_v2_and_trajectory_explained]] — sobretasa vs discount margin, why the band re-based to −8.28/−5.00/−4.46% (FRNs damp the rate-jump channel), how to read nivel vs trajectory, and the two non-comparable aggregate-loss routes (`notes/summary_explanations/`, `GEN-26`).
 - Reading: [[2026-08-09_ua_graph_repair]] — tooling read-log, no analytical decisions (`GEN-35`: the corrupted UA graph rolled back and rebuilt via the plugin's own `/understand` flow; hand-rolled merges banned, stale-inventory + batch-coverage traps codified; `notes/reading/`, `GEN-21`).
 - Reading: [[2026-08-12_ccr_audit_cva]] — the audit + CVA read-log: HW1F conditional bond reconstruction behind the IRS fix, the Gregory/Pykhtin-Zhu CVA discretization and LGD conventions, CLIMACRED PD semantics, and the proxy-acceptability basis of the real-world CVA (`CCR-RISK-05/06`; `notes/reading/`, `GEN-21`).
+- Reading: [[2026-08-20_irs_convention_alignment]] — the convention-alignment read-log: simply- vs continuously-compounded forwards (`[BrigoMercurio2006]` §1.4), the TIIE-28 market-convention source to confirm, the FRN cross-desk identity, and why a ~1% desk reprice moves book EPE +0.024% (`CCR-RISK-07`; `notes/reading/`, `GEN-21`).
+- Explanation: [[2026-08-20_irs_simple_act360_explained]] — the alignment explained: what the simple Act/360 forward and $\delta_{360}$ mean, the payer relabel and its byte-identity proof, how to read the re-based band/NGFS/CVA numbers, and why consistency (audience, cross-desk coherence, `GEN-31`) justified the re-base (`CCR-RISK-07`; `notes/summary_explanations/`, `GEN-26`).
 - Explanation: [[2026-08-12_cva_extension_explained]] — the CVA build on the audited EE stack: the Gregory discretization and its inputs, base BOOK CVA 514k MXN vs EPE 255k, the exposure/credit/interaction decomposition (transition CVA nearly flat while EPE falls — the quantified wrong-way answer), the P-vs-Q cross-check wedge, and the deliberate limits (`OQ-CCR-04`; `notes/summary_explanations/`, `GEN-26`).
 
 ## Literature
