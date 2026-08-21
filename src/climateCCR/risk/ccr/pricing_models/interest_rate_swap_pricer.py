@@ -51,15 +51,16 @@ class InterestRateSwapPricer(PricingModel):
         period pays ``notional * accrual * (floating - K)`` at its payment date;
         the floating rate is the valuation-date-conditional continuously-compounded
         forward over the period's accrual window (both bond prices functions of the
-        same simulated short rate). The ``payer/receiver`` flag keeps the legacy
-        PIMPA sign: ``payer`` receives the fixed leg K and pays floating
-        (``MtM = sum N*accrual*(K - F)*DF``). Fixings that occurred before the
+        same simulated short rate). The ``payer/receiver`` flag carries the
+        market meaning (relabeled 2026-08-20, OQ-CCR-10): ``payer`` pays the
+        fixed leg K and receives floating
+        (``MtM = sum N*accrual*(F - K)*DF``). Fixings that occurred before the
         valuation date in simulated time are proxied by the valuation-date forward
         over the same span (the engine stores no per-path fixing history); a
         valuation date inside the trade's first period uses the real historical
         fixing of the period's own (previous) fixing date.
         """
-        pr_factor = -1 if trade.get_attribute("payer/receiver") == "payer" else 1
+        pr_factor = 1 if trade.get_attribute("payer/receiver") == "payer" else -1
         trade_mtms = np.empty((global_parameters["n_paths"], len(valuation_dates)))
         payments_frequency = trade.get_attribute("payments_frequency")
         underlyings = trade.trade_underlyings

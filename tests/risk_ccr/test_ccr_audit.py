@@ -12,6 +12,8 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_allclose
+
 from climateCCR.data.market.curve import Curve
 from climateCCR.data.market.surface import Surface
 from climateCCR.risk.ccr.pricing_models.interest_rate_swap_pricer import InterestRateSwapPricer
@@ -22,7 +24,6 @@ from climateCCR.utils.calendar_utils import (
     time_step_from_frequency,
     transform_dates_to_time_differences,
 )
-from numpy.testing import assert_allclose
 
 RATE = 0.03
 T0 = datetime(2020, 1, 1)
@@ -99,7 +100,9 @@ def scenarios_at(rates: list[float]) -> dict:
 
 def test_irs_t0_matches_hand_dcf():
     """Fresh at-market-window swap at t=0 equals the static-replication DCF."""
-    trade = make_irs(T0, datetime(2029, 10, 1), datetime(2020, 4, 3), datetime(2030, 1, 3))
+    trade = make_irs(
+        T0, datetime(2029, 10, 1), datetime(2020, 4, 3), datetime(2030, 1, 3), direction="receiver"
+    )
     mtm = make_pricer().price_single_trade(trade, [T0], scenarios_at([RATE]), {}, GP)
 
     step = time_step_from_frequency("quarterly")
@@ -109,7 +112,7 @@ def test_irs_t0_matches_hand_dcf():
     tau_pay = np.array([(d - T0).days / 365 for d in payments])
     # flat curve: the conditional cc forward over any window is the flat rate
     hand = 100.0 * np.sum(delta * (RATE - 0.02) * np.exp(-RATE * tau_pay))
-    assert_allclose(mtm[:, 0], -hand, rtol=1e-6)  # payer receives K, pays floating
+    assert_allclose(mtm[:, 0], -hand, rtol=1e-6)  # receiver receives K, pays floating
 
 
 def test_irs_future_floating_is_the_conditional_forward():
@@ -120,7 +123,7 @@ def test_irs_future_floating_is_the_conditional_forward():
         datetime(2025, 2, 1),
         datetime(2025, 4, 3),
         datetime(2025, 5, 3),
-        direction="receiver",
+        direction="payer",
     )
     assert len(trade.get_attribute("payments_schedule")) == 1
     t_val = datetime(2022, 1, 1)
@@ -157,7 +160,7 @@ def test_irs_spliced_first_period_uses_previous_fixing_with_notional_and_accrual
         datetime(2020, 4, 1),
         datetime(2020, 1, 3),
         datetime(2020, 7, 3),
-        direction="receiver",
+        direction="payer",
     )
     hist = pd.Series({"2019-10-01": 0.025, "2020-01-01": 0.031, "2020-04-01": 0.028})
     market_data = {"historical_fixings": {"USD_ZERO_YIELD_CURVE": hist}}

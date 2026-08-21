@@ -117,7 +117,9 @@ trade_rules:
     settlement_lag_days: 2     # first payment = first fixing + 3M + lag (fixture pattern)
     fixed_rate_by_tenor: {5: 0.0875, 7: 0.0900, 10: 0.0940}  # near-par vs the 2026-07-17 curve [eng]
     tenor_cycle: [5, 7, 10]    # assigned round-robin in NAID order
-    direction_cycle: [payer, receiver]  # alternated in NAID order -> two-way book
+    direction_cycle: [receiver, payer]  # alternated in NAID order -> two-way book; labels are
+                               # market semantics since OQ-CCR-10 (payer = pays fixed) -- the
+                               # cycle swap keeps every NAID's economic direction unchanged
   bonds:
     default_face: 100000       # notional column of BONDS.csv (per 100 face pricing)
 
