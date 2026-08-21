@@ -51,7 +51,7 @@ states (`*_fase_a/b`, `*_uniforme`, `__storm_clustered`, `ngfs_epe_readout_solo_
 ## What the audit deliberately did not change
 
 - The cc-vs-simple floating convention (#4) — a user decision; adopting simple Act/360 would align
-  the IRS with `MKT-SIE-04`/the FRN leg at a ~1% PV effect and another goldens re-base.
+  the IRS with `MKT-SIE-04`/the FRN leg at a ~1% PV effect and another goldens re-base. → **Resolved 2026-08-20 (`OQ-CCR-10` closed): simple Act/360 adopted, payer relabeled to market semantics, goldens + chain re-based — baseline BOOK EPE +0.024%, band −8.93/−5.44/−4.86% (second-decimal move, as the wedge predicted).**
 - `CorrelationMatrix` internals modernization (#8) — deferred while the goldens hold the PSD
   branch's exact numerics; revisit if numpy removes `np.matrix`.
 - The option pricer idiom (#10) — different component; noted only.
