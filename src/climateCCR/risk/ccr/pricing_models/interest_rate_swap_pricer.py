@@ -47,18 +47,20 @@ class InterestRateSwapPricer(PricingModel):
     ):
         """Price one IRS per (path, valuation date) off the simulated HW1F state.
 
-        Conventions (2026-08-12 audit, OQ-CCR-06): year fractions Act/365; each
-        period pays ``notional * accrual * (floating - K)`` at its payment date;
-        the floating rate is the valuation-date-conditional continuously-compounded
-        forward over the period's accrual window (both bond prices functions of the
-        same simulated short rate). The ``payer/receiver`` flag carries the
-        market meaning (relabeled 2026-08-20, OQ-CCR-10): ``payer`` pays the
-        fixed leg K and receives floating
-        (``MtM = sum N*accrual*(F - K)*DF``). Fixings that occurred before the
-        valuation date in simulated time are proxied by the valuation-date forward
-        over the same span (the engine stores no per-path fixing history); a
-        valuation date inside the trade's first period uses the real historical
-        fixing of the period's own (previous) fixing date.
+        Conventions (2026-08-20, OQ-CCR-10; fixing semantics from the 2026-08-12
+        audit, OQ-CCR-06): money accruals are **Act/360 on both legs** and each
+        period pays ``notional * accrual_360 * (floating - K)`` at its payment
+        date; the floating rate is the valuation-date-conditional **simple
+        Act/360 forward** ``(P(t_val,start)/P(t_val,end) - 1) / accrual_360``
+        (both bond prices functions of the same simulated short rate) — the
+        MKT-SIE-04 TIIE quoting convention, shared with the FRN pricer. Model
+        time (curve coordinates) stays Act/365. The ``payer/receiver`` flag
+        carries the market meaning: ``payer`` pays the fixed leg K and receives
+        floating (``MtM = sum N*accrual_360*(F - K)*DF``). Fixings that occurred
+        before the valuation date in simulated time are proxied by the
+        valuation-date forward over the same span (the engine stores no per-path
+        fixing history); a valuation date inside the trade's first period uses
+        the real historical fixing of the period's own (previous) fixing date.
         """
         pr_factor = 1 if trade.get_attribute("payer/receiver") == "payer" else -1
         trade_mtms = np.empty((global_parameters["n_paths"], len(valuation_dates)))
@@ -118,6 +120,8 @@ class InterestRateSwapPricer(PricingModel):
                 fixing_times = transform_dates_to_time_differences(
                     t0, list(residual_fixings_schedule)
                 )
+                # window length in model time (Act/365 — curve coordinates) vs the
+                # money daycount fraction of the same days on Act/360 (OQ-CCR-10)
                 accruals = np.reshape(
                     transform_dates_to_time_differences(
                         t0,
@@ -128,6 +132,7 @@ class InterestRateSwapPricer(PricingModel):
                     - fixing_times,
                     (1, -1),
                 )
+                accruals_360 = accruals * (365.0 / 360.0)
 
                 # discounting off the valuation-date state, as before
                 discount_factors = simulated_curve.get_value(
@@ -138,28 +143,29 @@ class InterestRateSwapPricer(PricingModel):
                     return_log=False,
                 )
 
-                # Each period's floating rate is the t_val-conditional continuously-
-                # compounded forward over its accrual window: -ln[P(t_val, end) /
-                # P(t_val, start)] / accrual, both bonds functions of r(t_val).
+                # Each period's floating rate is the t_val-conditional simple Act/360
+                # forward over its accrual window: (P(t_val, start) / P(t_val, end)
+                # - 1) / accrual_360, both bonds functions of r(t_val) — the
+                # MKT-SIE-04 TIIE convention, shared with the FRN pricer (OQ-CCR-10).
                 # A fixing that already occurred in *simulated* time (the engine keeps
                 # no per-path fixing history) is proxied by the valuation-date forward
                 # over the same accrual span.
                 effective_fixing_times = np.maximum(np.asarray(fixing_times), t_val)
-                log_p_start = simulated_curve.get_value(
+                p_start = simulated_curve.get_value(
                     calibration=calibration,
                     t_date=t_val,
                     T_date=effective_fixing_times,
                     initial_date=None,
-                    return_log=True,
+                    return_log=False,
                 )
-                log_p_end = simulated_curve.get_value(
+                p_end = simulated_curve.get_value(
                     calibration=calibration,
                     t_date=t_val,
                     T_date=effective_fixing_times + accruals.ravel(),
                     initial_date=None,
-                    return_log=True,
+                    return_log=False,
                 )
-                floating_rates = (log_p_start - log_p_end) / accruals
+                floating_rates = (p_start / p_end - 1.0) / accruals_360
                 if nonsimulated_underlying is not None:
                     floating_rates = (
                         floating_rates
@@ -168,10 +174,10 @@ class InterestRateSwapPricer(PricingModel):
                         ).reshape(1, -1)
                     )
 
-                # pricing: each period pays notional * accrual * (floating - K)
+                # pricing: each period pays notional * accrual_360 * (floating - K)
                 future_discount_factors = discount_factors[:, 1:] if spliced else discount_factors
                 trade_mtms[:, i] = notional * np.sum(
-                    future_discount_factors * accruals * (floating_rates - strike) * pr_factor,
+                    future_discount_factors * accruals_360 * (floating_rates - strike) * pr_factor,
                     axis=1,
                 )
 
@@ -192,12 +198,12 @@ class InterestRateSwapPricer(PricingModel):
                                 missing_date
                             ]
                         )
-                    first_accrual = transform_dates_to_time_differences(
+                    first_accrual_360 = transform_dates_to_time_differences(
                         previous_fixing, previous_fixing + time_step
-                    )
+                    ) * (365.0 / 360.0)
                     trade_mtms[:, i] += (
                         notional
-                        * first_accrual
+                        * first_accrual_360
                         * (float(missing_fixing) - strike)
                         * discount_factors[:, 0]
                         * pr_factor

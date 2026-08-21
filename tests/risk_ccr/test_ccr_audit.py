@@ -2,9 +2,11 @@
 
 Covers the four audited components (IRS pricer, Curve, Surface,
 CorrelationMatrix) plus their HW1F bond-reconstruction dependency. The IRS
-tests pin the 2026-08-12 corrected semantics: per-period Act/365 accrual on
-every cashflow, valuation-date-conditional forwards, and the real previous
-fixing (with notional and accrual) on a spliced first period.
+tests pin the 2026-08-12 corrected semantics under the 2026-08-20 OQ-CCR-10
+convention: per-period **Act/360** accrual on every cashflow,
+valuation-date-conditional **simple Act/360** forwards (the MKT-SIE-04 TIIE
+convention shared with the FRN pricer), and the real previous fixing (with
+notional and accrual) on a spliced first period.
 """
 
 from datetime import datetime
@@ -108,16 +110,19 @@ def test_irs_t0_matches_hand_dcf():
     step = time_step_from_frequency("quarterly")
     fixings = list(trade.get_attribute("fixings_schedule"))
     payments = list(trade.get_attribute("payments_schedule"))
-    delta = np.array([((d + step) - d).days / 365 for d in fixings])
+    delta365 = np.array([((d + step) - d).days / 365 for d in fixings])
+    delta360 = np.array([((d + step) - d).days / 360 for d in fixings])
     tau_pay = np.array([(d - T0).days / 365 for d in payments])
-    # flat curve: the conditional cc forward over any window is the flat rate
-    hand = 100.0 * np.sum(delta * (RATE - 0.02) * np.exp(-RATE * tau_pay))
+    # flat cc curve: the simple Act/360 forward satisfies F*delta360 = exp(r*delta365) - 1
+    hand = 100.0 * np.sum((np.expm1(RATE * delta365) - 0.02 * delta360) * np.exp(-RATE * tau_pay))
     assert_allclose(mtm[:, 0], -hand, rtol=1e-6)  # receiver receives K, pays floating
 
 
 def test_irs_future_floating_is_the_conditional_forward():
     """At a future valuation state the floating rate must come from bonds
-    conditioned on r(t_val), not from the fixing-date formula."""
+    conditioned on r(t_val), not from the fixing-date formula — and it is the
+    simple Act/360 forward, verbatim the FRN pricer's MKT-SIE-04 convention
+    (the OQ-CCR-10 cross-desk alignment)."""
     trade = make_irs(
         datetime(2025, 1, 1),
         datetime(2025, 2, 1),
@@ -146,9 +151,9 @@ def test_irs_future_floating_is_the_conditional_forward():
             calibration=calib, t_date=tv, T_date=np.array([T]), initial_date=None, return_log=False
         )[0, 0]
 
-    delta = t_end - t_fix
-    forward = -np.log(bond(t_end) / bond(t_fix)) / delta
-    hand = 100.0 * delta * (forward - 0.02) * bond(t_pay)
+    delta360 = (t_end - t_fix) * 365.0 / 360.0
+    forward = (bond(t_fix) / bond(t_end) - 1.0) / delta360
+    hand = 100.0 * delta360 * (forward - 0.02) * bond(t_pay)
     assert_allclose(mtm[:, 1], hand, rtol=1e-9)
 
 
@@ -173,10 +178,11 @@ def test_irs_spliced_first_period_uses_previous_fixing_with_notional_and_accrual
     assert len(residual_fixings) == len(payments) - 1  # the spliced configuration
     tau_pay = np.array([(d - T0).days / 365 for d in payments])
     df = np.exp(-RATE * tau_pay)
-    d0 = ((datetime(2019, 10, 1) + step) - datetime(2019, 10, 1)).days / 365
-    splice = 100.0 * d0 * (0.025 - 0.02) * df[0]  # previous fixing, NOT 0.031
-    deltas = np.array([((d + step) - d).days / 365 for d in residual_fixings])
-    future = 100.0 * np.sum(deltas * (RATE - 0.02) * df[1:])
+    d0_360 = ((datetime(2019, 10, 1) + step) - datetime(2019, 10, 1)).days / 360
+    splice = 100.0 * d0_360 * (0.025 - 0.02) * df[0]  # previous fixing, NOT 0.031
+    deltas365 = np.array([((d + step) - d).days / 365 for d in residual_fixings])
+    deltas360 = np.array([((d + step) - d).days / 360 for d in residual_fixings])
+    future = 100.0 * np.sum((np.expm1(RATE * deltas365) - 0.02 * deltas360) * df[1:])
     assert_allclose(mtm[:, 0], splice + future, rtol=1e-6)
 
 
