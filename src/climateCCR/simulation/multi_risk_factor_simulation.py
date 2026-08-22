@@ -20,6 +20,12 @@ class MultiRiskFactorSimulation:
         (DC-CCR-SIM-2). The jump draw uses its own substream of the master seed,
         so the diffusive component of every path is bit-for-bit identical with
         the overlay on or off (INT-09).
+
+        If ``simulation_parameters["scheduled_shocks"]`` holds a
+        :class:`~climateCCR.processes.scheduled_shocks.ScheduledShockOverlay`,
+        its deterministic scenario marks are applied through the same overlay
+        seam (OQ-INT-12) — identical across paths, consuming no RNG, so every
+        stream is unchanged with the block on or off.
         """
         nr_risk_drivers = 0
         for rf in self.simulated_risk_factors:
@@ -73,5 +79,34 @@ class MultiRiskFactorSimulation:
                         jump_scenario.step_marks[rf.name],
                         valuation_dates,
                     )
+
+        scheduled_shocks = simulation_parameters.get("scheduled_shocks")
+        if scheduled_shocks is not None:
+            # Deterministic scenario overlay (OQ-INT-12): zero RNG, applied after
+            # the jump channel; overlays compose order-independently (HW1F adds,
+            # GBM multiplies). Unlike jumps, unsimulated targets are config errors.
+            simulated = {rf.name: rf for rf in self.simulated_risk_factors}
+            missing = sorted(scheduled_shocks.target_names - set(simulated))
+            if missing:
+                raise ValueError(
+                    f"scheduled_shocks targets not simulated by this portfolio: {missing}"
+                )
+            alphas = {}
+            for name in scheduled_shocks.rate_targets:
+                calibration = getattr(simulated[name].model, "calibration", {})
+                if "alpha" not in calibration:
+                    raise ValueError(
+                        f"scheduled_shocks.rate_shocks target {name} has no mean-reversion "
+                        "alpha (not an HW1F-style model)"
+                    )
+                alphas[name] = calibration["alpha"]
+            shock_marks = scheduled_shocks.step_marks(valuation_dates, alphas)
+            n_paths = simulation_parameters["n_paths"]
+            for name, marks in shock_marks.items():
+                random_paths[name] = simulated[name].model.apply_jump_overlay(
+                    random_paths[name],
+                    np.broadcast_to(marks, (n_paths, len(marks))),
+                    valuation_dates,
+                )
 
         return random_paths
