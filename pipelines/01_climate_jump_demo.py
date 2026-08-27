@@ -16,6 +16,10 @@ Idempotent (GEN-*): skips if the output exists, rerun with --forzar/--force.
 With ``--trayectorias``, both legs also materialize the per-path portfolio
 values at the reporting dates (``per_path_values_{baseline,climate}.npz``,
 the OQ-GEN-02 c artifact) — the profiles themselves are byte-identical.
+With ``--choques-programados <fragmento>``, the INT-33 scheduled overlay
+(a pipelines/22 fragment) applies to BOTH legs — the "fase" NGFS state
+(OQ-INT-12 a) — so the jump-ON vs jump-OFF contrast stays the pure physical
+channel; the fragment's valuation_date must match the run config's.
 
     python pipelines/01_climate_jump_demo.py [--forzar] [--horizonte corto] [--trayectorias]
 """
@@ -27,6 +31,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = REPO_ROOT / "tests" / "fixtures" / "pimpa"
@@ -78,6 +83,23 @@ def run_book(
     return pd.concat(frames, ignore_index=True)
 
 
+def load_scheduled_fragment(path: Path, today_date: str) -> dict:
+    """Read a pipelines/22 fragment, failing loudly on a valuation-date mismatch.
+
+    The fragment's times_years are Act/365 fractions from ITS valuation date;
+    injecting them into a run valued elsewhere would silently shift the whole
+    scenario calendar (OQ-INT-12 a).
+    """
+    fragment = yaml.safe_load(path.read_text())
+    frag_date = fragment.get("provenance", {}).get("valuation_date")
+    if frag_date != today_date:
+        raise ValueError(
+            f"scheduled_shocks fragment valuation_date {frag_date!r} != run "
+            f"valuation_date {today_date!r} — regenerate with pipelines/22"
+        )
+    return fragment
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -121,6 +143,15 @@ def main() -> None:
         default=None,
         help="run-name suffix distinguishing runs that share a config but not a "
         "data root (e.g. an NGFS scenario overlay: --etiqueta ngfs_hwtp)",
+    )
+    parser.add_argument(
+        "--choques-programados",
+        "--scheduled-shocks",
+        type=Path,
+        default=None,
+        help="fragmento scheduled_shocks de pipelines/22 aplicado a AMBAS corridas "
+        "(jump-OFF y jump-ON) — el estado 'fase' del mundo NGFS (OQ-INT-12 a); "
+        "el contraste ON-OFF queda como el canal físico puro",
     )
     args = parser.parse_args()
 
@@ -171,6 +202,15 @@ def main() -> None:
         gp["B3_grid"],
         max_step_days or "event-driven",
     )
+
+    if args.choques_programados:
+        from climateCCR.processes.scheduled_shocks import ScheduledShockOverlay
+
+        fragment = load_scheduled_fragment(args.choques_programados, today_date)
+        gp["scheduled_shocks"] = ScheduledShockOverlay.from_config(fragment["scheduled_shocks"])
+        # Manifest completeness (GEN-06): the resolved fragment rides the manifest.
+        config.extra["scheduled_shocks"] = fragment
+        logger.info("Scheduled shocks (fase) from %s -> both legs", args.choques_programados)
 
     baseline_store: dict | None = {} if args.trayectorias else None
     jumped_store: dict | None = {} if args.trayectorias else None

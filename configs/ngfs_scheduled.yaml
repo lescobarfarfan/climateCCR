@@ -1,0 +1,21 @@
+# NGFS ST paths -> scheduled_shocks fragments (the fase producer, OQ-INT-12 a).
+#
+# pipelines/22 reads the tidy NGFS data and the shared shock config below
+# (single source for scenarios / region / window / curve_name /
+# equity_leg.sectors — do NOT duplicate the crosswalk here) and emits one YAML
+# fragment per scenario under `out_root`, consumed by
+# pipelines/01 --choques-programados (the INT-33 scheduled_shocks block).
+#
+# Raw published deltas (user ruling 2026-08-27): each path's t=0 point carries
+# the scenario delta already accumulated at the valuation date; the engine
+# pins t=0 to the observed market and applies that value from the first
+# simulation step (the catch-up), then tracks the published path. The
+# sovereign long anchor and the credit-spread leg are deliberately absent
+# (INT-33 single-factor note; OQ-INT-12 b Phase 2).
+#
+#   python pipelines/22_ngfs_scheduled_shocks.py [--forzar]
+
+valuation_date: "2026-07-17" # MKT-CURVE-05 anchor; pipelines/01 cross-checks its run config
+shock_config: configs/ngfs_shock.yaml
+ngfs_dir: data/scenarios_mx/ngfs_short_term
+out_root: results/ngfs_scheduled_shocks
