@@ -1,0 +1,101 @@
+# Trajectory-lambda(t) rider on the MEXICAN BOOK headline leg — REGISTRY
+# growth (OQ-INT-12 a robustness; user ruling 2026-08-27: two riders, this is
+# the upper leg). Everything except `climate_jumps.intensity` transfers
+# verbatim from configs/climate_jump_real_mexican.yaml (INT-20 headline).
+#
+#   lambda(t) = 19.2857 * exp(0.080767 * t),  t = Act/365 years from
+#   valuation_date, held constant beyond t_clip = 4.46301 (= decimal 2031.0,
+#   the NGFS window end + 1 — the MKT-NGFS-09 clip; np.interp end-clamp).
+#
+#   python pipelines/01_climate_jump_demo.py --config configs/climate_jump_real_mexican_trend_registry.yaml \
+#       --book-config configs/mexican_book.yaml --data-root data/ccr_book_mx --horizonte largo
+#
+# growth = arrivals_growth_log_yr of the mayores_200mdp_2002_2015 registry fit
+# (+8.4%/yr, p = 1.4e-7; results/hazard_jump_calibration_2000_2024/
+# parameters.csv, pipelines/03), RE-ANCHORED at the INT-20 headline level:
+# lambda(0) = 19.2857, NOT intensity_at(2026.5) ~ 78/yr.
+#
+# HAZ-STOCH-06 REGIME-BREAK CAVEAT (load-bearing): the +8.4%/yr growth is
+# registry-regime-specific (2002-2015, event x state grain). The literal
+# level extrapolation lambda(2025) ~ 69/yr was REFUTED by the 2016-2024
+# extension (observed report-regime arrivals run 7-10/yr; the only
+# cross-regime-valid trend is the ciclon bridge +1.4%/yr, p=.17 — the
+# sibling _trend_ct_bridge rider). This leg answers "what if arrivals trend
+# at the within-registry rate from today's headline level" — a robustness
+# ceiling on the trend, not a forecast. Values below are exact lambda(t) at
+# the annual grid + the clip point (chord error of the engine's linear
+# interpolation <= 0.1%); lambda(t_clip) = 27.6556 (x1.434) then holds.
+
+seed: 233423        # master seed; jumps draw from a derived substream (GEN-07)
+n_paths: 10000      # matches the locked baseline discipline (CCR-MIG-03)
+
+valuation_date: "2026-07-17"   # Mexican calibration anchor (MKT-CURVE-05/CALIB-07)
+
+horizons:
+  largo:
+    b3_grid: null
+    max_step_days: null
+  corto:
+    b3_grid: ["0D", "1D", "1W", "2W", "1M", "2M", "3M", "6M", "9M", "1Y", "18M", "2Y", "3Y"]
+    max_step_days: 1
+
+climate_jumps:
+  intensity: # lambda(t) trajectory (events/year), Act/365 years from valuation_date
+    times_years: [0.0, 1.0, 2.0, 3.0, 4.0, 4.46301]
+    values: [19.2857, 20.9080, 22.6667, 24.5734, 26.6405, 27.6556]
+  rate_marks:
+    median: 5.1658e-6 # sev_median 905.53 MDP-2025 / S_rate_eff_MX 175,293,784 -> +0.052 bp
+    sigma: 1.2106     # transfers exactly from the registry lognormal severity fit
+    sign: 1.0         # adverse event -> yields UP (decays through HW1F mean reversion)
+    targets: [MXN_ZERO_YIELD_CURVE]
+  equity_marks:
+    median: 0.006864 # sev_median 905.53 MDP-2025 / K_eff 131,932 MDP-2025 -> -0.69% median
+    sigma: 1.2106    # transfers exactly from the registry lognormal severity fit
+    sign: -1.0
+    targets:
+      [HCITY_SHARE, HOTEL_SHARE, FIHO12_SHARE, RLH_SHARE, POSADAS_SHARE, FINN13_SHARE,
+       ASUR_SHARE, GAP_SHARE, OMA_SHARE, VOLAR_SHARE, AGUA_SHARE, GRUMA_SHARE,
+       HERDEZ_SHARE, CULTIBA_SHARE, QUALITAS_SHARE, PENAVERDE_SHARE, FUNO_SHARE,
+       CEMEX_SHARE, GCC_SHARE, GMEXICO_SHARE, PENOLES_SHARE, VISTA_SHARE, AC_SHARE,
+       FEMSA_SHARE, WALMEX_SHARE, ALSEA_SHARE]
+    peril_mix:  # trigger-set frequency shares (pipelines/10, OQ-INT-11 Phase B)
+      ciclon_tropical: 0.34074100
+      incendio_forestal: 0.00740700
+      inundacion: 0.08518500
+      lluvia: 0.34814800
+      otros: 0.08518500
+      sequia: 0.13333300
+    target_peril_scales:  # c_ip = gamma_i^p / pi_p; sum_p pi_p c_ip = gamma_i
+      HCITY_SHARE: {ciclon_tropical: 2.336706, incendio_forestal: 0.141478, inundacion: 0.273214, lluvia: 0.391120, otros: 0.066908, sequia: 0.043400}
+      HOTEL_SHARE: {ciclon_tropical: 11.442416, incendio_forestal: 0.239966, inundacion: 0.056909, lluvia: 0.238835, otros: 0.028470, sequia: 0.006572}
+      FIHO12_SHARE: {ciclon_tropical: 2.336706, incendio_forestal: 0.141478, inundacion: 0.273214, lluvia: 0.391120, otros: 0.066908, sequia: 0.043400}
+      RLH_SHARE: {ciclon_tropical: 8.201247, incendio_forestal: 0.359451, inundacion: 0.081592, lluvia: 0.324087, otros: 0.056531, sequia: 0.012859}
+      POSADAS_SHARE: {ciclon_tropical: 3.280747, incendio_forestal: 0.166540, inundacion: 0.231675, lluvia: 0.372966, otros: 0.059017, sequia: 0.037184}
+      FINN13_SHARE: {ciclon_tropical: 1.325662, incendio_forestal: 0.253224, inundacion: 0.094084, lluvia: 0.147630, otros: 0.057756, sequia: 0.146521}
+      ASUR_SHARE: {ciclon_tropical: 11.080034, incendio_forestal: 0.000000, inundacion: 0.278186, lluvia: 0.594247, otros: 0.024002, sequia: 0.000000}
+      GAP_SHARE: {ciclon_tropical: 5.973658, incendio_forestal: 0.000000, inundacion: 0.035861, lluvia: 0.082269, otros: 0.006540, sequia: 0.000000}
+      OMA_SHARE: {ciclon_tropical: 3.552657, incendio_forestal: 0.000000, inundacion: 0.077984, lluvia: 0.097262, otros: 0.028666, sequia: 0.000000}
+      VOLAR_SHARE: {ciclon_tropical: 1.635695, incendio_forestal: 0.000000, inundacion: 0.136607, lluvia: 0.293340, otros: 0.033454, sequia: 0.000000}
+      AGUA_SHARE: {ciclon_tropical: 0.701012, incendio_forestal: 0.000000, inundacion: 0.204911, lluvia: 0.195560, otros: 0.033454, sequia: 0.130200}
+      GRUMA_SHARE: {ciclon_tropical: 2.170481, incendio_forestal: 0.627593, inundacion: 0.239722, lluvia: 0.304032, otros: 0.175887, sequia: 0.323691}
+      HERDEZ_SHARE: {ciclon_tropical: 1.168353, incendio_forestal: 0.565912, inundacion: 0.478125, lluvia: 0.488900, otros: 0.167269, sequia: 0.434001}
+      CULTIBA_SHARE: {ciclon_tropical: 0.701012, incendio_forestal: 0.000000, inundacion: 0.204911, lluvia: 0.195560, otros: 0.033454, sequia: 0.303801}
+      QUALITAS_SHARE: {ciclon_tropical: 1.402024, incendio_forestal: 0.141478, inundacion: 0.478125, lluvia: 0.488900, otros: 0.167269, sequia: 0.000000}
+      PENAVERDE_SHARE: {ciclon_tropical: 2.336706, incendio_forestal: 0.565912, inundacion: 0.478125, lluvia: 0.488900, otros: 0.100361, sequia: 0.086800}
+      FUNO_SHARE: {ciclon_tropical: 1.168353, incendio_forestal: 0.141478, inundacion: 0.341518, lluvia: 0.391120, otros: 0.066908, sequia: 0.021700}
+      CEMEX_SHARE: {ciclon_tropical: 0.355522, incendio_forestal: 0.113701, inundacion: 0.023942, lluvia: 0.049307, otros: 0.009326, sequia: 0.150845}
+      GCC_SHARE: {ciclon_tropical: 0.036942, incendio_forestal: 0.377610, inundacion: 0.361724, lluvia: 0.128565, otros: 0.159435, sequia: 0.398666}
+      GMEXICO_SHARE: {ciclon_tropical: 0.265680, incendio_forestal: 0.564907, inundacion: 0.068021, lluvia: 0.093742, otros: 0.035013, sequia: 1.322061}
+      PENOLES_SHARE: {ciclon_tropical: 0.181268, incendio_forestal: 0.911478, inundacion: 0.075006, lluvia: 0.174776, otros: 0.097865, sequia: 2.021572}
+      VISTA_SHARE: {ciclon_tropical: 0.233671, incendio_forestal: 0.000000, inundacion: 0.068304, lluvia: 0.097780, otros: 0.033454, sequia: 0.043400}
+      AC_SHARE: {ciclon_tropical: 0.701012, incendio_forestal: 0.000000, inundacion: 0.204911, lluvia: 0.195560, otros: 0.033454, sequia: 0.303801}
+      FEMSA_SHARE: {ciclon_tropical: 0.701012, incendio_forestal: 0.000000, inundacion: 0.204911, lluvia: 0.195560, otros: 0.033454, sequia: 0.303801}
+      WALMEX_SHARE: {ciclon_tropical: 0.934683, incendio_forestal: 0.141478, inundacion: 0.341518, lluvia: 0.293340, otros: 0.050181, sequia: 0.043400}
+      ALSEA_SHARE: {ciclon_tropical: 0.701012, incendio_forestal: 0.000000, inundacion: 0.204911, lluvia: 0.195560, otros: 0.033454, sequia: 0.043400}
+    peril_severity:  # per-label sigma, mean-matched medians (pipelines/10, OQ-INT-11 e)
+      ciclon_tropical: {median: 0.0058848, sigma: 1.3317}
+      incendio_forestal: {median: 0.0068640, sigma: 1.2106}  # pooled fallback (thin label)
+      inundacion: {median: 0.0067454, sigma: 1.2249}
+      lluvia: {median: 0.0082563, sigma: 1.0470}
+      otros: {median: 0.0097978, sigma: 0.8682}
+      sequia: {median: 0.0102867, sigma: 0.8102}

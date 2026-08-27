@@ -64,6 +64,11 @@ class ClimateJumpProcess:
             A scalar is a homogeneous Poisson; a 1-D array of length
             ``n_steps`` is a deterministic trajectory ``lambda(t)``; a 2-D
             ``(n_paths, n_steps)`` array is a pre-simulated Cox intensity.
+            A dict ``{"times_years", "values"}`` is the grid-free config form
+            of the 1-D trajectory (the OQ-INT-12 lambda(t) rider): at generate
+            time the values are interpolated onto the step-start grid
+            (``np.interp``, hold-beyond clamp — the scheduled-channel
+            path-prevailing convention, INT-33) and ride the 1-D branch.
         targets: Risk-factor name -> mark sampler. Every arrival hits every
             target (shared event times); marks are independent across targets.
         diffusion_dependence: Only ``"independent"`` is implemented — jumps are
@@ -100,7 +105,7 @@ class ClimateJumpProcess:
 
     def __init__(
         self,
-        intensity: float | np.ndarray,
+        intensity: float | np.ndarray | dict,
         targets: dict[str, MarkSampler],
         diffusion_dependence: str = "independent",
         mark_dependence: str = "independent",
@@ -121,6 +126,26 @@ class ClimateJumpProcess:
                 f"mark_dependence={mark_dependence!r}: only 'independent' is implemented "
                 "(cross-target mark dependence is a desirable to-do, OQ-INT-03)"
             )
+        self._intensity_path: tuple[np.ndarray, np.ndarray] | None = None
+        if isinstance(intensity, dict):
+            if set(intensity) != {"times_years", "values"}:
+                raise ValueError(
+                    "trajectory intensity must be exactly {'times_years', 'values'}, "
+                    f"got {sorted(intensity)}"
+                )
+            times = np.asarray(intensity["times_years"], dtype=float)
+            values = np.asarray(intensity["values"], dtype=float)
+            if times.ndim != 1 or times.shape != values.shape or times.size == 0:
+                raise ValueError(
+                    "trajectory intensity times_years/values must be equal-length, non-empty 1-D"
+                )
+            if not (np.all(np.isfinite(times)) and np.all(np.isfinite(values))):
+                raise ValueError("trajectory intensity times_years/values must be finite")
+            if np.any(np.diff(times) <= 0.0):
+                raise ValueError("trajectory intensity times_years must be strictly increasing")
+            if np.any(values < 0.0):
+                raise ValueError("intensity must be non-negative")
+            self._intensity_path = (times, values)
         self.intensity = intensity
         self.targets = dict(targets)
         self.diffusion_dependence = diffusion_dependence
@@ -190,7 +215,10 @@ class ClimateJumpProcess:
         ``rate_marks``/``equity_marks`` channels, each mapping its ``targets``
         to one lognormal mark sampler; present channels share the event stream
         (a config may run one channel only, e.g. the estimated price channel
-        while the rate translation stays open — OQ-INT-07).
+        while the rate translation stays open — OQ-INT-07). ``intensity`` is
+        the scalar events/year, or the trajectory dict
+        ``{times_years, values}`` (Act/365 years from the run's valuation
+        date; the OQ-INT-12 lambda(t) rider — see ``__init__``).
 
         A channel may carry an optional ``target_scales: {name: gamma}`` mapping
         (OQ-INT-11 Phase A, derived by ``pipelines/10_equity_mark_scales.py``):
@@ -288,10 +316,22 @@ class ClimateJumpProcess:
             peril_severity=peril_severity,
         )
 
-    def _step_intensities(self, n_paths: int, step_sizes: np.ndarray) -> np.ndarray:
-        """Expected events per (path, step): ``lambda_i * dt_i``, broadcast checked."""
+    def _step_intensities(
+        self, n_paths: int, step_sizes: np.ndarray, step_start_times: np.ndarray | None = None
+    ) -> np.ndarray:
+        """Expected events per (path, step): ``lambda_i * dt_i``, broadcast checked.
+
+        With a config-form trajectory (``{"times_years", "values"}``), the path
+        is interpolated at the step START times — the lambda prevailing over
+        ``[t_i, t_{i+1})`` — and rides the 1-D branch below.
+        """
         n_steps = len(step_sizes)
-        intensity = np.asarray(self.intensity, dtype=float)
+        if self._intensity_path is not None:
+            if step_start_times is None:
+                raise ValueError("trajectory intensity requires step_start_times")
+            intensity = np.interp(step_start_times, *self._intensity_path)
+        else:
+            intensity = np.asarray(self.intensity, dtype=float)
         if np.any(intensity < 0):
             raise ValueError("intensity must be non-negative")
         if intensity.ndim == 0:
@@ -325,7 +365,9 @@ class ClimateJumpProcess:
         step_sizes = np.diff(simulation_times)
         rng = get_stream_rng(master_seed, CLIMATE_JUMP_STREAM)
 
-        event_counts = rng.poisson(lam=self._step_intensities(n_paths, step_sizes))
+        event_counts = rng.poisson(
+            lam=self._step_intensities(n_paths, step_sizes, simulation_times[:-1])
+        )
         total_events = int(event_counts.sum())
 
         # One shared peril label per event (Phase B): drawn once, before the

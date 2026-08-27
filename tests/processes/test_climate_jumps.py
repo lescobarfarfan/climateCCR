@@ -454,3 +454,71 @@ def test_targets_not_simulated_by_this_portfolio_are_skipped():
     jumped = _simulate(process)
     np.testing.assert_array_equal(jumped["A"], baseline["A"])
     np.testing.assert_array_equal(jumped["B"], baseline["B"])
+
+
+# ---------------------------------------------------------------------------
+# Config-form trajectory intensity ({times_years, values} — OQ-INT-12 a rider)
+# ---------------------------------------------------------------------------
+
+
+def _trend_config(intensity) -> dict:
+    return {
+        "intensity": intensity,
+        "equity_marks": {
+            "median": 0.006864,
+            "sigma": 1.2106,
+            "sign": -1.0,
+            "targets": ["A_SHARE"],
+        },
+    }
+
+
+def test_config_trajectory_constant_path_equals_scalar():
+    # The INT-33 invariant one level down: a flat {times, values} path is the
+    # homogeneous scalar leg bit-for-bit (same substream, same marks).
+    flat = ClimateJumpProcess.from_config(
+        _trend_config({"times_years": [0.0, 3.0], "values": [2.0, 2.0]})
+    ).generate(DATES, 64, SEED)
+    scalar = ClimateJumpProcess.from_config(_trend_config(2.0)).generate(DATES, 64, SEED)
+    np.testing.assert_array_equal(flat.event_counts, scalar.event_counts)
+    np.testing.assert_array_equal(flat.step_marks["A_SHARE"], scalar.step_marks["A_SHARE"])
+
+
+def test_config_trajectory_matches_direct_1d_at_step_starts():
+    # The config form rides the tested 1-D branch: same scenario as handing
+    # the constructor the path interpolated at the step START times.
+    times, values = [0.0, 0.5, 1.5, 2.5], [10.0, 12.0, 3.0, 8.0]
+    sim_times = transform_dates_to_time_differences(DATES[0], DATES)
+    direct_1d = np.interp(sim_times[:-1], times, values)
+    marks = {"A_SHARE": LognormalMark(0.006864, 1.2106, sign=-1.0)}
+    via_config = ClimateJumpProcess.from_config(
+        _trend_config({"times_years": times, "values": values})
+    ).generate(DATES, 32, SEED)
+    direct = ClimateJumpProcess(direct_1d, marks).generate(DATES, 32, SEED)
+    np.testing.assert_array_equal(via_config.event_counts, direct.event_counts)
+    np.testing.assert_array_equal(via_config.step_marks["A_SHARE"], direct.step_marks["A_SHARE"])
+
+
+def test_config_trajectory_holds_beyond_last_point():
+    # Path ends at 1.0y: later step starts clamp to the last value (np.interp
+    # hold — the scheduled-channel convention).
+    process = ClimateJumpProcess.from_config(
+        _trend_config({"times_years": [0.0, 1.0], "values": [1.0, 5.0]})
+    )
+    sim_times = transform_dates_to_time_differences(DATES[0], DATES)
+    step_sizes = np.diff(sim_times)
+    per_step = process._step_intensities(4, step_sizes, sim_times[:-1])
+    # Annual DATES: step starts ~[0.0, 1.0027, 2.0055] -> lambda [1.0, 5.0, 5.0].
+    np.testing.assert_allclose(per_step[0], np.array([1.0, 5.0, 5.0]) * step_sizes)
+
+
+def test_config_trajectory_validation():
+    for bad in (
+        {"times_years": [0.0, 1.0]},  # missing values
+        {"times_years": [0.0, 1.0], "values": [1.0]},  # length mismatch
+        {"times_years": [1.0, 0.5], "values": [1.0, 2.0]},  # not increasing
+        {"times_years": [0.0, 1.0], "values": [1.0, -2.0]},  # negative intensity
+        {"times_years": [0.0, 1.0], "values": [1.0, 2.0], "extra": 1},  # unknown key
+    ):
+        with pytest.raises(ValueError):
+            ClimateJumpProcess.from_config(_trend_config(bad))
