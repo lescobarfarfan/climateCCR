@@ -57,6 +57,8 @@ the intensity `λ` and the per-event **impact/jump-mark** that drive the climate
 - Reading: [[2026-08-07_viz_validation_layer]] — the validation-layer read-log: point-process diagnostics (staircase, marked arrivals) and actuarial GOF for the jump channel's Exponential/lognormal legs (`GEN-33`; `notes/reading/`, `GEN-21`).
 - Explanation: [[2026-08-07_validation_figures_explained]] — the jump-channel diagnostics read against the HAZ record: the per-regime staircase across the 2016 break, the within-registry arrivals convexity, the severity QQ, and the daily jump-path concentration reading (`GEN-33`; `notes/summary_explanations/`, `GEN-26`).
 - Explanation: [[2026-08-07_physical_channel_in_ngfs_results_explained]] — the HAZ jump's four roles in the NGFS result set and the wrong-way/CVA reading (`INT-29/31`; `notes/summary_explanations/`, `GEN-26`).
+- Reading: [[2026-08-27_fase_producer_riders]] — the λ(t)-rider readings: the inhomogeneous-Poisson step-start discretization and the actuarial frequency-trend framing of the registry/CT-bridge pair under the `HAZ-STOCH-06` regime caveat (`INT-34`; `notes/reading/`, `GEN-21`).
+- Explanation: [[2026-08-27_fase_producer_results_explained]] — the rider results read against the HAZ record: why the re-anchored trends (not the refuted level extrapolation), the ×1.43-held-at-2031 ceiling moving the physical channel only −3.98→−4.11%, and what that insensitivity does to the `HAZ-STOCH-06` ambiguity (`INT-34`; `notes/summary_explanations/`, `GEN-26`).
 - Review: [[PONYTAIL_AUDIT_2026-07-11]] — over-engineering sweep; the CNSF normalizer dedup + the two deliberately rejected HAZ cuts (`HAZ-SCRAPER-CNSF-10`).
 
 ## Wires to the other arms
