@@ -260,7 +260,32 @@ def test_scheduled_shocks_compose_with_the_jump_channel():
 
 
 @pytest.mark.integration
-def test_unsimulated_scheduled_targets_are_a_loud_config_error():
+def test_partial_overlay_applies_to_the_simulated_subset():
+    # A book-wide fragment names factors this netting set does not hold: the
+    # overlay applies to what IS simulated and skips the rest (the
+    # jump-channel skip; supersedes the INT-33 per-target fail-loud, which is
+    # unworkable at per-NAID grain — pipelines/01 runs the book one netting
+    # set at a time). Zero RNG either way, so no stream to keep stable.
+    equity = (np.array([0.0, 2.0]), np.array([0.0, -0.03]))
+    block = {
+        "equity_shocks": {
+            "targets": ["A", "NOT_IN_PORTFOLIO"],
+            "times_years": [0.0, 2.0],
+            "log_factors": {"A": [0.0, -0.03], "NOT_IN_PORTFOLIO": [0.0, -0.5]},
+        }
+    }
+    baseline = _simulate()
+    shocked = _simulate(scheduled=ScheduledShockOverlay.from_config(block))
+    np.testing.assert_allclose(
+        shocked["A"] / baseline["A"],
+        np.broadcast_to(np.exp(_pinned(*equity)), baseline["A"].shape),
+        rtol=1e-12,
+    )
+    np.testing.assert_array_equal(shocked["R"], baseline["R"])
+
+
+@pytest.mark.integration
+def test_overlay_touching_nothing_simulated_is_a_loud_config_error():
     block = {
         "equity_shocks": {
             "targets": ["NOT_IN_PORTFOLIO"],
@@ -268,7 +293,7 @@ def test_unsimulated_scheduled_targets_are_a_loud_config_error():
             "log_factors": {"NOT_IN_PORTFOLIO": [0.0, -0.01]},
         }
     }
-    with pytest.raises(ValueError, match="not simulated"):
+    with pytest.raises(ValueError, match="no overlay target"):
         _simulate(scheduled=ScheduledShockOverlay.from_config(block))
 
 

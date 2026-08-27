@@ -84,15 +84,21 @@ class MultiRiskFactorSimulation:
         if scheduled_shocks is not None:
             # Deterministic scenario overlay (OQ-INT-12): zero RNG, applied after
             # the jump channel; overlays compose order-independently (HW1F adds,
-            # GBM multiplies). Unlike jumps, unsimulated targets are config errors.
+            # GBM multiplies). A book-wide overlay applies to whatever THIS
+            # portfolio simulates — the jump-channel skip (a netting set holds a
+            # subset of the book's factors, so the INT-33 per-target fail-loud
+            # is unworkable at per-NAID grain; superseded 2026-08-27). An
+            # overlay touching NOTHING simulated is still a loud config error.
             simulated = {rf.name: rf for rf in self.simulated_risk_factors}
-            missing = sorted(scheduled_shocks.target_names - set(simulated))
-            if missing:
+            present = scheduled_shocks.target_names & set(simulated)
+            if not present:
                 raise ValueError(
-                    f"scheduled_shocks targets not simulated by this portfolio: {missing}"
+                    "scheduled_shocks: no overlay target is simulated by this portfolio "
+                    f"(overlay: {sorted(scheduled_shocks.target_names)}; "
+                    f"simulated: {sorted(simulated)})"
                 )
             alphas = {}
-            for name in scheduled_shocks.rate_targets:
+            for name in scheduled_shocks.rate_targets & present:
                 calibration = getattr(simulated[name].model, "calibration", {})
                 if "alpha" not in calibration:
                     raise ValueError(
@@ -100,7 +106,7 @@ class MultiRiskFactorSimulation:
                         "alpha (not an HW1F-style model)"
                     )
                 alphas[name] = calibration["alpha"]
-            shock_marks = scheduled_shocks.step_marks(valuation_dates, alphas)
+            shock_marks = scheduled_shocks.step_marks(valuation_dates, alphas, targets=present)
             n_paths = simulation_parameters["n_paths"]
             for name, marks in shock_marks.items():
                 random_paths[name] = simulated[name].model.apply_jump_overlay(

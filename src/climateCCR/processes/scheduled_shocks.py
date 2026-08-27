@@ -134,7 +134,9 @@ class ScheduledShockOverlay:
     def target_names(self) -> frozenset[str]:
         return frozenset(self.rate_paths) | frozenset(self.equity_paths)
 
-    def step_marks(self, valuation_dates, alphas: dict[str, float]) -> dict[str, np.ndarray]:
+    def step_marks(
+        self, valuation_dates, alphas: dict[str, float], targets: set[str] | None = None
+    ) -> dict[str, np.ndarray]:
         """Per-target 1-D step marks on the simulation grid; consumes no RNG.
 
         Args:
@@ -142,7 +144,13 @@ class ScheduledShockOverlay:
                 ``generate_scenarios``).
             alphas: mean-reversion speed per rate target (the engine's own
                 calibration — one source of truth; required for every rate
-                target so the decay compensation matches the overlay it feeds).
+                target computed, so the decay compensation matches the overlay
+                it feeds).
+            targets: optional subset of ``target_names`` to compute. The
+                simulation passes each portfolio's simulated factors, so a
+                book-wide overlay applies to whatever a netting set actually
+                holds (alphas then needed only for the rate targets in the
+                subset). ``None`` computes every configured target.
 
         Returns:
             ``{target: (n_steps,) marks}`` — step ``i`` lands on date ``i+1``.
@@ -151,10 +159,14 @@ class ScheduledShockOverlay:
         step_sizes = np.diff(times)
         marks: dict[str, np.ndarray] = {}
         for name, (path_times, values) in self.equity_paths.items():
+            if targets is not None and name not in targets:
+                continue
             target = np.interp(times, path_times, values)
             target[0] = 0.0  # t=0 stays the observed market
             marks[name] = np.diff(target)
         for name, (path_times, values) in self.rate_paths.items():
+            if targets is not None and name not in targets:
+                continue
             if name not in alphas:
                 raise ValueError(
                     f"scheduled_shocks.rate_shocks target {name} needs the model's "
