@@ -199,18 +199,18 @@ wind-field attribution), CENAPRED (A/B/A′ outputs), drought (SPEI). Land under
 |---|---|---|
 | `infra` | seeds, typed YAML config, logger, `RunManifest`, `ProjectPaths` | **Built & tested** — smoke pipeline writes a real manifest |
 | `data.market` | Banxico SIE retrieval (rates, curves, Bonos M) | design in canon; migrating |
-| `data.scenarios` | NGFS / SSP scenario ingestion | planned |
+| `data.scenarios` | NGFS / SSP scenario ingestion | **Built** — NGFS short-term connector (`MKT-NGFS-04..08`); SSP planned |
 | `data.hazard_mx` | CNSF · IBTrACS · CENAPRED · drought | **Mature**, migrating in |
-| `calibration.financial` | HW / Vasicek / GBM estimators → `direct_input` | **New work** (PIMPA does none) |
-| `calibration.impact` | CLIMADA subnational impact functions; `λ` + jump-mark | design complete; building |
+| `calibration.financial` | HW / Vasicek / GBM estimators → `direct_input`; NGFS shock translation | **Built** (`MKT-CALIB-05..08`, `MKT-NGFS-06/09`) |
+| `calibration.impact` | hazard jump calibration, loss→mark scale, sector marks | **Built** (`INT-16/17`, `INT-24..26`); CLIMADA impact functions pending |
 | `processes.diffusions` | BM / GBM / Hull–White 1F | **Implemented** in PIMPA; promote |
-| `processes.jumps` | Poisson / Cox climate jump | **New** — integrating contract (`DC-CCR-SIM-2`) |
-| `simulation` | correlated multi-factor MC + jump-injection hook | **Implemented** (correlated, seeded); add hook |
+| `processes.jumps` / `processes.scheduled_shocks` | Poisson climate jump (+ trajectory `λ(t)`); deterministic scheduled scenario overlay | **Built** — the integrating contract (`DC-CCR-SIM-2`; `INT-14`, `INT-33/34`) |
+| `simulation` | correlated multi-factor MC + jump / scheduled-overlay injection | **Built** (correlated, seeded, substream-isolated jumps) |
 | `signatures` → `inference` | rough-path features + detection / validation | **Prototype with bugs**; role under review (`OQ-CCR-07`) |
-| `risk.ccr` (PIMPA) | EE / PE; + EPE / Effective-EPE / CVA | EE/PE **implemented**; EPE/CVA to add |
+| `risk.ccr` (PIMPA) | EE / PE / EPE / CVA; IRS, options, fixed + FRN cebures | **Built** (`INT-23`, `CCR-RISK-02..07`); Effective-EPE future work |
 | `risk.market` | VaR / ES, stress shocks | planned (MKT theory exists) |
 | `risk.loss` | compound-Poisson / Cox loss, parametric pricing | planned |
-| `viz` | publication-quality figures; change-vs-baseline | planned |
+| `viz` | thesis figures: CCR profiles, processes, market, validation, the NGFS flavor set | **Built** (`INT-15`, `GEN-22/33/34`; `pipelines/02`, `08`, `18`–`20`, `23`) |
 
 ---
 
@@ -258,6 +258,8 @@ The full standard is in `context/WORKFLOW.md` (§4 reproducibility, §5 version 
 - **Tests** — `pytest` units per module + ≥1 end-to-end integration test on a tiny fixture (PIMPA's
   prototype CSVs are an ideal regression fixture). **Quality**: black/ruff via pre-commit; type hints
   on public APIs. **Secrets** via environment variables / a git-ignored `.env`.
+- **Scenario workflows** — the three NGFS application flavors (nivel / trayectoria / fase), their
+  producers, run flags, readouts and comparison conventions: `notes/pipelines/ngfs_application_flavors.md`.
 - **Compatibility** — PIMPA's `DataFrame.iteritems()` (removed in pandas ≥ 2.0) is migrated to
   `.items()` on the way in.
 - **Bilingual boundary (`INT-07`)** — public Python APIs in English; Spanish data identifiers, peril

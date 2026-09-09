@@ -147,7 +147,11 @@ The **climate jump channel** (`INT-10`) is the integrating wire: `data.hazard_mx
 `calibration.impact` estimates the intensity `λ` and the impact/jump-mark → `processes.jumps` builds a
 Poisson/Cox shock → `simulation` superimposes it on the GBM/HW1F diffusion (a **jump-diffusion**) →
 `risk.*` reads out the change vs a no-climate baseline. A *fixed* climate assumption instead enters as
-a parameter shift through `scenarios`/`calibration.financial` (`INT-12`).
+a parameter shift through `scenarios`/`calibration.financial` (`INT-12` — the nivel / trayectoria
+flavors); a *trajectory* transition scenario also enters in-simulation as a deterministic scheduled
+overlay through `processes.scheduled_shocks` → `simulation` (`INT-33/34`, the fase flavor), with its
+credit-spread leg valuation-side in the bond pricers. Run recipes for the three flavors:
+`notes/pipelines/ngfs_application_flavors.md`.
 
 Key contracts that make the wiring work (full text in `context/DATA_CONTRACTS.md`):
 
