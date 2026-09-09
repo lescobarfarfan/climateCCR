@@ -42,6 +42,16 @@ legs:
   - {name: ngfs_swuc,          run: climate_jump_real_mexican_ngfs_swuc,     column: baseline, pd: SWUC,     curve: swuc}
   - {name: ngfs_swuc_combined, run: climate_jump_real_mexican_ngfs_swuc,     column: climate,  pd: SWUC,     curve: swuc}
   - {name: ngfs_daps_nam,      run: climate_jump_real_mexican_ngfs_daps_nam, column: baseline, pd: DAPS_NAM, curve: daps_nam}
+  # fase flavor (OQ-INT-12 c): the unshocked book + --choques-programados, so the
+  # t=0 pricing curve is the observed one — CVA keeps t=0 DF (curve: base) and the
+  # scenario enters through the in-simulation EE profile only. `_sin_spread` =
+  # the pre-Phase-2 archive (rate + equity channels; cebur spreads unshocked while
+  # the PD path moves — an asymmetry vs the nivel legs until OQ-INT-12 b lands).
+  - {name: fase_hwtp_sin_spread,          run: climate_jump_real_mexican_ngfs_hwtp_fase_sin_spread,     column: baseline, pd: HWTP,     curve: base}
+  - {name: fase_hwtp_combined_sin_spread, run: climate_jump_real_mexican_ngfs_hwtp_fase_sin_spread,     column: climate,  pd: HWTP,     curve: base}
+  - {name: fase_swuc_sin_spread,          run: climate_jump_real_mexican_ngfs_swuc_fase_sin_spread,     column: baseline, pd: SWUC,     curve: base}
+  - {name: fase_swuc_combined_sin_spread, run: climate_jump_real_mexican_ngfs_swuc_fase_sin_spread,     column: climate,  pd: SWUC,     curve: base}
+  - {name: fase_daps_nam_sin_spread,      run: climate_jump_real_mexican_ngfs_daps_nam_fase_sin_spread, column: baseline, pd: DAPS_NAM, curve: base}
 
 # scenario-delta decompositions vs the base leg (headline LGD): the exposure
 # channel moves the *discounted* EE profile (market state incl. the scenario
@@ -54,5 +64,8 @@ decomposition:
   - {label: HWTP, leg: ngfs_hwtp}
   - {label: SWUC, leg: ngfs_swuc}
   - {label: DAPS_NAM, leg: ngfs_daps_nam}
+  - {label: FASE_HWTP_SIN_SPREAD, leg: fase_hwtp_sin_spread}
+  - {label: FASE_SWUC_SIN_SPREAD, leg: fase_swuc_sin_spread}
+  - {label: FASE_DAPS_NAM_SIN_SPREAD, leg: fase_daps_nam_sin_spread}
 
 out_dir: results/cva
