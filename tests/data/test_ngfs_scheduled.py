@@ -53,20 +53,27 @@ def tidy_frame() -> pd.DataFrame:
                         "value": value,
                     }
                 )
-    for sector, slope in (("Market Services", -2.0), ("Consumer Goods Industries", 1.0)):
-        for year in range(2023, 2031):
-            rows.append(
-                {
-                    "model": "CLIMACRED",
-                    "scenario": "HWTP",
-                    "region": "Mexico - MEX",
-                    "variable": f"equity_relative_adjustment|{sector}",
-                    "unit": "% vs BAU",
-                    "year": year,
-                    "subannual": "Year",
-                    "value": slope * (year - 2023),
-                }
-            )
+    families = (
+        ("equity_relative_adjustment", "% vs BAU", {"Market Services": -2.0}),
+        ("equity_relative_adjustment", "% vs BAU", {"Consumer Goods Industries": 1.0}),
+        ("corporate_bond_spread_adjustment", "pp vs BAU", {"Market Services": 0.5}),
+        ("corporate_bond_spread_adjustment", "pp vs BAU", {"Consumer Goods Industries": -0.05}),
+    )
+    for family, unit, slopes in families:
+        for sector, slope in slopes.items():
+            for year in range(2023, 2031):
+                rows.append(
+                    {
+                        "model": "CLIMACRED",
+                        "scenario": "HWTP",
+                        "region": "Mexico - MEX",
+                        "variable": f"{family}|{sector}",
+                        "unit": unit,
+                        "year": year,
+                        "subannual": "Year",
+                        "value": slope * (year - 2023),
+                    }
+                )
     frame = pd.DataFrame(rows)
     frame["time"] = frame["year"] + frame["subannual"].map(offsets)
     return frame
@@ -111,7 +118,8 @@ def test_equity_paths_log_units_shared_axis_crosswalk(producer):
             "FEMSA_SHARE": "Consumer Goods Industries",
         },
     }
-    by_name = producer.equity_paths(frame, "HWTP", leg, VALUATION, WINDOW)
+    log_units = producer.SECTOR_CHANNELS[0][3]
+    by_name = producer.sector_paths(frame, "HWTP", leg, VALUATION, WINDOW, log_units)
     assert set(by_name) == set(leg["sectors"])
     t_w, v_w = by_name["WALMEX_SHARE"]
     t_h, v_h = by_name["HCITY_SHARE"]
@@ -122,8 +130,33 @@ def test_equity_paths_log_units_shared_axis_crosswalk(producer):
     assert v_w[-1] == pytest.approx(np.log1p(-14.0 / 100.0))
 
 
+def test_spread_paths_linear_units_shared_axis_issuer_fan_out(producer):
+    frame = tidy_frame()
+    leg = {
+        "variable_family": "corporate_bond_spread_adjustment",
+        "sectors": {
+            "FIBRAHOTEL": "Market Services",
+            "ALSEA": "Market Services",
+            "FEMSA": "Consumer Goods Industries",
+        },
+    }
+    pp_units = producer.SECTOR_CHANNELS[1][3]
+    by_issuer = producer.sector_paths(frame, "HWTP", leg, VALUATION, WINDOW, pp_units)
+    assert set(by_issuer) == set(leg["sectors"])
+    t_h, v_h = by_issuer["FIBRAHOTEL"]
+    assert by_issuer["ALSEA"] == (t_h, v_h)  # same sector -> same path
+    assert t_h == by_issuer["FEMSA"][0]  # one shared axis
+    # Linear units (pp -> decimal, no log): last kept point 2030.5 -> +3.5 pp -> 0.035.
+    assert v_h[-1] == pytest.approx(0.5 * (2030 - 2023) / 100.0)
+    # Raw basing: t=0 carries the published pp interpolated at the valuation date.
+    years = [y + 0.5 for y in range(2023, 2031)]  # annual rows sit at mid-year
+    published_pp = [0.5 * k for k in range(len(years))]
+    t0 = producer._decimal_year(VALUATION)
+    assert v_h[0] == pytest.approx(np.interp(t0, years, published_pp) / 100.0)
+
+
 def test_build_fragment_units_and_overlay_round_trip(producer):
-    from climateCCR.processes.scheduled_shocks import ScheduledShockOverlay
+    from climateCCR.processes.scheduled_shocks import ScheduledShockOverlay, SpreadSchedule
 
     frame = tidy_frame()
     shock = {
@@ -135,14 +168,40 @@ def test_build_fragment_units_and_overlay_round_trip(producer):
             "variable_family": "equity_relative_adjustment",
             "sectors": {"WALMEX_SHARE": "Market Services"},
         },
+        "bond_leg": {
+            "variable_family": "corporate_bond_spread_adjustment",
+            "sectors": {"FEMSA": "Consumer Goods Industries"},
+        },
     }
     block = producer.build_fragment(frame, "HWTP", shock, VALUATION)
-    ScheduledShockOverlay.from_config(block)  # engine-schema round trip
+    overlay = ScheduledShockOverlay.from_config(block)  # engine-schema round trip
+    assert overlay.target_names == {"MXN_ZERO_YIELD_CURVE", "WALMEX_SHARE"}  # no issuers
+    assert SpreadSchedule.from_config(block["spread_shocks"]).target_names == {"FEMSA"}
     # Rate units pp -> decimal: the linear ramp is exact under interpolation.
     t0 = producer._decimal_year(VALUATION)
     delta_t0 = block["rate_shocks"]["deltas"]["MXN_ZERO_YIELD_CURVE"][0]
     assert delta_t0 == pytest.approx(0.2 * (t0 - 2025.0) / 100.0)
     assert block["equity_shocks"]["targets"] == ["WALMEX_SHARE"]
+    assert block["spread_shocks"]["targets"] == ["FEMSA"]
+    assert block["spread_shocks"]["spreads"]["FEMSA"][-1] == pytest.approx(-0.05 * 7 / 100.0)
+
+
+def test_book_spread_schedule_guard(demo, tmp_path):
+    (tmp_path / "BONDS.csv").write_text("trade_id,issuer_name,spread\n1,FEMSA,0.01\n")
+    gp = {
+        "prototype_data_paths": {"trades": {"DEBT": str(tmp_path) + "/"}},
+        "prototype_data_files": {
+            "trades": {"DEBT": {"BOND_FIXED": "BONDS.csv", "BOND_FRN": "BONDS.csv"}}
+        },
+    }
+    block = {"targets": ["FEMSA"], "times_years": [0.0, 1.0], "spreads": {"FEMSA": [0.0, 0.01]}}
+    assert demo.book_spread_schedule(block, gp).target_names == frozenset({"FEMSA"})
+    disjoint = {"targets": ["PEMEX"], "times_years": [0.0], "spreads": {"PEMEX": [0.0]}}
+    with pytest.raises(ValueError, match="no issuer"):
+        demo.book_spread_schedule(disjoint, gp)
+    no_debt = {"prototype_data_paths": {"trades": {}}, "prototype_data_files": {"trades": {}}}
+    with pytest.raises(ValueError, match="no issuer"):  # a book without a DEBT desk
+        demo.book_spread_schedule(block, no_debt)
 
 
 def test_fragment_guard_valuation_mismatch(demo, tmp_path):

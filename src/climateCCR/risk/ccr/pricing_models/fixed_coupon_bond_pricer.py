@@ -14,8 +14,12 @@ class FixedCouponBondPricer(PricingModel):
     with P(t, T_i) reconstructed from the simulated HW1F short rate exactly as
     the IRS pricer does, and the residual cashflows per 100 face from
     ``bono_cashflows`` (182-day periods). The spread is the issuance sobretasa,
-    constant for the life of the trade.
-    # ponytail: static spread; per-path spread dynamics need a credit risk factor
+    constant for the life of the trade unless ``global_parameters["spread_shocks"]``
+    carries a ``SpreadSchedule`` naming the issuer (the fase credit-spread leg,
+    OQ-INT-12 b): then the delta prevailing at each valuation date shifts it,
+    floored at 0.
+    # ponytail: deterministic spread schedule; per-path stochastic spread
+    # dynamics would need a credit risk factor
     """
 
     def __init__(self, name=None) -> None:
@@ -44,6 +48,8 @@ class FixedCouponBondPricer(PricingModel):
         coupon = trade.get_attribute("coupon")
         spread = trade.get_attribute("spread")
         maturity = trade.get_attribute("maturity")
+        schedule = global_parameters.get("spread_shocks")  # OQ-INT-12 b: the fase spread leg
+        issuer = trade.get_attribute("issuer_name") if schedule is not None else None
 
         for i, valuation_date in enumerate(valuation_dates):
             plazo_dias = (maturity - valuation_date).days
@@ -54,6 +60,7 @@ class FixedCouponBondPricer(PricingModel):
             times_days, amounts = bono_cashflows(plazo_dias, coupon)
             tau = times_days / 365.0  # years from the valuation date (Act/365)
             t = transform_dates_to_time_differences(valuation_dates[0], valuation_date)
+            s = schedule.shocked_spread(spread, t, issuer) if schedule is not None else spread
             discount_factors = SimulatedHW1FCurve(scenarios[discount_curve][:, i]).get_value(
                 calibration=self.calibration[discount_curve],
                 t_date=t,
@@ -62,10 +69,7 @@ class FixedCouponBondPricer(PricingModel):
                 return_log=False,
             )
             trade_mtms[:, i] = (
-                ls_factor
-                * notional
-                / 100.0
-                * (discount_factors @ (amounts * np.exp(-spread * tau)))
+                ls_factor * notional / 100.0 * (discount_factors @ (amounts * np.exp(-s * tau)))
             )
 
         return trade_mtms

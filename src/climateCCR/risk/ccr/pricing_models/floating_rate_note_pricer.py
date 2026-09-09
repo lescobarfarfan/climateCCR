@@ -27,9 +27,13 @@ class FloatingRateNotePricer(PricingModel):
     result. The current period's already-fixed index is approximated by the
     stub forward from the current path state (S clamped to t): exact for the
     stub's par value, and the ≤28-day fixing lag is immaterial at the B3
-    reporting grain.
-    # ponytail: static discount margin + single-curve TIIE proxy; per-path
-    # spread dynamics need a credit risk factor (OQ-INT-10 b scope)
+    reporting grain. The discount margin is constant unless
+    ``global_parameters["spread_shocks"]`` carries a ``SpreadSchedule`` naming
+    the issuer (the fase credit-spread leg, OQ-INT-12 b): then the delta
+    prevailing at each valuation date shifts it, floored at 0, while the
+    contractual sobretasa stays put.
+    # ponytail: deterministic discount-margin schedule + single-curve TIIE
+    # proxy; per-path stochastic spread dynamics would need a credit risk factor
     """
 
     def __init__(self, name=None) -> None:
@@ -59,6 +63,8 @@ class FloatingRateNotePricer(PricingModel):
         spread = trade.get_attribute("spread")  # discount margin (NGFS-shockable)
         maturity = trade.get_attribute("maturity")
         accrual = FRN_PERIOD_DAYS / 360.0
+        schedule = global_parameters.get("spread_shocks")  # OQ-INT-12 b: the fase spread leg
+        issuer = trade.get_attribute("issuer_name") if schedule is not None else None
 
         for i, valuation_date in enumerate(valuation_dates):
             plazo_dias = (maturity - valuation_date).days
@@ -70,6 +76,7 @@ class FloatingRateNotePricer(PricingModel):
             tau = times_days / 365.0  # years from the valuation date (Act/365)
             tau_fix = np.maximum(times_days - FRN_PERIOD_DAYS, 0.0) / 365.0
             t = transform_dates_to_time_differences(valuation_dates[0], valuation_date)
+            s = schedule.shocked_spread(spread, t, issuer) if schedule is not None else spread
             curve = SimulatedHW1FCurve(scenarios[discount_curve][:, i])
             p_pay = curve.get_value(
                 calibration=self.calibration[discount_curve],
@@ -89,7 +96,7 @@ class FloatingRateNotePricer(PricingModel):
             amounts = (forward_simple + margin) * accrual * 100.0
             amounts[:, -1] += 100.0
             trade_mtms[:, i] = (
-                ls_factor * notional / 100.0 * (p_pay * np.exp(-spread * tau) * amounts).sum(axis=1)
+                ls_factor * notional / 100.0 * (p_pay * np.exp(-s * tau) * amounts).sum(axis=1)
             )
 
         return trade_mtms

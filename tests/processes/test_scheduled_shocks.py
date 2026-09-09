@@ -15,7 +15,7 @@ import pytest
 from climateCCR.processes.diffusions.geometric_brownian_motion import GeometricBrownianMotion
 from climateCCR.processes.diffusions.hw1f import HW1F
 from climateCCR.processes.jumps import ClimateJumpProcess, DeterministicMark
-from climateCCR.processes.scheduled_shocks import ScheduledShockOverlay
+from climateCCR.processes.scheduled_shocks import ScheduledShockOverlay, SpreadSchedule
 from climateCCR.simulation.correlation_matrix import CorrelationMatrix
 from climateCCR.simulation.multi_risk_factor_simulation import MultiRiskFactorSimulation
 from climateCCR.simulation.risk_factor import RiskFactor
@@ -187,6 +187,71 @@ def test_a_target_cannot_sit_in_both_channels():
             rate_paths={"X": (np.array([0.0]), np.array([0.0]))},
             equity_paths={"X": (np.array([0.0]), np.array([0.0]))},
         )
+
+
+# ---------------------------------------------------------------------------
+# SpreadSchedule — the valuation-side spread leg (OQ-INT-12 b)
+# ---------------------------------------------------------------------------
+
+
+def _schedule(times, values, issuer="X"):
+    block = {"targets": [issuer], "times_years": list(times), "spreads": {issuer: list(values)}}
+    return SpreadSchedule.from_config(block)
+
+
+def test_spread_schedule_t0_is_the_observed_market_and_prevails_after():
+    times, values = [0.0, 1.0, 2.0], [0.004, 0.006, 0.010]
+    schedule = _schedule(times, values)
+    spread = 0.024
+    assert schedule.shocked_spread(spread, 0.0, "X") is spread  # same object: byte identity
+    expected = spread + np.interp(TIMES[1], times, values)
+    assert schedule.shocked_spread(spread, TIMES[1], "X") == pytest.approx(expected)
+
+
+def test_spread_schedule_holds_first_and_last_values():
+    schedule = _schedule([0.6, 0.9], [0.002, 0.005])
+    assert schedule.shocked_spread(0.01, 0.3, "X") == pytest.approx(0.012)
+    assert schedule.shocked_spread(0.01, 5.0, "X") == pytest.approx(0.015)
+
+
+def test_spread_schedule_floors_at_zero_and_skips_unscheduled_issuers():
+    schedule = _schedule([0.0, 1.0], [-0.05, -0.05])
+    assert schedule.shocked_spread(0.01, 0.5, "X") == 0.0
+    assert schedule.shocked_spread(0.01, 0.5, "OTHER") == 0.01
+    assert schedule.target_names == frozenset({"X"})
+
+
+def test_constant_spread_path_reduces_to_nivel_after_t0():
+    schedule = _schedule([0.0, 3.0], [0.0125, 0.0125])
+    spread = 0.02
+    assert schedule.shocked_spread(spread, TIMES[0], "X") == spread
+    for t in TIMES[1:]:
+        assert schedule.shocked_spread(spread, t, "X") == max(spread + 0.0125, 0.0)
+
+
+@pytest.mark.parametrize(
+    "block",
+    [
+        {"targets": [], "times_years": [0.0], "spreads": {}},  # no issuer
+        {"targets": ["X"], "times_years": [0.0, 1.0], "spreads": {"X": [0.0]}},  # length
+        {"targets": ["X"], "times_years": [1.0, 0.5], "spreads": {"X": [0.0, 0.0]}},  # order
+        {"targets": ["X"], "times_years": [0.0], "spreads": {"X": [0.0], "Y": [0.0]}},  # unknown
+        {"targets": ["X", "Y"], "times_years": [0.0], "spreads": {"X": [0.0]}},  # missing
+        {"targets": ["X"], "times_years": [0.0], "spreads": {"X": [float("nan")]}},  # NaN
+    ],
+)
+def test_invalid_spread_blocks_raise(block):
+    with pytest.raises((ValueError, KeyError)):
+        SpreadSchedule.from_config(block)
+
+
+def test_overlay_from_config_ignores_the_spread_channel():
+    block = {
+        "rate_shocks": {"targets": ["R"], "times_years": [0.0, 1.0], "deltas": {"R": [0.0, 0.01]}},
+        "spread_shocks": {"targets": ["X"], "times_years": [0.0], "spreads": {"X": [0.001]}},
+    }
+    # Issuers never reach the simulation's fail-loud target intersection.
+    assert ScheduledShockOverlay.from_config(block).target_names == frozenset({"R"})
 
 
 # ---------------------------------------------------------------------------

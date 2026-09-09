@@ -144,6 +144,50 @@ def test_market_dependencies_declare_the_curve_calibration():
     assert dependencies == {("Pricing_HW1F_calibration", CURVE_NAME)}
 
 
+# --- The fase credit-spread leg (OQ-INT-12 b): the discount margin follows a schedule ---
+
+DATES = [VALUATION_DATE, datetime(2027, 7, 17)]
+
+
+def _price_on(trade, dates=DATES, **gp_extra):
+    scenarios = {CURVE_NAME: np.full((N_PATHS, len(dates)), FLAT_RATE)}
+    return _make_pricer().price_single_trade(
+        trade, dates, scenarios, {}, {"n_paths": N_PATHS, **gp_extra}
+    )
+
+
+def _spread_schedule(delta, issuer="ISSUER"):
+    from climateCCR.processes.scheduled_shocks import SpreadSchedule
+
+    block = {"targets": [issuer], "times_years": [0.0, 3.0], "spreads": {issuer: [delta, delta]}}
+    return SpreadSchedule.from_config(block)
+
+
+def test_frn_spread_schedule_absent_zero_or_foreign_issuer_is_byte_identical():
+    trade = _trade(issuer_name="ISSUER")
+    static = _price_on(trade)
+    np.testing.assert_array_equal(_price_on(trade, spread_shocks=_spread_schedule(0.0)), static)
+    foreign = _spread_schedule(0.02, issuer="OTHER")
+    np.testing.assert_array_equal(_price_on(trade, spread_shocks=foreign), static)
+
+
+def test_frn_constant_spread_schedule_moves_the_discount_margin_only_after_t0():
+    delta = 0.03
+    scheduled = _price_on(_trade(issuer_name="ISSUER"), spread_shocks=_spread_schedule(delta))
+    static = _price_on(_trade(issuer_name="ISSUER"))
+    # The nivel state: the discount margin widened, the contractual sobretasa untouched.
+    nivel = _price_on(_trade(issuer_name="ISSUER", spread=0.0125 + delta))
+    np.testing.assert_array_equal(scheduled[:, 0], static[:, 0])
+    np.testing.assert_array_equal(scheduled[:, 1:], nivel[:, 1:])
+    assert np.all(scheduled[:, 1] < static[:, 1])  # off par once credit deteriorates
+
+
+def test_frn_spread_schedule_floors_at_zero():
+    floored = _price_on(_trade(issuer_name="ISSUER"), spread_shocks=_spread_schedule(-1.0))
+    zero_margin = _price_on(_trade(issuer_name="ISSUER", spread=0.0))
+    np.testing.assert_array_equal(floored[:, 1:], zero_margin[:, 1:])
+
+
 def _load_pipeline_09():
     spec = importlib.util.spec_from_file_location(
         "build_mexican_book", REPO_ROOT / "pipelines" / "09_build_mexican_book.py"

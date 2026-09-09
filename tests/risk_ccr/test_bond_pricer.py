@@ -123,5 +123,48 @@ def test_market_dependencies_declare_the_curve_calibration():
     assert dependencies == {("Pricing_HW1F_calibration", CURVE_NAME)}
 
 
+# --- The fase credit-spread leg (OQ-INT-12 b): a valuation-side SpreadSchedule ---
+
+DATES = [VALUATION_DATE, datetime(2027, 7, 17)]
+
+
+def _price_on(trade, dates=DATES, **gp_extra):
+    scenarios = {CURVE_NAME: np.full((N_PATHS, len(dates)), FLAT_RATE)}
+    return _make_pricer().price_single_trade(
+        trade, dates, scenarios, {}, {"n_paths": N_PATHS, **gp_extra}
+    )
+
+
+def _spread_schedule(delta, issuer="ISSUER"):
+    from climateCCR.processes.scheduled_shocks import SpreadSchedule
+
+    block = {"targets": [issuer], "times_years": [0.0, 3.0], "spreads": {issuer: [delta, delta]}}
+    return SpreadSchedule.from_config(block)
+
+
+def test_spread_schedule_absent_zero_or_foreign_issuer_is_byte_identical():
+    trade = _trade(issuer_name="ISSUER")
+    static = _price_on(trade)
+    np.testing.assert_array_equal(_price_on(trade, spread_shocks=_spread_schedule(0.0)), static)
+    foreign = _spread_schedule(0.02, issuer="OTHER")
+    np.testing.assert_array_equal(_price_on(trade, spread_shocks=foreign), static)
+
+
+def test_constant_spread_schedule_reduces_to_nivel_after_t0():
+    delta = 0.008
+    scheduled = _price_on(_trade(issuer_name="ISSUER"), spread_shocks=_spread_schedule(delta))
+    static = _price_on(_trade(issuer_name="ISSUER"))
+    nivel = _price_on(_trade(issuer_name="ISSUER", spread=0.0120 + delta))
+    np.testing.assert_array_equal(scheduled[:, 0], static[:, 0])  # 0D: the observed market
+    np.testing.assert_array_equal(scheduled[:, 1:], nivel[:, 1:])  # after: the nivel state
+    assert np.all(scheduled[:, 1] < static[:, 1])  # a wider spread lowers the price
+
+
+def test_spread_schedule_floors_at_zero():
+    floored = _price_on(_trade(issuer_name="ISSUER"), spread_shocks=_spread_schedule(-1.0))
+    zero_spread = _price_on(_trade(issuer_name="ISSUER", spread=0.0))
+    np.testing.assert_array_equal(floored[:, 1:], zero_spread[:, 1:])
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

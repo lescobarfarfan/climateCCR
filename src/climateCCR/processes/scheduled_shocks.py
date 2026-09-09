@@ -28,6 +28,13 @@ Conventions fixed by the OQ-INT-12 design ruling:
   (the ``np.interp`` end clamps — the MKT-NGFS-09 hold-beyond-window rule).
   The producer pipeline owns the NGFS calendar-year -> year-fraction bridge;
   this module is calendar-free.
+- **Spread leg (OQ-INT-12 b, valuation-side):** per-issuer credit-spread
+  delta paths ride the same fragment as a ``spread_shocks`` channel but never
+  touch a simulated path — :class:`SpreadSchedule` hands the bond pricers the
+  delta prevailing at each reporting date (``max(spread + delta(t), 0)``, a
+  flat spread term structure per date — the nivel semantics); t=0 is the
+  observed market, so a constant path reproduces the nivel spread state at
+  every date after 0D and an absent or zero schedule prices byte-identically.
 
 Unlike the jump channel — which draws marks for every configured target so the
 event stream is identical across portfolios and silently skips targets a
@@ -41,7 +48,13 @@ import numpy as np
 
 from climateCCR.utils.calendar_utils import transform_dates_to_time_differences
 
-_CHANNEL_VALUE_KEYS = {"rate_shocks": "deltas", "equity_shocks": "log_factors"}
+_CHANNEL_VALUE_KEYS = {
+    "rate_shocks": "deltas",
+    "equity_shocks": "log_factors",
+    "spread_shocks": "spreads",  # valuation-side (SpreadSchedule), never a simulated overlay
+}
+# The channels the simulation overlay consumes; spread_shocks is read by the bond pricers.
+_OVERLAY_CHANNELS = ("rate_shocks", "equity_shocks")
 
 
 def _validated_paths(channel: str, block: dict) -> dict[str, tuple[np.ndarray, np.ndarray]]:
@@ -118,7 +131,7 @@ class ScheduledShockOverlay:
         """
         parsed = {
             channel: _validated_paths(channel, block[channel])
-            for channel in _CHANNEL_VALUE_KEYS
+            for channel in _OVERLAY_CHANNELS
             if block.get(channel) is not None
         }
         return cls(
@@ -176,3 +189,42 @@ class ScheduledShockOverlay:
             target[0] = 0.0
             marks[name] = target[1:] - target[:-1] * np.exp(-alphas[name] * step_sizes)
         return marks
+
+
+class SpreadSchedule:
+    """Valuation-side deterministic credit-spread deltas per issuer (OQ-INT-12 b).
+
+    Built from a ``spread_shocks`` block — ``{targets, times_years, spreads}``:
+    issuer names, Act/365 years from the valuation date, decimal spread deltas
+    vs BAU. Not a channel of :class:`ScheduledShockOverlay`: spreads are frozen
+    t=0 pricer inputs, not simulated risk factors, so the bond pricers read the
+    schedule at each reporting date instead of it riding the jump-overlay seam.
+    :meth:`shocked_spread` applies the prevailing delta to ALL remaining
+    cashflows (a flat spread term structure per date — the nivel
+    ``spread + delta`` semantics, deliberately not forward-integrated), floors
+    at 0 like the nivel leg, holds the last value beyond the window (the
+    ``np.interp`` clamp), and returns the input spread itself at t=0 (the
+    observed market) and for unscheduled issuers — so an absent or zero
+    schedule prices byte-identically and a constant path reproduces the nivel
+    spread state at every date after 0D.
+    """
+
+    def __init__(self, paths: dict[str, tuple[np.ndarray, np.ndarray]]) -> None:
+        if not paths:
+            raise ValueError("spread_shocks needs at least one target")
+        self.paths = dict(paths)
+
+    @classmethod
+    def from_config(cls, block: dict) -> SpreadSchedule:
+        return cls(_validated_paths("spread_shocks", block))
+
+    @property
+    def target_names(self) -> frozenset[str]:
+        return frozenset(self.paths)
+
+    def shocked_spread(self, spread: float, t: float, issuer: str) -> float:
+        """``max(spread + delta(t), 0)`` for a scheduled issuer after t=0; ``spread`` otherwise."""
+        if t <= 0.0 or issuer not in self.paths:
+            return spread
+        times, values = self.paths[issuer]
+        return max(spread + float(np.interp(t, times, values)), 0.0)

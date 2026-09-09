@@ -19,7 +19,10 @@ the OQ-GEN-02 c artifact) — the profiles themselves are byte-identical.
 With ``--choques-programados <fragmento>``, the INT-33 scheduled overlay
 (a pipelines/22 fragment) applies to BOTH legs — the "fase" NGFS state
 (OQ-INT-12 a) — so the jump-ON vs jump-OFF contrast stays the pure physical
-channel; the fragment's valuation_date must match the run config's.
+channel; the fragment's valuation_date must match the run config's. A
+fragment's ``spread_shocks`` channel (Phase 2, OQ-INT-12 b) becomes a
+valuation-side ``SpreadSchedule`` the bond pricers read — both legs alike —
+and must name at least one issuer of the book.
 
     python pipelines/01_climate_jump_demo.py [--forzar] [--horizonte corto] [--trayectorias]
 """
@@ -100,6 +103,29 @@ def load_scheduled_fragment(path: Path, today_date: str) -> dict:
     return fragment
 
 
+def book_spread_schedule(block: dict, global_parameters: dict):
+    """Fragment spread schedule; loud if it names no issuer of this book (OQ-INT-12 b).
+
+    The DEBT desk file(s) are resolved exactly as ``Trade.load`` does, so a book
+    without bonds (the PIMPA fixture) or a fragment built for another book is a
+    config error, not a silent no-op — the scheduled-shock rule that an overlay
+    touching nothing simulated fails loudly, restated for the valuation side.
+    """
+    from climateCCR.processes.scheduled_shocks import SpreadSchedule
+
+    schedule = SpreadSchedule.from_config(block)
+    desk = global_parameters["prototype_data_paths"]["trades"].get("DEBT", "")
+    files = global_parameters["prototype_data_files"]["trades"].get("DEBT", {})
+    issuers: set[str] = set()
+    for name in set(files.values()):
+        issuers |= set(pd.read_csv(desk + name)["issuer_name"])
+    if not schedule.target_names & issuers:
+        raise ValueError(
+            f"spread_shocks names no issuer of this book: {sorted(schedule.target_names)}"
+        )
+    return schedule
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -151,7 +177,8 @@ def main() -> None:
         default=None,
         help="fragmento scheduled_shocks de pipelines/22 aplicado a AMBAS corridas "
         "(jump-OFF y jump-ON) — el estado 'fase' del mundo NGFS (OQ-INT-12 a); "
-        "el contraste ON-OFF queda como el canal físico puro",
+        "el contraste ON-OFF queda como el canal físico puro; su canal spread_shocks "
+        "(fase 2, OQ-INT-12 b) entra por valuación en los pricers de bonos",
     )
     args = parser.parse_args()
 
@@ -207,10 +234,17 @@ def main() -> None:
         from climateCCR.processes.scheduled_shocks import ScheduledShockOverlay
 
         fragment = load_scheduled_fragment(args.choques_programados, today_date)
-        gp["scheduled_shocks"] = ScheduledShockOverlay.from_config(fragment["scheduled_shocks"])
+        block = fragment["scheduled_shocks"]
+        gp["scheduled_shocks"] = ScheduledShockOverlay.from_config(block)
+        if block.get("spread_shocks"):  # Phase 2: valuation-side, read by the bond pricers
+            gp["spread_shocks"] = book_spread_schedule(block["spread_shocks"], gp)
         # Manifest completeness (GEN-06): the resolved fragment rides the manifest.
         config.extra["scheduled_shocks"] = fragment
-        logger.info("Scheduled shocks (fase) from %s -> both legs", args.choques_programados)
+        logger.info(
+            "Scheduled shocks (fase) from %s -> both legs (channels: %s)",
+            args.choques_programados,
+            sorted(block),
+        )
 
     baseline_store: dict | None = {} if args.trayectorias else None
     jumped_store: dict | None = {} if args.trayectorias else None

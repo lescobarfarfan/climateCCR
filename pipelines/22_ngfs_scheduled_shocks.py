@@ -16,6 +16,12 @@ overlays of pipelines/16:
   book names through the shock config's ``equity_leg.sectors`` crosswalk;
   interpolation happens in log space, matching how the engine interpolates
   the ``log_factors`` it is handed.
+- **spread channel (Phase 2, OQ-INT-12 b)** — the annual CLIMACRED
+  ``corporate_bond_spread_adjustment`` sector paths (excl-policy, pp vs BAU
+  -> decimal) mapped to the book issuers through ``bond_leg.sectors`` — the
+  same family and crosswalk as the nivel bond leg, so the flavors stay
+  like-for-like. Valuation-side: a ``SpreadSchedule`` the bond pricers read at
+  each reporting date, never a simulated overlay.
 
 Conventions (INT-33 + the 2026-08-27 rulings): **raw published deltas** — the
 fragment's t=0 point carries the scenario delta already accumulated at the
@@ -25,12 +31,13 @@ thereafter); the producer owns the **calendar bridge** (NGFS decimal years ->
 calendar dates, nearest-day quantization <= 12 h -> Act/365 year-fractions
 from the valuation date — the engine's own axis); points at or beyond
 ``window[1] + 1.0`` (decimal 2031.0) are dropped and the engine's np.interp
-clamp holds the last value (the MKT-NGFS-09 clip). The credit-spread leg is
-valuation-side and deliberately absent (OQ-INT-12 b, Phase 2).
+clamp holds the last value (the MKT-NGFS-09 clip). Every channel shares the
+basing, the bridge and the clip.
 
 Fragments are deterministic (provenance carries the source sha256s, no
 timestamps — byte-identical re-runs, GEN-30 discipline) and validated through
-``ScheduledShockOverlay.from_config`` before writing. Idempotent (GEN-05):
+``ScheduledShockOverlay.from_config`` / ``SpreadSchedule.from_config`` before
+writing. Idempotent (GEN-05):
 existing fragments are skipped, rerun with ``--forzar``. A ``resumen.csv``
 and a run manifest land beside them.
 
@@ -51,6 +58,14 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PRODUCER_CONFIG = REPO_ROOT / "configs" / "ngfs_scheduled.yaml"
+
+# Sector-grain channels: (shock-config leg, fragment channel, value key, published -> engine).
+SECTOR_CHANNELS = (
+    ("equity_leg", "equity_shocks", "log_factors", lambda pct: np.log1p(pct / 100.0)),
+    ("bond_leg", "spread_shocks", "spreads", lambda pp: pp / 100.0),
+)
+# Every fragment channel and its value key (the resumen rows).
+CHANNEL_VALUE_KEYS = (("rate_shocks", "deltas"), *((c, k) for _, c, k, _ in SECTOR_CHANNELS))
 
 
 def _decimal_year(date_str: str) -> float:
@@ -103,10 +118,21 @@ def scheduled_path(
     return times, [at_t0] + [float(v) for v in values_pub[keep]]
 
 
-def equity_paths(
-    frame: pd.DataFrame, scenario: str, leg: dict, valuation_date: str, window: tuple[float, float]
+def sector_paths(
+    frame: pd.DataFrame,
+    scenario: str,
+    leg: dict,
+    valuation_date: str,
+    window: tuple[float, float],
+    units,
 ) -> dict[str, tuple[list[float], list[float]]]:
-    """Per-name cumulative log(1 + pct/100) paths on one shared annual axis."""
+    """Per-name paths of one sector-grain family on one shared annual axis.
+
+    ``units`` maps the published values to the engine's: ``log1p(pct / 100)``
+    for the equity channel (so interpolation happens in log space, matching
+    how the engine interpolates the ``log_factors`` it is handed), ``pp / 100``
+    for the spread channel. Every name in a sector rides that sector's path.
+    """
     from climateCCR.data.scenarios.ngfs import annual_series
 
     family = leg["variable_family"]
@@ -120,15 +146,15 @@ def equity_paths(
         elif not np.array_equal(times, shared_times):
             raise ValueError(
                 f"{family}|{sector} ({scenario}): time axis differs from the other sectors — "
-                "the equity channel needs one shared times_years"
+                f"the {family} channel needs one shared times_years"
             )
-        log_values = np.log1p(series["value"].to_numpy(dtype=float) / 100.0)
-        by_sector[sector] = scheduled_path(times, log_values, valuation_date, window)
+        values = units(series["value"].to_numpy(dtype=float))
+        by_sector[sector] = scheduled_path(times, values, valuation_date, window)
     return {name: by_sector[sector] for name, sector in leg["sectors"].items()}
 
 
 def build_fragment(frame: pd.DataFrame, scenario: str, shock: dict, valuation_date: str) -> dict:
-    """The INT-33 ``scheduled_shocks`` block for one scenario (rate + equity channels)."""
+    """The INT-33 ``scheduled_shocks`` block for one scenario (rate, equity, spread channels)."""
     from climateCCR.data.scenarios import policy_rate_delta
 
     window = tuple(shock["window"])
@@ -144,14 +170,16 @@ def build_fragment(frame: pd.DataFrame, scenario: str, shock: dict, valuation_da
             "deltas": {curve: [pp / 100.0 for pp in rate_pp]},
         }
     }
-    leg = shock.get("equity_leg")
-    if leg:
-        by_name = equity_paths(frame, scenario, leg, valuation_date, window)
+    for leg_key, channel, value_key, units in SECTOR_CHANNELS:
+        leg = shock.get(leg_key)
+        if not leg:
+            continue
+        by_name = sector_paths(frame, scenario, leg, valuation_date, window, units)
         names = sorted(by_name)
-        block["equity_shocks"] = {
+        block[channel] = {
             "targets": names,
             "times_years": by_name[names[0]][0],
-            "log_factors": {name: by_name[name][1] for name in names},
+            value_key: {name: by_name[name][1] for name in names},
         }
     return block
 
@@ -171,7 +199,7 @@ def main() -> None:
 
     from climateCCR.data.scenarios import load_short_term
     from climateCCR.infra import RunManifest, get_logger, load_config
-    from climateCCR.processes.scheduled_shocks import ScheduledShockOverlay
+    from climateCCR.processes.scheduled_shocks import ScheduledShockOverlay, SpreadSchedule
 
     config = load_config(args.config)
     config.paths.ensure()
@@ -198,6 +226,8 @@ def main() -> None:
             continue
         block = build_fragment(frame, scenario, shock, valuation_date)
         ScheduledShockOverlay.from_config(block)  # fail here, not at simulation time
+        if block.get("spread_shocks"):
+            SpreadSchedule.from_config(block["spread_shocks"])  # the overlay skips this channel
         fragment = {
             "provenance": {
                 "producer": "pipelines/22_ngfs_scheduled_shocks.py",
@@ -213,11 +243,11 @@ def main() -> None:
         out_root.mkdir(parents=True, exist_ok=True)
         out_path.write_text(yaml.safe_dump(fragment, sort_keys=False, width=100))
         built += 1
-        for channel in ("rate_shocks", "equity_shocks"):
+        for channel, value_key in CHANNEL_VALUE_KEYS:
             ch = block.get(channel)
             if not ch:
                 continue
-            values = np.asarray(list((ch.get("deltas") or ch["log_factors"]).values()))
+            values = np.asarray(list(ch[value_key].values()))
             rows.append(
                 {
                     "scenario": scenario,
@@ -232,11 +262,12 @@ def main() -> None:
                 }
             )
         logger.info(
-            "%s -> %s (%d rate points, %d equity names)",
+            "%s -> %s (%d rate points, %d equity names, %d spread issuers)",
             scenario,
             out_path,
             len(block["rate_shocks"]["times_years"]),
             len(block.get("equity_shocks", {}).get("targets", [])),
+            len(block.get("spread_shocks", {}).get("targets", [])),
         )
 
     if built:
@@ -250,6 +281,7 @@ def main() -> None:
             "window": list(shock["window"]),
             "curve_name": shock["curve_name"],
             "equity_sectors": (shock.get("equity_leg") or {}).get("sectors", {}),
+            "bond_sectors": (shock.get("bond_leg") or {}).get("sectors", {}),
         }
         manifest = RunManifest.create(
             seed=config.seed, config=config, project_root=config.paths.root
