@@ -31,6 +31,13 @@ groups:
     "Floor (lambda 7.22/yr)": climate_jump_real_mexican_floor
     "NGFS HWTP, jump-on": climate_jump_real_mexican_ngfs_hwtp
     "NGFS SWUC, jump-on": climate_jump_real_mexican_ngfs_swuc
+  # The trajectory-lambda(t) riders (INT-34) vs the constant headline: the
+  # physical channel's arrivals-trend sensitivity in the plain world (no
+  # transition overlay); both re-anchored at lambda_0 = 19.2857 (HAZ-STOCH-06).
+  riders:
+    "Headline (constant lambda 19.29/yr)": climate_jump_real_mexican
+    "CT-bridge rider (+1.37%/yr)": climate_jump_real_mexican_trend_ct_bridge
+    "Registry rider (+8.08%/yr)": climate_jump_real_mexican_trend_registry
 
 # The INT-23 -> INT-26 re-base chain as one walk (OQ-GEN-02 c): BOOK EPE shift
 # per lambda leg across the mark-state stages. Run dir = base + leg + stage

@@ -1,0 +1,39 @@
+# NGFS fase figure set (OQ-INT-12 c; pipelines/23_ngfs_fase_figures.py).
+#
+# Reads STORED artifacts only: the pipelines/22 scenario fragments, the
+# trajectory-lambda(t) rider configs, and the pipelines/17 readouts of every
+# application flavor (nivel / trayectoria / fase). Renders, under
+# results/figures/<run_name>/:
+# - scheduled_shock_paths: the scenario paths the fase engine consumes (rate
+#   delta per scenario; equity adjustment per GEM-E3 sector; spread deltas per
+#   issuer sector once the Phase-2 channel is in the fragments);
+# - intensity_paths: the lambda(t) riders vs the constant headline lambda with
+#   the expected cumulative arrivals (the deferred trajectory-lambda visuals);
+# - flavor_comparison: transition-only book-EPE delta per scenario, one bar per
+#   application flavor;
+# - epe_delta_matrix_<flavor>: the scenario x band matrix per flavor;
+# - transition_profiles: the per-pillar transition delta per scenario, one line
+#   per flavor, from the first post-0D pillar (fase 0D rows are zero-delta by
+#   construction — the INT-33 t=0 pin).
+#
+# Missing readouts are skipped with a warning (each flavor is reproducible from
+# its own config: ngfs_shock.yaml / ngfs_shock_trayectoria.yaml / ngfs_scheduled.yaml).
+
+seed: 233423 # deterministic pipeline; the seed only stamps the manifest
+run_name: ngfs_fase
+
+fragments_dir: results/ngfs_scheduled_shocks
+scenarios: [HWTP, SWUC, DAPS_NAM]
+shock_config: configs/ngfs_shock.yaml # equity_leg.sectors / bond_leg.sectors -> line groups
+
+# Rider configs carry the {times_years, values} intensity trajectory (INT-34).
+riders:
+  "Registry trend (+8.08%/yr)": configs/climate_jump_real_mexican_trend_registry.yaml
+  "CT bridge (+1.37%/yr)": configs/climate_jump_real_mexican_trend_ct_bridge.yaml
+headline_intensity: 19.2857 # INT-20 headline lambda (events/yr)
+horizon_years: 10.0 # display horizon; the riders hold their 2031.0 value beyond
+
+readouts: # flavor -> pipelines/17 out_dir (book_epe_deltas.csv + book_profile_deltas.csv)
+  nivel: results/ngfs_epe_readout
+  trayectoria: results/ngfs_epe_readout_trayectoria
+  fase: results/ngfs_epe_readout_fase_sin_spread
