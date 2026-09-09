@@ -36,4 +36,4 @@ horizon_years: 10.0 # display horizon; the riders hold their 2031.0 value beyond
 readouts: # flavor -> pipelines/17 out_dir (book_epe_deltas.csv + book_profile_deltas.csv)
   nivel: results/ngfs_epe_readout
   trayectoria: results/ngfs_epe_readout_trayectoria
-  fase: results/ngfs_epe_readout_fase_sin_spread
+  fase: results/ngfs_epe_readout_fase

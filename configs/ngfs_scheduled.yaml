@@ -26,20 +26,22 @@ out_root: results/ngfs_scheduled_shocks
 # --- pipelines/17_ngfs_epe_readout.py: the fase matrix (OQ-INT-12 c) ---
 # Like-for-like against the same unshocked base run as the nivel/trayectoria
 # readouts: every fase cell is the unshocked book + --choques-programados with
-# the fragment above, run under `--etiqueta ngfs_<scen>_fase_sin_spread`
-# (rate + equity channels only — the Phase-2 spread channel joins later).
+# the fragment above (rate + equity + spread channels), run under
+# `--etiqueta ngfs_<scen>_fase`. The pre-Phase-2 state (rate + equity only)
+# stays archived as results/ngfs_epe_readout_fase_sin_spread + the
+# `…_fase_sin_spread` run dirs (its manifest carries the config that made it).
 # flavor: fase turns on the 0D pin assertion — fase 0D rows are zero-delta by
 # construction (INT-33), so a 0D delta is a bug signal, not a result; compare
 # per-pillar tables from the first post-0D pillar (book_profile_deltas.csv).
 readout:
   flavor: fase
-  out_dir: results/ngfs_epe_readout_fase_sin_spread
+  out_dir: results/ngfs_epe_readout_fase
   base_run: climate_jump_real_mexican
   scenario_runs:
-    - {scenario: HWTP, band: headline, run: climate_jump_real_mexican_ngfs_hwtp_fase_sin_spread}
-    - {scenario: HWTP, band: floor, run: climate_jump_real_mexican_floor_ngfs_hwtp_fase_sin_spread}
-    - {scenario: HWTP, band: ct_anchor, run: climate_jump_real_mexican_ct_anchor_ngfs_hwtp_fase_sin_spread}
-    - {scenario: SWUC, band: headline, run: climate_jump_real_mexican_ngfs_swuc_fase_sin_spread}
-    - {scenario: SWUC, band: floor, run: climate_jump_real_mexican_floor_ngfs_swuc_fase_sin_spread}
-    - {scenario: SWUC, band: ct_anchor, run: climate_jump_real_mexican_ct_anchor_ngfs_swuc_fase_sin_spread}
-    - {scenario: DAPS_NAM, band: headline, run: climate_jump_real_mexican_ngfs_daps_nam_fase_sin_spread}
+    - {scenario: HWTP, band: headline, run: climate_jump_real_mexican_ngfs_hwtp_fase}
+    - {scenario: HWTP, band: floor, run: climate_jump_real_mexican_floor_ngfs_hwtp_fase}
+    - {scenario: HWTP, band: ct_anchor, run: climate_jump_real_mexican_ct_anchor_ngfs_hwtp_fase}
+    - {scenario: SWUC, band: headline, run: climate_jump_real_mexican_ngfs_swuc_fase}
+    - {scenario: SWUC, band: floor, run: climate_jump_real_mexican_floor_ngfs_swuc_fase}
+    - {scenario: SWUC, band: ct_anchor, run: climate_jump_real_mexican_ct_anchor_ngfs_swuc_fase}
+    - {scenario: DAPS_NAM, band: headline, run: climate_jump_real_mexican_ngfs_daps_nam_fase}

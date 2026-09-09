@@ -52,6 +52,13 @@ legs:
   - {name: fase_swuc_sin_spread,          run: climate_jump_real_mexican_ngfs_swuc_fase_sin_spread,     column: baseline, pd: SWUC,     curve: base}
   - {name: fase_swuc_combined_sin_spread, run: climate_jump_real_mexican_ngfs_swuc_fase_sin_spread,     column: climate,  pd: SWUC,     curve: base}
   - {name: fase_daps_nam_sin_spread,      run: climate_jump_real_mexican_ngfs_daps_nam_fase_sin_spread, column: baseline, pd: DAPS_NAM, curve: base}
+  # The full-leg fase state (rate + equity + the OQ-INT-12 b valuation-side spread
+  # channel): the difference vs the `_sin_spread` legs is the spread channel's CVA.
+  - {name: fase_hwtp,                     run: climate_jump_real_mexican_ngfs_hwtp_fase,     column: baseline, pd: HWTP,     curve: base}
+  - {name: fase_hwtp_combined,            run: climate_jump_real_mexican_ngfs_hwtp_fase,     column: climate,  pd: HWTP,     curve: base}
+  - {name: fase_swuc,                     run: climate_jump_real_mexican_ngfs_swuc_fase,     column: baseline, pd: SWUC,     curve: base}
+  - {name: fase_swuc_combined,            run: climate_jump_real_mexican_ngfs_swuc_fase,     column: climate,  pd: SWUC,     curve: base}
+  - {name: fase_daps_nam,                 run: climate_jump_real_mexican_ngfs_daps_nam_fase, column: baseline, pd: DAPS_NAM, curve: base}
 
 # scenario-delta decompositions vs the base leg (headline LGD): the exposure
 # channel moves the *discounted* EE profile (market state incl. the scenario
@@ -67,5 +74,8 @@ decomposition:
   - {label: FASE_HWTP_SIN_SPREAD, leg: fase_hwtp_sin_spread}
   - {label: FASE_SWUC_SIN_SPREAD, leg: fase_swuc_sin_spread}
   - {label: FASE_DAPS_NAM_SIN_SPREAD, leg: fase_daps_nam_sin_spread}
+  - {label: FASE_HWTP, leg: fase_hwtp}
+  - {label: FASE_SWUC, leg: fase_swuc}
+  - {label: FASE_DAPS_NAM, leg: fase_daps_nam}
 
 out_dir: results/cva
