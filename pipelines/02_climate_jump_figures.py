@@ -49,7 +49,11 @@ def _scenario_label(config, path: Path, base_stem: str) -> str:
         name = stem[len(base_stem) + 1 :].replace("_", " ")
     else:
         name = stem
-    return f"{name} (λ = {config.extra['climate_jumps']['intensity']:g}/yr)"
+    intensity = config.extra["climate_jumps"]["intensity"]
+    if isinstance(intensity, dict):  # trajectory rider (INT-34): level at t0 -> last point
+        values = intensity["values"]
+        return f"{name} (λ(t) = {values[0]:g} → {values[-1]:g}/yr)"
+    return f"{name} (λ = {intensity:g}/yr)"
 
 
 def select_path_factors(

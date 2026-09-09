@@ -281,8 +281,10 @@ def plot_scenario_band(
     return fig
 
 
-def plot_epe_delta_matrix(deltas: pd.DataFrame) -> Figure:
+def plot_epe_delta_matrix(deltas: pd.DataFrame, title: str | None = None) -> Figure:
     """Annotated scenario × band matrix of book-EPE deltas (%) vs base jump-off.
+
+    ``title`` replaces the default axis title (per-application-flavor matrices).
 
     Input: the NGFS readout artifact (``book_epe_deltas.csv`` — one row per
     ``scenario`` × ``band`` with ``transition_pct`` / ``combined_pct`` /
@@ -340,7 +342,104 @@ def plot_epe_delta_matrix(deltas: pd.DataFrame) -> Figure:
                 fontsize=8,
                 color="white" if dark else TEXT_SECONDARY,
             )
-    ax.set_title("Book-EPE delta vs base jump-off (%)")
+    ax.set_title(title or "Book-EPE delta vs base jump-off (%)")
+    return fig
+
+
+# Display names for the NGFS readout delta columns (pipelines/17).
+DELTA_LABELS = {
+    "transition_pct": "Transition-only book-EPE delta vs base jump-off (%)",
+    "combined_pct": "Combined (transition + physical) book-EPE delta (%)",
+    "jump_within_pct": "Jump-within book-EPE delta (%)",
+}
+
+
+def plot_flavor_comparison(
+    deltas: Mapping[str, pd.DataFrame],
+    column: str = "transition_pct",
+    band: str = "headline",
+) -> Figure:
+    """Book-EPE delta per scenario, one bar per scenario-application flavor.
+
+    Input: ``flavor -> book_epe_deltas readout frame`` (pipelines/17: one row
+    per ``scenario`` × ``band`` with ``transition_pct`` / ``combined_pct`` /
+    ``jump_within_pct``), flavors in the caller's order. Rows are read at
+    ``band`` (transition deltas are band-independent by construction; combined
+    and jump-within are band-specific). Undefined cells (physical-embedding
+    narratives run jump-off only, INT-29) draw no bar and an em dash.
+    """
+    if not deltas:
+        raise ValueError("deltas is empty: pass flavor -> book_epe_deltas readout frame")
+    flavors = list(deltas)
+    scenarios = list(dict.fromkeys(s for frame in deltas.values() for s in frame["scenario"]))
+    width = 0.8 / len(flavors)
+    x = np.arange(len(scenarios))
+    fig, ax = plt.subplots(figsize=(1.8 + 1.9 * len(scenarios), 3.4))
+    ax.axhline(0.0, color=TEXT_SECONDARY, linewidth=0.8)
+    for i, (color, flavor) in enumerate(zip(SERIES_COLORS, flavors, strict=False)):
+        frame = deltas[flavor]
+        rows = frame[frame["band"] == band].set_index("scenario")[column]
+        values = np.array([rows.get(s, np.nan) for s in scenarios], dtype=float)
+        pos = x + (i - (len(flavors) - 1) / 2) * width
+        ax.bar(pos, np.nan_to_num(values), width=0.95 * width, color=color, label=flavor)
+        for xi, value in zip(pos, values, strict=False):
+            undefined = bool(np.isnan(value))
+            ax.annotate(
+                "—" if undefined else f"{value:+.2f}",
+                (xi, 0.0 if undefined else value),
+                textcoords="offset points",
+                xytext=(0, 4 if undefined or value >= 0 else -11),
+                ha="center",
+                fontsize=7.5,
+                color=TEXT_SECONDARY,
+            )
+    ax.set_xticks(x, scenarios)
+    ax.set_ylabel(DELTA_LABELS.get(column, column), fontsize=8.5)
+    ax.legend(title="Application flavor", fontsize=8)
+    ax.set_title(f"Book-EPE delta by application flavor ({band} band)")
+    return fig
+
+
+def plot_transition_profiles(
+    profiles: Mapping[str, pd.DataFrame],
+    scenarios: Sequence[str] | None = None,
+    column: str = "transition_pct",
+    band: str = "headline",
+) -> Figure:
+    """Per-pillar book-EE delta per scenario, one line per application flavor.
+
+    Input: ``flavor -> book_profile_deltas readout frame`` (pipelines/17: one
+    row per ``scenario`` × ``band`` × pillar with ``pillar_index`` and
+    ``default_times``). The 0D pillar is dropped: the fase flavor cannot move
+    it (INT-33 t=0 pin — its 0D delta is zero by construction) while the t=0
+    flavors revalue the book there, so fase-vs-nivel comparisons never mix that
+    row (OQ-INT-12 c). Pillars sit on the B3 tenor axis (GEN-28).
+    """
+    if not profiles:
+        raise ValueError("profiles is empty: pass flavor -> book_profile_deltas readout frame")
+    first = next(iter(profiles.values()))
+    names = list(scenarios) if scenarios is not None else list(dict.fromkeys(first["scenario"]))
+    fig, axes = plt.subplots(
+        1, len(names), figsize=(4.0 * len(names), 3.3), squeeze=False, sharey=True
+    )
+    for ax, scenario in zip(axes.flat, names, strict=False):
+        ax.axhline(0.0, color=TEXT_SECONDARY, linewidth=0.8)
+        for color, (flavor, frame) in zip(SERIES_COLORS, profiles.items(), strict=False):
+            mask = (frame["scenario"] == scenario) & (frame["band"] == band)
+            rows = frame[mask & (frame["pillar_index"] > 0)].sort_values("pillar_index")
+            if rows.empty:
+                continue
+            x = _grid_axis(ax, rows["default_times"])
+            y = rows[column].to_numpy(dtype=float)
+            ax.plot(x, y, marker="o", markersize=3, color=color, label=flavor)
+        ax.set_title(scenario)
+    axes.flat[0].set_ylabel(DELTA_LABELS.get(column, column), fontsize=8.5)
+    axes.flat[0].legend(title="Application flavor", fontsize=8)
+    fig.suptitle(
+        "Book-EE delta by reporting pillar — from the first post-0D pillar",
+        fontsize=11,
+        fontweight="bold",
+    )
     return fig
 
 

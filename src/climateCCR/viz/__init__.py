@@ -22,9 +22,11 @@ from .ccr import (
     plot_epe_shift_distribution,
     plot_exposure_profiles,
     plot_exposure_shift,
+    plot_flavor_comparison,
     plot_mean_shift_summary,
     plot_scenario_band,
     plot_stage_walk_epe,
+    plot_transition_profiles,
     with_supervisory_pfe,
 )
 from .market import plot_estimator_fan_comparison, plot_jump_decay, plot_rate_path_fan
@@ -32,7 +34,9 @@ from .processes import (
     plot_annual_aggregate_loss,
     plot_event_arrivals,
     plot_fan_comparison,
+    plot_intensity_paths,
     plot_sample_paths,
+    plot_scheduled_shock_paths,
 )
 from .style import apply_style, save_figure
 from .validation import (
@@ -57,9 +61,13 @@ __all__ = [
     "plot_epe_delta_matrix",
     "plot_epe_shift_distribution",
     "plot_stage_walk_epe",
+    "plot_flavor_comparison",
+    "plot_transition_profiles",
     "plot_sample_paths",
     "plot_fan_comparison",
     "plot_event_arrivals",
+    "plot_intensity_paths",
+    "plot_scheduled_shock_paths",
     "plot_annual_aggregate_loss",
     "plot_rate_path_fan",
     "plot_estimator_fan_comparison",

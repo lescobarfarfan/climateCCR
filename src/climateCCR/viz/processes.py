@@ -129,15 +129,38 @@ def plot_fan_comparison(
     return fig
 
 
+def _cumulative_intensity(years: np.ndarray, times: np.ndarray, values: np.ndarray) -> np.ndarray:
+    """Expected cumulative arrivals of a trajectory intensity on ``years``.
+
+    The intensity prevailing over each step is its value at the step START
+    (``ClimateJumpProcess`` draws ``lambda(t_i) * dt_i``), held beyond the last
+    point (``np.interp`` clamp) — so this is the engine's own expectation, not
+    a smoother quadrature.
+    """
+    rate = np.interp(years, times, values)
+    return np.concatenate([[0.0], np.cumsum(rate[:-1] * np.diff(years))])
+
+
+def _expected_arrivals(years: np.ndarray, intensity) -> tuple[np.ndarray, str]:
+    """(expected cumulative events, legend label) for a scalar or trajectory intensity."""
+    if isinstance(intensity, Mapping):
+        times = np.asarray(intensity["times_years"], dtype=float)
+        values = np.asarray(intensity["values"], dtype=float)
+        return _cumulative_intensity(years, times, values), r"Expected $\int_0^t \lambda(u)\,du$"
+    return float(intensity) * years, r"Expected $\lambda t$"
+
+
 def plot_event_arrivals(
     dates: Sequence[datetime],
     event_counts: np.ndarray,
-    intensity: float | None = None,
+    intensity: float | Mapping[str, Sequence[float]] | None = None,
 ) -> Figure:
     """Mechanism check: mean cumulative climate events vs the Poisson expectation.
 
     With a homogeneous intensity the observed mean should track ``lambda * t``
-    (Act/365 year fractions, the engine's grid time).
+    (Act/365 year fractions, the engine's grid time); a trajectory intensity
+    ``{"times_years", "values"}`` (the DC-CCR-SIM-2 config form, years from the
+    first grid date) tracks its step-start cumulative ``∫ lambda(u) du``.
     """
     grid = _as_datetime_index(dates)
     mean_cumulative = event_counts.cumsum(axis=1).mean(axis=0)
@@ -145,17 +168,156 @@ def plot_event_arrivals(
     ax.plot(grid[1:], mean_cumulative, color=COLOR_CLIMATE, label="Observed mean (Monte Carlo)")
     if intensity is not None:
         years = (grid - grid[0]).days / 365.0
-        ax.plot(
-            grid,
-            intensity * years,
-            color=TEXT_SECONDARY,
-            linestyle="--",
-            linewidth=1.2,
-            label=r"Expected $\lambda t$",
-        )
+        expected, label = _expected_arrivals(years, intensity)
+        ax.plot(grid, expected, color=TEXT_SECONDARY, linestyle="--", linewidth=1.2, label=label)
     ax.legend(loc="upper left")
     ax.set_ylabel("Cumulative climate events per path")
     ax.set_title("Climate jump arrivals — simulated vs expected")
+    return fig
+
+
+def plot_intensity_paths(
+    paths: Mapping[str, Mapping[str, Sequence[float]]],
+    baseline: float,
+    horizon_years: float,
+) -> Figure:
+    """Trajectory arrival intensities vs the constant headline, with cumulative arrivals.
+
+    Input: ``label -> {"times_years", "values"}`` (the DC-CCR-SIM-2 intensity
+    trajectory form — Act/365 years from the valuation date, events/yr; each
+    path holds its last value beyond its last point, the engine's ``np.interp``
+    clamp) plus the constant ``baseline`` intensity. Left: ``lambda(t)`` to
+    ``horizon_years`` (the held stretch dotted); right: the expected cumulative
+    arrivals per path against ``baseline * t`` — the time-averaged intensity
+    the exposure integral actually feels (INT-34: a 43% terminal rise is a
+    ~20% average rise over the exposure-weighted horizon).
+    """
+    if not paths:
+        raise ValueError("paths is empty: pass label -> {times_years, values}")
+    grid = np.linspace(0.0, float(horizon_years), 401)
+    fig, (ax_rate, ax_cum) = plt.subplots(1, 2, figsize=(8.6, 3.2))
+    ax_rate.axhline(
+        baseline,
+        color=TEXT_SECONDARY,
+        linestyle="--",
+        linewidth=1.2,
+        label=f"Headline (constant {baseline:g}/yr)",
+    )
+    ax_cum.plot(
+        grid, baseline * grid, color=TEXT_SECONDARY, linestyle="--", linewidth=1.2, label="Headline"
+    )
+    for color, (label, path) in zip(SERIES_COLORS, paths.items(), strict=False):
+        times = np.asarray(path["times_years"], dtype=float)
+        values = np.asarray(path["values"], dtype=float)
+        rate = np.interp(grid, times, values)
+        inside = grid <= times[-1]
+        ax_rate.plot(
+            grid[inside],
+            rate[inside],
+            color=color,
+            label=f"{label} ({values[0]:.2f} → {values[-1]:.2f}/yr, held after {times[-1]:.2f}y)",
+        )
+        ax_rate.plot(grid[~inside], rate[~inside], color=color, linestyle=":", linewidth=1.2)
+        ax_cum.plot(grid, _cumulative_intensity(grid, times, values), color=color, label=label)
+    ax_rate.set_xlabel("Years from valuation (Act/365)")
+    ax_rate.set_ylabel(r"Arrival intensity $\lambda(t)$ (events/yr)")
+    ax_rate.legend(fontsize=7.5, loc="upper left")
+    ax_cum.set_xlabel("Years from valuation (Act/365)")
+    ax_cum.set_ylabel("Expected cumulative events")
+    ax_cum.legend(fontsize=7.5, loc="upper left")
+    fig.suptitle(
+        r"Trajectory $\lambda(t)$ riders vs the constant headline intensity",
+        fontsize=11,
+        fontweight="bold",
+    )
+    return fig
+
+
+# Scheduled-shock channels beyond the rate leg: (channel, value key, display units, y label).
+_SCHEDULED_PANELS = (
+    ("equity_shocks", "log_factors", lambda v: 100.0 * np.expm1(v), "Equity adjustment (%)"),
+    ("spread_shocks", "spreads", lambda v: 100.0 * v, "Credit-spread delta (pp)"),
+)
+
+
+def _first_per_group(targets: Sequence[str], groups: Mapping[str, str] | None) -> dict[str, str]:
+    """``label -> representative target``: names sharing a group ride one published path."""
+    series: dict[str, str] = {}
+    for target in targets:
+        series.setdefault(groups.get(target, target) if groups else target, target)
+    return series
+
+
+def plot_scheduled_shock_paths(
+    fragments: Mapping[str, Mapping[str, Mapping]],
+    groups: Mapping[str, str] | None = None,
+) -> Figure:
+    """The scheduled (fase) scenario paths themselves, straight from the fragments.
+
+    Input: ``scenario -> scheduled_shocks block`` (the DC-CCR-SIM-2 scheduled
+    overlay contract, INT-33/34): ``rate_shocks`` ``{targets, times_years,
+    deltas}`` in decimal rate, ``equity_shocks`` ``{…, log_factors}`` and,
+    once the Phase-2 channel exists, ``spread_shocks`` ``{…, spreads}`` — all
+    on Act/365 years from the valuation date, the t=0 point carrying the
+    accumulated-to-valuation catch-up the pinned engine applies at step 1,
+    held beyond the last point. ``groups`` maps target names to a group (the
+    GEM-E3 sector crosswalk): every name in a group rides the same published
+    path, so one line per group is exact. Top: the rate delta (pp) per
+    scenario (◆ = the t=0 catch-up); below, one panel per scenario and channel.
+    """
+    if not fragments:
+        raise ValueError("fragments is empty: pass scenario -> scheduled_shocks block")
+    scenarios = list(fragments)
+    panels = [p for p in _SCHEDULED_PANELS if any(p[0] in f for f in fragments.values())]
+    nrows, ncols = 1 + len(panels), len(scenarios)
+    fig = plt.figure(figsize=(1.0 + 3.1 * ncols, 2.7 * nrows))
+    gs = fig.add_gridspec(nrows, ncols)
+    ax_rate = fig.add_subplot(gs[0, :])
+    ax_rate.axhline(0.0, color=TEXT_SECONDARY, linewidth=0.8)
+    for color, scenario in zip(SERIES_COLORS, scenarios, strict=False):
+        block = fragments[scenario].get("rate_shocks")
+        if not block:
+            continue
+        times = np.asarray(block["times_years"], dtype=float)
+        for target in block["targets"]:
+            values = 100.0 * np.asarray(block["deltas"][target], dtype=float)
+            ax_rate.plot(times, values, color=color, marker="o", markersize=2.5, label=scenario)
+            ax_rate.plot(
+                times[:1], values[:1], linestyle="none", marker="D", markersize=6, color=color
+            )
+    ax_rate.set_ylabel("Rate delta vs baseline (pp)")
+    ax_rate.set_xlabel("Years from valuation (Act/365)")
+    ax_rate.legend(fontsize=8, title="Scenario")
+    ax_rate.set_title("Scheduled policy-rate path (◆ = the t=0 catch-up)", fontsize=10)
+    for row, (channel, key, units, ylabel) in enumerate(panels, start=1):
+        legend_ax = None
+        for col, scenario in enumerate(scenarios):
+            ax = fig.add_subplot(gs[row, col])
+            ax.axhline(0.0, color=TEXT_SECONDARY, linewidth=0.8)
+            block = fragments[scenario].get(channel)
+            if block:
+                legend_ax = legend_ax or ax
+                times = np.asarray(block["times_years"], dtype=float)
+                series = _first_per_group(block["targets"], groups)
+                for i, (label, target) in enumerate(series.items()):
+                    ax.plot(
+                        times,
+                        units(np.asarray(block[key][target], dtype=float)),
+                        color=SERIES_COLORS[i % len(SERIES_COLORS)],
+                        linestyle="-" if i < len(SERIES_COLORS) else "--",
+                        label=label,
+                    )
+            ax.set_title(f"{scenario} — {channel.replace('_', ' ')}", fontsize=9)
+            ax.set_xlabel("Years from valuation")
+            if col == 0:
+                ax.set_ylabel(ylabel)
+        if legend_ax is not None:  # groups are shared across scenarios: one legend per row
+            legend_ax.legend(fontsize=6.5, loc="best")
+    fig.suptitle(
+        "Scheduled (fase) scenario paths — NGFS short-term, raw published deltas",
+        fontsize=11,
+        fontweight="bold",
+    )
     return fig
 
 

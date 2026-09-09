@@ -333,3 +333,124 @@ def test_stage_walk_one_line_per_leg_with_annotations():
         viz.plot_stage_walk_epe({})
     with pytest.raises(ValueError, match="legs"):
         viz.plot_stage_walk_epe({"s1": {"leg A": summary(1.0)}, "s2": {"leg B": summary(1.0)}})
+
+
+def test_event_arrivals_accepts_a_trajectory_intensity(path_data):
+    dates, _, _, events = path_data
+    trajectory = {"times_years": [0, 1], "values": [1, 3]}
+    fig = viz.plot_event_arrivals(dates, events, intensity=trajectory)
+    ax = fig.axes[0]
+    years = (pd.DatetimeIndex(dates) - pd.Timestamp(dates[0])).days / 365.0
+    rate = np.interp(years, [0.0, 1.0], [1.0, 3.0])
+    by_hand = np.concatenate([[0.0], np.cumsum(rate[:-1] * np.diff(years))])  # step-start rule
+    np.testing.assert_allclose(ax.lines[1].get_ydata(), by_hand)
+    assert "\\int" in ax.get_legend().get_texts()[1].get_text()
+
+
+def test_intensity_paths_one_rider_per_line_and_monotone_cumulative():
+    riders = {
+        "registry": {"times_years": [0.0, 1.0, 2.0], "values": [19.0, 21.0, 23.0]},
+        "bridge": {"times_years": [0.0, 1.0, 2.0], "values": [19.0, 19.3, 19.5]},
+    }
+    fig = viz.plot_intensity_paths(riders, baseline=19.0, horizon_years=5.0)
+    ax_rate, ax_cum = fig.axes
+    assert len(ax_rate.lines) == 1 + 2 * 2  # headline + (path, held stretch) per rider
+    assert len(ax_cum.lines) == 1 + 2
+    np.testing.assert_allclose(ax_rate.lines[2].get_ydata(), 23.0)  # held beyond the last point
+    cumulative = ax_cum.lines[1].get_ydata()
+    assert cumulative[0] == 0.0 and np.all(np.diff(cumulative) >= 0)
+    with pytest.raises(ValueError, match="empty"):
+        viz.plot_intensity_paths({}, 19.0, 5.0)
+
+
+def test_scheduled_shock_paths_one_panel_per_scenario_and_channel():
+    block = {
+        "rate_shocks": {
+            "targets": ["R"],
+            "times_years": [0.0, 1.0, 2.0],
+            "deltas": {"R": [0.005, 0.008, 0.01]},
+        },
+        "equity_shocks": {
+            "targets": ["A", "B", "C"],
+            "times_years": [0.0, 1.0],
+            "log_factors": {"A": [-0.1, -0.2], "B": [-0.1, -0.2], "C": [0.01, 0.02]},
+        },
+    }
+    groups = {"A": "services", "B": "services", "C": "goods"}
+    fig = viz.plot_scheduled_shock_paths({"HWTP": block, "SWUC": block}, groups)
+    assert len(fig.axes) == 1 + 2  # rate panel + one equity panel per scenario
+    rate_ax = fig.axes[0]
+    assert len(rate_ax.lines) == 1 + 2 * 2  # zero line + (path, t0 marker) per scenario
+    np.testing.assert_allclose(rate_ax.lines[1].get_ydata(), [0.5, 0.8, 1.0])  # decimal -> pp
+    equity_ax = fig.axes[1]
+    assert len(equity_ax.lines) == 1 + 2  # zero line + one line per group (A and B collapse)
+    np.testing.assert_allclose(equity_ax.lines[1].get_ydata(), 100.0 * np.expm1([-0.1, -0.2]))
+    # A spread channel in any fragment adds a panel row for every scenario.
+    spread = {"targets": ["X"], "times_years": [0.0, 1.0], "spreads": {"X": [0.01, 0.02]}}
+    with_spread = {**block, "spread_shocks": spread}
+    fig = viz.plot_scheduled_shock_paths({"HWTP": with_spread, "SWUC": block}, groups)
+    assert len(fig.axes) == 1 + 2 + 2
+    np.testing.assert_allclose(fig.axes[3].lines[1].get_ydata(), [1.0, 2.0])  # decimal -> pp
+    with pytest.raises(ValueError, match="empty"):
+        viz.plot_scheduled_shock_paths({})
+
+
+def test_flavor_comparison_one_bar_per_scenario_and_flavor():
+    def readout(t_a, t_b, combined_a=np.nan):
+        return pd.DataFrame(
+            {
+                "scenario": ["A", "B"],
+                "band": ["headline", "headline"],
+                "transition_pct": [t_a, t_b],
+                "combined_pct": [combined_a, np.nan],
+                "jump_within_pct": [np.nan, np.nan],
+            }
+        )
+
+    deltas = {"nivel": readout(-5.7, -20.0, -14.4), "fase": readout(-2.3, -3.0)}
+    fig = viz.plot_flavor_comparison(deltas)
+    ax = fig.axes[0]
+    assert len(ax.patches) == 4 and len(ax.texts) == 4  # 2 scenarios x 2 flavors
+    assert [t.get_text() for t in ax.get_xticklabels()] == ["A", "B"]
+    assert "-5.70" in [t.get_text() for t in ax.texts]
+    fig = viz.plot_flavor_comparison(deltas, column="combined_pct")
+    assert "—" in [t.get_text() for t in fig.axes[0].texts]  # undefined cells dashed
+    with pytest.raises(ValueError, match="empty"):
+        viz.plot_flavor_comparison({})
+
+
+def test_transition_profiles_drop_the_0d_pillar():
+    def profile(scale):
+        dates = ("2026-07-17", "2026-07-18", "2027-07-17")
+        return pd.DataFrame(
+            {
+                "scenario": ["A"] * 3,
+                "band": ["headline"] * 3,
+                "default_times": dates,
+                "pillar_index": [0, 1, 2],
+                "transition_pct": [0.0, scale, 2 * scale],
+            }
+        )
+
+    fig = viz.plot_transition_profiles({"nivel": profile(-1.0), "fase": profile(-0.5)})
+    ax = fig.axes[0]
+    labels = [t.get_text() for t in ax.get_xticklabels()]
+    assert "2026-07-17" not in labels and "2026-07-18" in labels
+    assert len(ax.lines) == 1 + 2  # zero line + one line per flavor
+    np.testing.assert_allclose(ax.lines[1].get_ydata(), [-1.0, -2.0])
+    with pytest.raises(ValueError, match="empty"):
+        viz.plot_transition_profiles({})
+
+
+def test_epe_delta_matrix_title_override():
+    deltas = pd.DataFrame(
+        {
+            "scenario": ["A"],
+            "band": ["headline"],
+            "transition_pct": [-1.0],
+            "combined_pct": [-2.0],
+            "jump_within_pct": [-1.0],
+        }
+    )
+    ax = viz.plot_epe_delta_matrix(deltas, title="fase").axes[0]
+    assert ax.get_title(loc="left") == "fase"  # the thesis style titles left
