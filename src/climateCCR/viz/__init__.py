@@ -16,6 +16,7 @@ artifacts (Phase 5, PROJECT_PLAN).
 """
 
 from .ccr import (
+    effective_epe_summary,
     epe_summary,
     plot_book_exposure_distribution,
     plot_epe_delta_matrix,
@@ -52,6 +53,7 @@ __all__ = [
     "apply_style",
     "save_figure",
     "epe_summary",
+    "effective_epe_summary",
     "with_supervisory_pfe",
     "plot_exposure_profiles",
     "plot_exposure_shift",
