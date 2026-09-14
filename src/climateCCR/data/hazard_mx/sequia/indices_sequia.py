@@ -26,12 +26,13 @@ Distribuciones (decisión de modelación, ver config_sequia.py):
 """
 
 from __future__ import annotations
+
 import logging
+
+import config_sequia as cfg
 import numpy as np
 from scipy import special
 from scipy.stats import norm
-
-import config_sequia as cfg
 
 log = logging.getLogger("sequia.indices")
 
@@ -122,7 +123,7 @@ def _ajustar_loglogistica(x: np.ndarray):
     if res is None:
         return np.nan, np.nan, np.nan
     w0, w1, w2 = res
-    denom = (6.0 * w1 - w0 - 6.0 * w2)
+    denom = 6.0 * w1 - w0 - 6.0 * w2
     if abs(denom) < 1e-12:
         return np.nan, np.nan, np.nan
     beta = (2.0 * w1 - w0) / denom
@@ -159,8 +160,14 @@ def _cdf_loglogistica(x: np.ndarray, alpha, beta, gamma_) -> np.ndarray:
 # --------------------------------------------------------------------------- #
 # 3. Estandarización por mes calendario sobre el periodo de referencia.
 # --------------------------------------------------------------------------- #
-def _estandarizar(acumulada: np.ndarray, anios: np.ndarray, meses: np.ndarray,
-                  anio_ini: int, anio_fin: int, tipo: str) -> np.ndarray:
+def _estandarizar(
+    acumulada: np.ndarray,
+    anios: np.ndarray,
+    meses: np.ndarray,
+    anio_ini: int,
+    anio_fin: int,
+    tipo: str,
+) -> np.ndarray:
     """Ajusta la distribución por mes calendario sobre [anio_ini, anio_fin] y
     transforma toda la serie a la normal estándar.
 
@@ -197,13 +204,11 @@ def _estandarizar(acumulada: np.ndarray, anios: np.ndarray, meses: np.ndarray,
 # --------------------------------------------------------------------------- #
 def spi_serie(precip: np.ndarray, anios, meses, n, anio_ini, anio_fin):
     acc = acumular_ventana(precip, n)
-    return _estandarizar(acc, np.asarray(anios), np.asarray(meses),
-                         anio_ini, anio_fin, "spi")
+    return _estandarizar(acc, np.asarray(anios), np.asarray(meses), anio_ini, anio_fin, "spi")
 
 
 def spei_serie(precip, pet, anios, meses, n, anio_ini, anio_fin):
     # Balance hídrico climático D = P - PET (ambos en las mismas unidades).
     balance = np.asarray(precip, float) - np.asarray(pet, float)
     acc = acumular_ventana(balance, n)
-    return _estandarizar(acc, np.asarray(anios), np.asarray(meses),
-                         anio_ini, anio_fin, "spei")
+    return _estandarizar(acc, np.asarray(anios), np.asarray(meses), anio_ini, anio_fin, "spei")

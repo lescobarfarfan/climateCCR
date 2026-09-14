@@ -17,17 +17,19 @@ Referencias (ver fuentes/ibtracs.md §9 y §11):
   - Factor gradiente->superficie ~0.9: convención (p. ej. Powell et al. 2003) [confirmar].
   - Rmax cuando falta: estimación empírica documentada (placeholder a calibrar).
 """
+
 from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 
 # Constantes físicas
-RHO = 1.15          # densidad del aire (kg/m^3)
-OMEGA = 7.292e-5    # velocidad angular de la Tierra (rad/s)
+RHO = 1.15  # densidad del aire (kg/m^3)
+OMEGA = 7.292e-5  # velocidad angular de la Tierra (rad/s)
 KT_A_MS = 0.514444  # nudos -> m/s
-NMI_A_KM = 1.852    # millas náuticas -> km
-RED_SUP = 0.90      # factor de reducción gradiente -> superficie (10 m)
-PENV_HPA = 1010.0   # presión ambiental por defecto (hPa)
+NMI_A_KM = 1.852  # millas náuticas -> km
+RED_SUP = 0.90  # factor de reducción gradiente -> superficie (10 m)
+PENV_HPA = 1010.0  # presión ambiental por defecto (hPa)
 R_TIERRA_KM = 6371.0
 UMBRALES_KT = (34, 64, 96)  # TCE-DAT (Geiger et al. 2018)
 
@@ -36,8 +38,10 @@ def _haversine_km(lat0, lon0, lat, lon):
     """Distancia great-circle (km) de un punto (lat0,lon0) a arrays lat/lon."""
     lat0r, lon0r = np.radians(lat0), np.radians(lon0)
     latr, lonr = np.radians(lat), np.radians(lon)
-    d = (np.sin((latr - lat0r) / 2) ** 2
-         + np.cos(lat0r) * np.cos(latr) * np.sin((lonr - lon0r) / 2) ** 2)
+    d = (
+        np.sin((latr - lat0r) / 2) ** 2
+        + np.cos(lat0r) * np.cos(latr) * np.sin((lonr - lon0r) / 2) ** 2
+    )
     return 2 * R_TIERRA_KM * np.arcsin(np.sqrt(d))
 
 
@@ -45,7 +49,7 @@ def parametro_holland_B(vmax_ms, dp_pa):
     """B de Holland (1980): B = rho*e*Vmax^2 / dp. Acotado a [1.0, 2.5]."""
     if vmax_ms is None or dp_pa is None or dp_pa <= 0 or np.isnan(vmax_ms):
         return 1.3  # default razonable si faltan datos
-    B = RHO * np.e * vmax_ms ** 2 / dp_pa
+    B = RHO * np.e * vmax_ms**2 / dp_pa
     return float(np.clip(B, 1.0, 2.5))
 
 
@@ -61,8 +65,7 @@ def estimar_rmax_km(vmax_kt, lat_deg):
     return float(np.clip(rmax, 15.0, 150.0))
 
 
-def viento_holland_kt(r_km, rmax_km, vmax_kt, lat_deg=None, pc_hpa=None,
-                      penv_hpa=PENV_HPA, B=None):
+def viento_holland_kt(r_km, rmax_km, vmax_kt, lat_deg=None, pc_hpa=None, penv_hpa=PENV_HPA, B=None):
     """
     Viento sostenido en superficie (nudos) a distancia r_km del centro, perfil de
     Holland (1980) ANCLADO a Vmax: pica en Vmax en r=Rmax y decae con la distancia.
@@ -76,14 +79,14 @@ def viento_holland_kt(r_km, rmax_km, vmax_kt, lat_deg=None, pc_hpa=None,
     if B is None:
         if pc_hpa is not None and not (isinstance(pc_hpa, float) and np.isnan(pc_hpa)):
             dp_pa = max((penv_hpa - pc_hpa) * 100.0, 1.0)
-            B = float(np.clip(RHO * np.e * vmax_ms ** 2 / dp_pa, 1.0, 2.5))
+            B = float(np.clip(RHO * np.e * vmax_ms**2 / dp_pa, 1.0, 2.5))
         else:
             B = 1.3
     r_m = np.maximum(np.asarray(r_km, float) * 1000.0, 1.0)
     rmax_m = max(rmax_km * 1000.0, 1.0)
     term = (rmax_m / r_m) ** B
     shape = np.sqrt(term * np.exp(1.0 - term))  # perfil normalizado: =1 en r=Rmax
-    return vmax_ms * shape / KT_A_MS            # superficie (kt)
+    return vmax_ms * shape / KT_A_MS  # superficie (kt)
 
 
 # --------------------------------------------------------------------------- #
@@ -91,13 +94,12 @@ def viento_holland_kt(r_km, rmax_km, vmax_kt, lat_deg=None, pc_hpa=None,
 # --------------------------------------------------------------------------- #
 # Coeficientes de EE.UU. (Kaplan & DeMaria 1995). Para México no hay valores
 # establecidos; se usan los de EE.UU. como mejor aproximación disponible (a revisar).
-KD_R = 0.90       # factor de reducción al cruzar la costa
-KD_VB = 26.7      # viento de fondo (kt)
+KD_R = 0.90  # factor de reducción al cruzar la costa
+KD_VB = 26.7  # viento de fondo (kt)
 KD_ALPHA = 0.095  # constante de decaimiento (1/h)
 
 
-def decaimiento_kaplan_demaria(track, R=KD_R, Vb=KD_VB, alpha=KD_ALPHA,
-                               umbral_tierra_km=1.0):
+def decaimiento_kaplan_demaria(track, R=KD_R, Vb=KD_VB, alpha=KD_ALPHA, umbral_tierra_km=1.0):
     """
     Aplica el decaimiento de Kaplan & DeMaria (1995) al Vmax sobre tierra:
         V(t) = Vb + (R*V0 - Vb) * exp(-alpha * t)
@@ -124,7 +126,9 @@ def decaimiento_kaplan_demaria(track, R=KD_R, Vb=KD_VB, alpha=KD_ALPHA,
         if es_tierra.iloc[i]:
             if landfall_t is None:  # acaba de tocar tierra
                 landfall_t = d["ISO_TIME"].iloc[i]
-                V0 = vmax_ef[i - 1] if i > 0 and not np.isnan(vmax_ef[i - 1]) else d["_vmax"].iloc[i]
+                V0 = (
+                    vmax_ef[i - 1] if i > 0 and not np.isnan(vmax_ef[i - 1]) else d["_vmax"].iloc[i]
+                )
             if V0 is not None and not np.isnan(V0):
                 t_h = (d["ISO_TIME"].iloc[i] - landfall_t).total_seconds() / 3600.0
                 v_kd = Vb + (R * V0 - Vb) * np.exp(-alpha * t_h)
@@ -142,7 +146,9 @@ def decaimiento_kaplan_demaria(track, R=KD_R, Vb=KD_VB, alpha=KD_ALPHA,
 def interpolar_traza(df_storm, paso_min):
     """Remuestrea una tormenta (un SID) al paso temporal dado (interp. lineal en tiempo)."""
     d = df_storm.sort_values("ISO_TIME").set_index("ISO_TIME")
-    cols = [c for c in ["LAT", "LON", "WMO_WIND", "USA_WIND", "WMO_PRES", "DIST2LAND"] if c in d.columns]
+    cols = [
+        c for c in ["LAT", "LON", "WMO_WIND", "USA_WIND", "WMO_PRES", "DIST2LAND"] if c in d.columns
+    ]
     d = d[cols].apply(pd.to_numeric, errors="coerce")
     d = d.resample(f"{int(paso_min)}min").interpolate(method="time").dropna(subset=["LAT", "LON"])
     return d.reset_index()
@@ -167,8 +173,9 @@ def construir_malla(ruta_estados, granularidad_deg, col_estado="NOMGEO"):
     grid_lon, grid_lat = np.meshgrid(lons, lats)
     pts = gpd.GeoDataFrame(
         {"lat": grid_lat.ravel(), "lon": grid_lon.ravel()},
-        geometry=[Point(x, y) for x, y in zip(grid_lon.ravel(), grid_lat.ravel())],
-        crs=4326)
+        geometry=[Point(x, y) for x, y in zip(grid_lon.ravel(), grid_lat.ravel(), strict=False)],
+        crs=4326,
+    )
     est = estados[[col_estado, "geometry"]].rename(columns={col_estado: "entidad"})
     celdas = gpd.sjoin(pts, est, how="inner", predicate="within")
     out = pd.DataFrame(celdas[["lat", "lon", "entidad"]]).reset_index(drop=True)
@@ -182,8 +189,10 @@ def construir_malla(ruta_estados, granularidad_deg, col_estado="NOMGEO"):
         rep["lon"] = rep.geometry.x
         rep["lat"] = rep.geometry.y
         out = pd.concat([out, rep[["lat", "lon", "entidad"]]], ignore_index=True)
-        print("[campo_viento] estados sin celda de malla (se añade punto representativo): "
-              f"{sorted(faltantes['entidad'].tolist())}")
+        print(
+            "[campo_viento] estados sin celda de malla (se añade punto representativo): "
+            f"{sorted(faltantes['entidad'].tolist())}"
+        )
     return out.reset_index(drop=True)
 
 
@@ -209,8 +218,11 @@ def footprint_tormenta(track_interp, malla, rmax_col="USA_RMW"):
         if pd.isna(vmax_kt) or vmax_kt <= 0:
             continue
         pc = p.get("WMO_PRES")
-        rmax_km = (p[rmax_col] * NMI_A_KM if rmax_col in track_interp.columns and pd.notna(p.get(rmax_col))
-                   else estimar_rmax_km(vmax_kt, p["LAT"]))
+        rmax_km = (
+            p[rmax_col] * NMI_A_KM
+            if rmax_col in track_interp.columns and pd.notna(p.get(rmax_col))
+            else estimar_rmax_km(vmax_kt, p["LAT"])
+        )
         r = _haversine_km(p["LAT"], p["LON"], lat_c, lon_c)
         v = viento_holland_kt(r, rmax_km, vmax_kt, lat_deg=p["LAT"], pc_hpa=pc)
         vmax_cell = np.maximum(vmax_cell, v)
@@ -249,7 +261,7 @@ def covariables_campo_viento(df_mex, malla, pesos_exposicion=None, decaimiento_t
             out[f"celdas_ge{u}kt"] = int((g["v_kt"] >= u).sum())
         # PDI local: suma sobre tormentas del (máx local en el estado)^3
         pdi = g.groupby("SID")["v_kt"].max()
-        out["pdi_local"] = float((pdi ** 3).sum())
+        out["pdi_local"] = float((pdi**3).sum())
         return pd.Series(out)
 
     panel = todo.groupby(["entidad", "anio"]).apply(agg).reset_index()
@@ -262,6 +274,7 @@ def covariables_campo_viento(df_mex, malla, pesos_exposicion=None, decaimiento_t
 def disponible_climada() -> bool:
     try:
         import climada  # noqa: F401
+
         return True
     except ImportError:
         return False
