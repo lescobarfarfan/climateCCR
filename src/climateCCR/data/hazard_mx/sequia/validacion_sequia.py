@@ -15,11 +15,12 @@ brecha fuera grande, se revisaría la elección de distribución (decisión docu
 """
 
 from __future__ import annotations
+
 import logging
 from pathlib import Path
-import numpy as np
 
 import config_sequia as cfg
+import numpy as np
 
 log = logging.getLogger("sequia.validacion")
 
@@ -42,6 +43,7 @@ def validar(args, raiz: Path) -> dict:
     """Compara, por índice y escala, el cálculo propio (ref 1991-2020) contra el
     benchmark oficial. Devuelve y registra un reporte de métricas."""
     import xarray as xr
+
     dir_crudos = raiz / cfg.DIR_CRUDOS
     dir_cons = raiz / cfg.DIR_CONSOLIDADOS
 
@@ -64,12 +66,20 @@ def validar(args, raiz: Path) -> dict:
             propio_al, of_al = xr.align(propio, of, join="inner")
             m = _metricas(propio_al.values, of_al.values)
             reporte[f"{tipo}{n}"] = m
-            log.info("Validación %s-%d: n=%d corr=%.3f sesgo=%+.3f rmse=%.3f",
-                     tipo, n, m["n"], m["corr"], m["sesgo"], m["rmse"])
+            log.info(
+                "Validación %s-%d: n=%d corr=%.3f sesgo=%+.3f rmse=%.3f",
+                tipo,
+                n,
+                m["n"],
+                m["corr"],
+                m["sesgo"],
+                m["rmse"],
+            )
 
     # Umbral orientativo: corr>=0.95 y |sesgo|<=0.1 => reproducción satisfactoria.
     ruta = dir_cons / "reporte_validacion.json"
     import json
+
     ruta.write_text(json.dumps(reporte, indent=2, ensure_ascii=False), encoding="utf-8")
     log.info("Reporte de validación -> %s", ruta.name)
     return reporte
@@ -79,6 +89,7 @@ def _cargar_oficial(oficiales, tipo, n):
     """Devuelve el DataArray oficial para el índice/escala dados, o None.
     Empareja por el código del nombre: era5drought_{spi|spei}_oficial.nc."""
     import xarray as xr
+
     for ruta in oficiales:
         nombre = f"_{ruta.stem.lower()}_"
         es_spei = "_spei_" in nombre

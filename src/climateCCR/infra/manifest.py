@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 # Packages whose versions are worth pinning into the manifest.
-_TRACKED_PACKAGES = ("numpy", "pandas", "scipy", "scikit-learn", "matplotlib", "pyyaml")
+_TRACKED_PACKAGES = ("numpy", "pandas", "scipy", "matplotlib", "pyyaml")
 
 
 def _git_commit(root: Path | None = None) -> str | None:
@@ -66,7 +66,7 @@ class RunManifest:
         seed: int,
         config: dict[str, Any] | Any,
         project_root: Path | None = None,
-    ) -> "RunManifest":
+    ) -> RunManifest:
         """Build a manifest from a seed and a config (dict or ``Config``)."""
         if hasattr(config, "to_dict"):
             config = config.to_dict()

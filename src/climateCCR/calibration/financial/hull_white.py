@@ -52,6 +52,56 @@ def simple_to_continuous(rate: float | np.ndarray, tenor_days: float) -> float |
     return (DAYS_PER_YEAR / tenor_days) * np.log1p(rate * tenor_days / 360.0)
 
 
+def tiie_fondeo_index(overnight_pct: pd.Series) -> pd.Series:
+    """Banxico's *Índice de TIIE de Fondeo* (business-day composition), every calendar day.
+
+    On a business day ``D`` the index compounds every fixing published before
+    ``D``: ``I_D = 100000 * prod_i (1 + r_i * n_i / 36000)`` with ``r_i`` the
+    F-TIIE published on business day ``i`` (percent) and ``n_i`` the calendar
+    days it covers until the next publication; on a non-business day ``I`` the
+    last business-day index accrues *simple* interest on the last fixing,
+    ``I_I = I_D * (1 + r_D * delta / 36000)`` — verbatim the Banxico technical
+    note ([BanxicoTIIEFondeoNota]; official source Circular 3/2012). The
+    compounded-in-advance term rates are ratios of this index (MKT-SIE-09).
+    ``overnight_pct`` is indexed by publication date, values in percent.
+    """
+    fixings = overnight_pct.dropna().sort_index()
+    dates = pd.DatetimeIndex(fixings.index)
+    covered = np.diff(dates.to_numpy()).astype("timedelta64[D]").astype(float)
+    growth = np.log1p(fixings.to_numpy(dtype=float)[:-1] * covered / 36000.0)
+    business = pd.Series(
+        100_000.0 * np.exp(np.concatenate([[0.0], np.cumsum(growth)])), index=dates
+    )
+    calendar = pd.date_range(dates[0], dates[-1], freq="D")
+    last_business = pd.Series(dates, index=dates).reindex(calendar).ffill()
+    delta = (calendar - pd.DatetimeIndex(last_business)).days.to_numpy(dtype=float)
+    last_rate = fixings.reindex(calendar).ffill().to_numpy(dtype=float)
+    return business.reindex(calendar).ffill() * (1.0 + last_rate * delta / 36000.0)
+
+
+def term_rate_readings(index: pd.Series, days: int) -> pd.DataFrame:
+    """Term rates implied by the trailing 28-day index ratio under two quoting readings.
+
+    Banxico publishes ``TIIE de Fondeo compuesta por adelantado a T días`` as
+    ``[(I_D / I_{D-28})^{T/28} - 1] * 36000 / T`` — a simple Act/360 quote by
+    construction (MKT-SIE-04). Column ``simple`` reproduces that formula;
+    ``compuesta_anual`` is the annually-compounded reading ``G^{365/T} - 1`` that
+    the rejected ``(365/360)*ln(1+r)`` conversion would imply, where
+    ``G = (I_D/I_{D-28})^{T/28}``. Both in percent, indexed like ``index``
+    (the ratio is defined once the index spans 28 days).
+    """
+    if days <= 0:
+        raise ValueError(f"days must be > 0, got {days}")
+    ratio = (index / index.shift(28, freq="D")).dropna()
+    growth = ratio ** (days / 28.0)
+    return pd.DataFrame(
+        {
+            "simple": (growth - 1.0) * 36000.0 / days,
+            "compuesta_anual": (growth ** (DAYS_PER_YEAR / days) - 1.0) * 100.0,
+        }
+    )
+
+
 def exclude_windows(series: pd.Series, windows: Iterable[tuple[str, str]] | None) -> pd.Series:
     """Drop observations inside the closed ``[start, end]`` crisis windows.
 

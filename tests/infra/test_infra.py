@@ -7,7 +7,6 @@ guarantees (seeding) are pinned by a test, so any regression is caught.
 from __future__ import annotations
 
 import numpy as np
-
 from climateCCR.infra import (
     Config,
     RunManifest,

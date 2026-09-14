@@ -116,6 +116,34 @@ def test_with_supervisory_pfe_floors_only_at_reporting():
     assert "uncollateralized_pfe_0.99_shift" not in frame.columns  # input not mutated
 
 
+def test_effective_epe_summary_running_max_within_first_year():
+    """Running max per counterparty over the first year; BOOK = sum (Basel CRE53)."""
+    frame = pd.DataFrame(
+        {
+            "netting_agreement_id": [1, 1, 1, 2, 2, 2],
+            "default_times": [
+                "2021-01-01",
+                "2021-07-02",
+                "2023-01-01",
+                "2020-01-01",
+                "2020-07-01",
+                "2021-01-01",
+            ],
+            "uncollateralized_ee_baseline": [10.0, 4.0, 99.0, 0.0, 0.0, 6.0],
+            "uncollateralized_ee_climate": [2.0, 6.0, 0.0, 0.0, 0.0, 0.0],
+        }
+    )
+    out = viz.effective_epe_summary(frame).set_index("netting_agreement_id")
+    # NAID 1: the 2Y pillar lies outside the horizon; the running max holds 10
+    # (not the mean 7); the rising climate profile 2 -> 6 is a plain trapezoid.
+    assert out.loc["1", "eepe_baseline"] == pytest.approx(10.0)
+    assert out.loc["1", "eepe_climate"] == pytest.approx(4.0)
+    assert out.loc["1", "eepe_shift_pct"] == pytest.approx(-60.0)
+    # NAID 2: a 366-day (leap-year) 1Y pillar is kept by the slack.
+    assert out.loc["2", "eepe_baseline"] == pytest.approx(3.0 * 184 / 366)
+    assert out.loc["BOOK", "eepe_baseline"] == pytest.approx(10.0 + 3.0 * 184 / 366)
+
+
 def test_epe_summary_time_averages_and_totals_the_book():
     dates = ["2020-01-01", "2020-07-01", "2022-01-01"]
     frame = pd.DataFrame(

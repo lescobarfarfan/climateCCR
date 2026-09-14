@@ -21,29 +21,33 @@ Fuente autoritativa de polígonos: INEGI, Marco Geoestadístico Nacional
 """
 
 from __future__ import annotations
+
 import logging
-import numpy as np
-import geopandas as gpd
-from shapely.geometry import box
 
 import config_sequia as cfg
+import geopandas as gpd
+import numpy as np
+from shapely.geometry import box
 
 log = logging.getLogger("sequia.agregacion")
 
 
 def _malla_a_celdas(lats: np.ndarray, lons: np.ndarray) -> gpd.GeoDataFrame:
     """Construye polígonos de celda a partir de los centros de la malla regular."""
-    lats = np.asarray(lats, float); lons = np.asarray(lons, float)
+    lats = np.asarray(lats, float)
+    lons = np.asarray(lons, float)
     dlat = np.median(np.diff(np.sort(np.unique(lats))))
     dlon = np.median(np.diff(np.sort(np.unique(lons))))
     registros, ij = [], []
     for i, la in enumerate(lats):
         for j, lo in enumerate(lons):
-            registros.append(box(lo - dlon / 2, la - dlat / 2,
-                                  lo + dlon / 2, la + dlat / 2))
+            registros.append(box(lo - dlon / 2, la - dlat / 2, lo + dlon / 2, la + dlat / 2))
             ij.append((i, j))
-    g = gpd.GeoDataFrame({"i": [a for a, _ in ij], "j": [b for _, b in ij]},
-                         geometry=registros, crs=cfg.CRS_GEOGRAFICO)
+    g = gpd.GeoDataFrame(
+        {"i": [a for a, _ in ij], "j": [b for _, b in ij]},
+        geometry=registros,
+        crs=cfg.CRS_GEOGRAFICO,
+    )
     return g
 
 
@@ -60,17 +64,23 @@ def calcular_pesos(lats, lons, estados: gpd.GeoDataFrame):
         clave = fila[cfg.CLAVE_ESTADO]
         inter = celdas.intersection(fila.geometry)
         areas = inter.area.values
-        tot = areas.sum() # type: ignore
+        tot = areas.sum()  # type: ignore
         if tot <= 0:
-            pesos[clave] = {"tipo": "fallback",
-                            "centroide": fila.geometry.centroid}
+            pesos[clave] = {"tipo": "fallback", "centroide": fila.geometry.centroid}
             continue
-        sel = areas > 0 # type: ignore
+        sel = areas > 0  # type: ignore
         w = areas[sel] / tot
-        pesos[clave] = {"tipo": "area",
-                        "ij": list(zip(celdas.loc[sel, "i"].astype(int), # type: ignore
-                                       celdas.loc[sel, "j"].astype(int))), # type: ignore
-                        "w": w}
+        pesos[clave] = {
+            "tipo": "area",
+            "ij": list(
+                zip(
+                    celdas.loc[sel, "i"].astype(int),  # type: ignore
+                    celdas.loc[sel, "j"].astype(int),
+                    strict=False,
+                )
+            ),  # type: ignore
+            "w": w,
+        }
     return pesos, celdas
 
 
@@ -82,25 +92,31 @@ def agregar_campo(campo: np.ndarray, lats, lons, pesos, celdas) -> dict:
     salida = {}
     for clave, p in pesos.items():
         if p["tipo"] == "fallback":
-            salida[clave] = _valor_celda_mas_cercana(campo, lats, lons,
-                                                      p["centroide"], celdas)
+            salida[clave] = _valor_celda_mas_cercana(campo, lats, lons, p["centroide"], celdas)
             continue
         vals, ws = [], []
-        for (i, j), w in zip(p["ij"], p["w"]):
+        for (i, j), w in zip(p["ij"], p["w"], strict=False):
             v = campo[i, j]
             if np.isfinite(v):
-                vals.append(v); ws.append(w)
+                vals.append(v)
+                ws.append(w)
         if ws:
-            ws = np.array(ws); ws /= ws.sum()  # renormaliza si hubo celdas NaN
+            ws = np.array(ws)
+            ws /= ws.sum()  # renormaliza si hubo celdas NaN
             salida[clave] = float(np.dot(np.array(vals), ws))
         else:
             # Todas las celdas del estado eran NaN -> fallback por cercanía.
-            centro = celdas.dissolve().geometry.iloc[0]  # placeholder seguro
             salida[clave] = _valor_celda_mas_cercana(
-                campo, lats, lons,
-                gpd.GeoSeries([box(lons.min(), lats.min(), lons.max(), lats.max())],
-                              crs=cfg.CRS_GEOGRAFICO).geometry.iloc[0].centroid, # type: ignore
-                celdas)
+                campo,
+                lats,
+                lons,
+                gpd.GeoSeries(
+                    [box(lons.min(), lats.min(), lons.max(), lats.max())], crs=cfg.CRS_GEOGRAFICO
+                )
+                .geometry.iloc[0]
+                .centroid,  # type: ignore
+                celdas,
+            )
     return salida
 
 

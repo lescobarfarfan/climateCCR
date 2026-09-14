@@ -113,6 +113,35 @@ def epe_summary(comparison: pd.DataFrame, metric: str = "uncollateralized_ee") -
     return out
 
 
+def effective_epe_summary(
+    comparison: pd.DataFrame, metric: str = "uncollateralized_ee", horizon_years: float = 1.0
+) -> pd.DataFrame:
+    """Effective EPE — the Basel running max of EE over the first year (CCR-RISK-08).
+
+    Effective EE_k = max(Effective EE_{k-1}, EE_k) on each side of the comparison
+    frame, then the same time average as :func:`epe_summary` over the reporting
+    pillars inside ``horizon_years`` — the IMM exposure measure (EAD = alpha x
+    EEPE, Basel CRE53). Basel aggregates EEPE additively across netting sets, so
+    the ``BOOK`` row is the sum of the per-counterparty rows (max-of-sum is not
+    sum-of-max). Two deliberate deviations from CRE53, stated for the manuscript:
+    the average is the trapezoid of :func:`epe_summary` rather than the
+    right-Riemann sum, and there is no min(1y, maturity) truncation (the frame
+    carries no maturity; every book maturity exceeds one year). Columns
+    ``eepe_baseline`` / ``eepe_climate`` / ``eepe_shift`` / ``eepe_shift_pct``.
+    [BaselCRE]
+    """
+    frame = comparison.sort_values(["netting_agreement_id", "default_times"]).copy()
+    dates = pd.to_datetime(frame["default_times"])
+    first = dates.groupby(frame["netting_agreement_id"]).transform("min")
+    years = (dates - first).dt.days / 365.25
+    # ponytail: 3-day slack keeps a leap-year 1Y tenor pillar (366 d) inside the
+    # window; interpolate to the exact horizon if a non-tenor grid ever needs it.
+    frame = frame[years <= horizon_years + 3.0 / 365.25]
+    cols = [f"{metric}_baseline", f"{metric}_climate"]
+    frame[cols] = frame.groupby("netting_agreement_id")[cols].cummax()
+    return epe_summary(frame, metric).rename(columns=lambda c: c.replace("epe_", "eepe_"))
+
+
 def _grid_axis(ax, dates, max_ticks: int = 8) -> np.ndarray:
     """Evenly spaced x positions for a B3 reporting grid; ticks keep the dates.
 

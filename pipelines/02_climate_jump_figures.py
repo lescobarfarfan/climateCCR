@@ -3,7 +3,8 @@
 Renders the climate-vs-baseline story behind pipelines/01_climate_jump_demo.py:
 EE profiles and shifts per counterparty, the supervisory-PFE tail view
 (PFE = max(quantile, 0), floored at reporting — CCR-RISK-03), and the EPE
-summary table (the INT-23 headline readout), all from the comparison CSV;
+summary table (the INT-23 headline readout) plus its Effective-EPE twin
+(first-year running max, CCR-RISK-08), all from the comparison CSV;
 plus process-level views — simulated HW1F short-rate and GBM share paths
 jump-off vs jump-on with the shared master seed, so each climate path deviates
 from its baseline twin only at the marked jump events (INT-09) — and the
@@ -222,15 +223,20 @@ def main() -> None:
         )
 
     # -- EPE summary: the time-averaged EE per counterparty and whole book, one
-    #    block per scenario — the headline single-number readout (INT-23).
-    epe = pd.concat(
-        [viz.epe_summary(frame).assign(scenario=label) for label, frame in band.items()],
-        ignore_index=True,
-    )
-    epe = epe[["scenario", *[c for c in epe.columns if c != "scenario"]]]
-    epe_csv = out_dir / "epe_summary.csv"
-    epe.to_csv(epe_csv, index=False)
-    logger.info("EPE summary -> %s", epe_csv)
+    #    block per scenario — the headline single-number readout (INT-23); and
+    #    its Effective-EPE twin (first-year running max, CCR-RISK-08).
+    for stem, summary in (
+        ("epe_summary", viz.epe_summary),
+        ("eepe_summary", viz.effective_epe_summary),
+    ):
+        table = pd.concat(
+            [summary(frame).assign(scenario=label) for label, frame in band.items()],
+            ignore_index=True,
+        )
+        table = table[["scenario", *[c for c in table.columns if c != "scenario"]]]
+        table_csv = out_dir / f"{stem}.csv"
+        table.to_csv(table_csv, index=False)
+        logger.info("%s -> %s", stem, table_csv)
 
     # -- Process-level figures: re-simulate under the demo config (same master
     #    seed as pipeline 01, so these paths are the ones behind the CSV).

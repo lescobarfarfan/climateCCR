@@ -18,15 +18,15 @@ def main() -> None:
 
     logger = get_logger("climateCCR.smoke", log_dir=config.paths.logs)
     logger.info("Project root: %s", config.paths.root)
-    logger.info("Config: seed=%s n_paths=%s ccy=%s", config.seed, config.n_paths,
-                config.settlement_currency)
+    logger.info(
+        "Config: seed=%s n_paths=%s ccy=%s", config.seed, config.n_paths, config.settlement_currency
+    )
 
     rng = set_seed(config.seed)
     draws = rng.standard_normal(3)
     logger.info("First three N(0,1) draws: %s", draws.tolist())
 
-    manifest = RunManifest.create(seed=config.seed, config=config,
-                                  project_root=config.paths.root)
+    manifest = RunManifest.create(seed=config.seed, config=config, project_root=config.paths.root)
     out_path = manifest.write(config.paths.manifests)
     logger.info("Wrote run manifest: %s", out_path)
 

@@ -30,7 +30,9 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 - Resolved 2026-08-20: `OQ-CCR-10` → simple Act/360 + market payer semantics (`CCR-RISK-07`). Resolved 2026-08-12: `OQ-CCR-04` → CVA built (`CCR-RISK-06`); `OQ-CCR-06` → audit done (`CCR-RISK-05`).
 
 ## Notes (import under `notes/`)
-- Plan: [[PROJECT_PLAN]], [[PHASE_0]] — `notes/plan/`.
+- Plan: [[PROJECT_PLAN]] — re-baselined 2026-09-14 (`INT-38`): phases closed by decision ID, the Phase 6 chapter-to-results map; [[PHASE_0]] archived under `notes/plan/archive/` (executed by `CCR-MIG-*`).
+- Reading: [[2026-09-14_scope_manuscript_gate]] — the scope & manuscript gate read-log (`INT-37/38`, `CCR-SIG-05`, `CCR-RISK-08`, `MKT-SIE-09`, `HAZ-CLEAN-CNSF-15`).
+- Explanation: [[2026-09-14_hypotheses_and_scope_explained]] — the hypotheses H1/H2/H3, the scope split, Effective-EPE, the compounding identity, the CNSF year finding.
 - Review: [[CODE_REVIEW]] — `notes/reviews/` (PIMPA + randomized-signature bugs C1–C5).
 - Review: [[PONYTAIL_AUDIT_2026-07-11]] — over-engineering sweep: applied/rejected cuts + the `notebook_tools` inventory (`CCR-MIG-09`, `GEN-25`).
 - Review: [[PRICING_INTERNALS_AUDIT_2026-08-12]] — the `OQ-CCR-06` second pass: three ACTIVE IRS-pricer errors fixed (missing accrual, wrong-state forwards, spliced-period fixing), goldens deliberately re-based, Surface/Curve/CorrelationMatrix behaviour locked by tests; cc-vs-simple floating convention deferred — resolved 2026-08-20 (`CCR-RISK-07`) (`notes/reviews/`).

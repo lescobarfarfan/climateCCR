@@ -1,0 +1,16 @@
+# Read-log — the scope & manuscript gate (2026-09-14)
+
+Session decisions: `INT-37` (the hypotheses), `INT-38` (the scope split and plan re-base), `CCR-SIG-05` (signatures → future work), `CCR-RISK-08` (Effective-EPE), `MKT-SIE-09` (the compounding identity), `HAZ-CLEAN-CNSF-15` (the CNSF year convention), plus the closes `CCR-ARCH-06`, `MKT-CURVE-07`, `MKT-CREDIT-02`, `MKT-PHYS-04`, `HAZ-SOURCES-05`, `CCR-LIT-04`, `GEN-36`. Readings ordered by priority.
+
+1. **`[MacKinlay1997]` — MacKinlay, *Event Studies in Economics and Finance*, §§2–4 (the market model, abnormal returns, CAR aggregation and the test statistics).** Why: H1 of `INT-37` is stated as a *rejected* event-study hypothesis; the manuscript has to say exactly what "reprice within the event window" means and why the pre-registered gate of `INT-18` is the test — the null is only interpretable if the design is the standard one.
+2. **`[BaselCRE]` — CRE53, the Effective EE / Effective EPE paragraphs (EAD = α·EEPE), with `[Gregory_xVA]` ch. 7 on exposure metrics.** Why: `CCR-RISK-08` reports EEPE beside EPE; the reader needs the running-max definition, the one-year horizon and the additive aggregation across netting sets to see why the IMM measure is far less climate-sensitive than lifetime EPE (−2.1 vs −8.9 %) — the capital-vs-pricing reading of `INT-23`.
+3. **`[BanxicoTIIEFondeoNota]` — all three sections (business-day index, calendar-day index, compounded-in-advance rates).** Why: `MKT-SIE-09` rests on the index construction and the formula $r_T = [(I_D/I_{D-28})^{T/28}-1]\cdot 36000/T$; it is the primary document behind `MKT-SIE-04` and the simple-Act/360 choice of `CCR-RISK-04/07`.
+4. **`[Hausman1978]` §§1–2 and `[CKLS1992]` §II.** Why: now verified citations for the calibration-window reasoning the methodology chapter carries (`MKT-CALIB-06/08`) — the specification-test reading of the AR(1)-vs-MLE gap and the coarser-than-daily sampling convention.
+5. **`[Garwood1936]`.** Why: the exact Poisson confidence interval on λ (`INT-16`) is now a verified citation; read the derivation to state the interval's coverage claim correctly in the results chapter.
+6. **`[Kruttli2025]` §§I–III and `[Bressan2024]`.** Why: the H2 mechanism — transmission concentrated on climate-exposed names — is argued from these two: firm-level exposure shares drive return responses (Kruttli) and asset-level footprints matter for physical-risk pricing (Bressan), the construction evidence behind `INT-24/25` after the `INT-27` null.
+7. **`[PielkeLandsea1998]` §§2–3.** Why: the attribution caveat on deflated damage trends (`HAZ-STOCH-05/06`) and the one residual kept open in `OQ-INT-07` (c).
+8. **`[Compagnoni2023]` §§1–2 (still §99).** Why: to write the future-work paragraph on signatures accurately (`CCR-SIG-05`) — what a reservoir readout would need in sample size compared with the 63 cyclone episodes available.
+
+## Related
+Decisions: [[DECISIONS]] (`INT-37`, `INT-38`, `CCR-SIG-05`, `CCR-RISK-08`, `MKT-SIE-09`, `HAZ-CLEAN-CNSF-15`) · Explanation: [[2026-09-14_hypotheses_and_scope_explained]] · Plan: [[PROJECT_PLAN]] · Prior read-log: [[2026-09-08_fase_matrix_spread_leg]] · Arms: [[CCR_MOC]] · [[MKT_MOC]] · [[HAZ_MOC]] · Home: [[_INDEX]]
+#arm/int #type/reading

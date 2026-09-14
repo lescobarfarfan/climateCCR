@@ -14,8 +14,6 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_allclose
-
 from climateCCR.data.market.curve import Curve
 from climateCCR.data.market.surface import Surface
 from climateCCR.risk.ccr.pricing_models.interest_rate_swap_pricer import InterestRateSwapPricer
@@ -26,6 +24,7 @@ from climateCCR.utils.calendar_utils import (
     time_step_from_frequency,
     transform_dates_to_time_differences,
 )
+from numpy.testing import assert_allclose
 
 RATE = 0.03
 T0 = datetime(2020, 1, 1)
