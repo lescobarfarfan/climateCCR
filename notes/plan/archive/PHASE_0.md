@@ -1,3 +1,5 @@
+> **Archived 2026-09-14** — every item below was executed by `CCR-MIG-01..09` (Phase 0 closed; `INT-38`). Kept for the record; the live plan is [[PROJECT_PLAN]].
+
 # Phase 0 — Foundation: packaging, infra, PIMPA migration
 
 *Tracked guide. One of these per phase (see notes/PROJECT_PLAN.md for the schedule).* *Target: ~2–3 weeks at ~15 hrs/week.*

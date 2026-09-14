@@ -1,133 +1,49 @@
-# Project plan — tasks & rough time estimates
+# Project plan — status and remaining work (re-baselined 2026-09-14)
 
-*Working note for the gitignored `notes/` folder.*
+Re-baselined under `INT-38` (the scope and manuscript gate). The original 2026-06-28 plan (Phases 0–6 at ~15 hrs/week over ~34 weeks) is superseded in place: Phases 0–5 are closed, Phase 3 (signatures) leaves the plan (`CCR-SIG-05`), and Phase 6 (writing) gets the task table it never had. Each closed phase names the decisions that closed it; the canon (`context/`) stays the source of truth for the content, this note only maps it to the work.
 
-**Estimating assumptions (adjust to your reality):**
-- Part-time thesis effort alongside a full-time job: **~15 productive hours/week**, within an **~8-month**
-  (≈34-week) envelope. Estimates below are **calendar weeks at ~15 hrs/week**.
-- Estimates are **rough planning figures**, not commitments. The two research phases (3 & 4) carry
-  genuine uncertainty because they depend on whether RQ1's effects are detectable — build in slack.
-- Thesis **writing overlaps** the build (don't leave it to the end): keep a running methods/results
-  document from Phase 0.
-- "DoD" = Definition of Done.
+## 1. Closed phases
 
----
-
-## Phase 0 — Foundation: packaging, infra, PIMPA migration  ·  ~2–3 weeks
-The highest-leverage phase: it removes the import pain and makes everything reproducible.
-
-| # | Task | Est. |
+| Phase | Closed by | Definition of done, as met |
 |---|---|---|
-| 0.1 | Create repo, `src/climateCCR` skeleton, `pyproject.toml`, `environment.yml`, `.gitignore`, pre-commit (black/ruff) | 2–3 d |
-| 0.2 | `infra`: `set_seed`, YAML config loader, logger, run-manifest writer | 3–4 d |
-| 0.3 | Move PIMPA into `climateCCR.risk` **unchanged in behaviour**; add `__init__.py`; fix `iteritems`→`items` and stray imports | 2–3 d |
-| 0.4 | Lock a **regression test** reproducing PIMPA's EE/PE on the prototype CSVs under a fixed seed | 2 d |
-| 0.5 | `pip install -e .`; confirm clean imports from a notebook and a script | 0.5 d |
+| 0 — Foundation | `CCR-ARCH-01..05`, `CCR-INFRA-01`, `CCR-MIG-01..09` | `import climateCCR` works anywhere; PIMPA runs from the package; the EE/PE goldens are locked (`CCR-MIG-03`) |
+| 1 — Data | `MKT-SIE-06/07/09`, `MKT-CALIB-07` (Yahoo), `MKT-NGFS-04` (NGFS short-term connector), `INT-21` (the Mexican book), `GEN-24`, `HAZ-SOURCES-04` | config-driven pulls of price, rate and one climate-scenario dataset, cached with provenance |
+| 2 — Calibration + end-to-end | `MKT-CURVE-05/06`, `MKT-CALIB-05..08`, `INT-16/17`, `INT-20`, `INT-22` | PIMPA exposure profiles on real public data, byte-reproducible (`INT-21`, seed 233423) |
+| 3 — RQ1 signatures | **removed** — RQ1 is answered by the HAZ estimation (`INT-16..20`) and two pre-registered nulls (`INT-18/19` rates, `INT-27` equities); the randomized signatures are future work (`CCR-SIG-05`) | n/a |
+| 4 — RQ2 propagation | `INT-13/14` (jump channel), `INT-23..28` (headline metric, sector and peril marks, sensitivities), `INT-29..36` (NGFS three flavors, spread leg), `CCR-RISK-02..08` (bond desks, PFE floor, pricer audit, CVA, Effective-EPE) | quantified change in CCR metrics under climate, reproducible with manifests |
+| 5 — Visualization | `INT-15`, `GEN-22/28/33/34` | every figure regenerates from one command plus a config and seed (`pipelines/02`, `08`, `18–20`, `23`) |
 
-**DoD:** `import climateCCR` works anywhere; PIMPA runs from the package and the regression test is green.
+## 2. Built beyond the original plan
 
----
+- Sector- and peril-differentiated jump marks with per-peril severity (`INT-24..26`) and their sensitivities (`INT-25` S-tier jitter, `INT-28` storm clustering).
+- The NGFS short-term transition channel in three application flavors — nivel (headline), trayectoria, fase — with the valuation-side spread leg (`MKT-NGFS-06..09`, `INT-30..36`).
+- Unilateral CVA with the exact exposure / credit / interaction decomposition (`CCR-RISK-06`) and Effective-EPE (`CCR-RISK-08`).
+- The model-vs-observed validation layer and the aggregate-loss readouts (`GEN-33/34`).
+- The pre-registered event studies on rates and equities (`INT-18/19`, `INT-27`) — the H1 nulls of `INT-37`.
 
-## Phase 1 — Data layer  ·  ~2–3 weeks
+## 3. Small-revisions backlog (all small, none blocking the manuscript)
 
-| # | Task | Est. |
+- `OQ-INT-07` (c) — the step-aware `MarkSampler` (time-varying severity); interface-ready per `INT-13`, no engine change.
+- `OQ-MKT-02` — a P-measure stress appendix hook: estimate the market price of rate risk only if a real-world stress-path appendix is written.
+- `OQ-HAZ-19` (b, c) — refresh the report-regime fits when the CENAPRED 2024 extenso or a restored event grain appears (`GEN-31` living calibration).
+- `OQ-MKT-04` / `OQ-MKT-13` (b) — the NGFS long-term vintage join and its splice, on the Phase VI release (`GEN-31`).
+- Reference verification tail — the `REFERENCES.md` §99 entries that are not on the results chain (HAZ-pipeline sources, workflow books).
+
+## 4. Phase 6 — writing (the only open phase)
+
+| Chapter | Content, anchored in the canon | Weeks |
 |---|---|---|
-| 1.1 | `data` interface + common tidy time-series schema; immutable `data/raw/` cache | 3 d |
-| 1.2 | Market/FX price connector (Yahoo/Google Finance) for the chosen universe | 2–3 d |
-| 1.3 | Rates/curve data ingestion for HW1F inputs | 2 d |
-| 1.4 | Climate/scenario connectors (NGFS / IIASA database; IPCC-SSP; Copernicus C3S) — at least one working end-to-end | 3–5 d |
-| 1.5 | Caching + provenance logging; small fixtures for tests | 1–2 d |
+| 1 Introduction and hypotheses | the aim (`INT-09`); H1/H2/H3 and the headline claim (`INT-37`); the three-arm machine (`INT-11`) | 1 |
+| 2 Literature | `REFERENCES.md` §1–13; signatures and weather derivatives as future-work pointers (`CCR-SIG-05`, `MKT-WD-01`) | 1.5 |
+| 3 Data | SIE and the curve (`DC-MKT-SIE-*`); the Mexican book (`DC-CCR-RISK-4`); CENAPRED and CNSF (`DC-HAZ-*`); NGFS short-term (`DC-MKT-NGFS-2`); value-level inspection (`GEN-27`) | 1 |
+| 4 Methodology | market calibration (`MKT-CALIB-*`, `MKT-CURVE-05`); hazard calibration and loss-to-mark scale (`INT-16/17/20`, `INT-24..26`); the rate-channel event study (`INT-18/19`); the jump-diffusion engine (`INT-13/14`, `DC-CCR-SIM-2`); CCR metrics (`INT-23`, `CCR-RISK-03/06/08`); the NGFS flavors (`MKT-NGFS-06..09`, `INT-33..36`) | 2.5 |
+| 5 Results | H1 nulls (`INT-18/19/27`); H2 physical band and per-name effects (`INT-23`, `GEN-34`); the transition three-flavor table (`INT-35`); H3 separability and the combined cells; CVA and the wrong-way reversal (`CCR-RISK-06`); robustness (`INT-25/28`, the λ(t) riders `INT-34`, validation `GEN-33`) | 2 |
+| 6 Discussion and limitations | the body-text-only items: structural credit overlay (`MKT-CREDIT-02`), the long-term join, Cox λ(t), CLIMADA impact functions; the `OQ-MKT-02` hook; the CNSF report-lag caveat (`HAZ-CLEAN-CNSF-15`); the long-end curve caveat (`MKT-CURVE-07`) | 1 |
+| 7 Conclusions and future work | signatures, weather derivatives, parametric pricing, stochastic spreads (`INT-38`) | 0.5 |
+| Appendices | reproducibility (`GEN-*`); the figure and table map (`results/figures/*` plus manifests); the reference-verification record | 0.5 |
 
-**DoD:** a config-driven pull of price, rate, and one climate-scenario dataset, cached and logged.
-
----
-
-## Phase 2 — Calibration + real-data end-to-end  ·  ~2 weeks
-
-| # | Task | Est. |
-|---|---|---|
-| 2.1 | `calibration.fit_gbm` (drift/vol from log-returns; MLE) → emits PIMPA `'direct_input'` objects | 2–3 d |
-| 2.2 | `calibration.fit_hull_white` (`alpha`, `sigma`, curve/`theta` fit) | 3–4 d |
-| 2.3 | Promote `processes` + `simulation` out of `scenario_generation` (keep ABCs) | 2 d |
-| 2.4 | **End-to-end smoke test:** real data → calibrate → simulate → PIMPA EE/PE | 2–3 d |
-
-**DoD:** PIMPA produces an exposure profile on **real public data** (no prototype CSVs), reproducibly.
-
----
-
-## Phase 3 — RQ1: signatures + inference (research core)  ·  ~4–6 weeks *(high uncertainty)*
-
-| # | Task | Est. |
-|---|---|---|
-| 3.1 | Move rand-sig into `climateCCR.signatures`; fix solver arg/shape bugs; **seed** the reservoir; add a fixed-seed reproducibility unit test (see code review C1–C4) | 4–5 d |
-| 3.2 | Feature pipeline: path → (randomized) signature features for equities/macro series | 3–4 d |
-| 3.3 | Define the climate-event labelling / narrative signal (event windows, scenario tags) | 3–5 d |
-| 3.4 | `inference`: time-series classification + regression of risk factors on climate signals | 1–1.5 wk |
-| 3.5 | **Leakage-aware** backtesting / walk-forward CV; significance tests | 1 wk |
-| 3.6 | Decision checkpoint: are effects detectable? → choose Path A (RQ2) or fallback | 1–2 d |
-
-**DoD:** a defensible empirical answer to RQ1 with cross-validated evidence and the go/no-go decision.
-
----
-
-## Phase 4 — RQ2 / fallback: propagation & sensitivity  ·  ~3–4 weeks
-
-| # | Task | Est. |
-|---|---|---|
-| 4.A | *(Path A)* Calibrate the detected effect; add an event-injection hook to `simulation`; re-run PIMPA | 1.5–2 wk |
-| 4.B | *(Fallback)* Map climate scenarios to **justified** parameter perturbations (GBM drift, HW1F curve); document the rule | 1–1.5 wk |
-| 4.1 | Add EPE / Effective EPE, and CVA (with optionally climate-conditioned credit spread) to `risk` | 4–6 d |
-| 4.2 | Monte Carlo **sensitivity analysis**: how CCR metrics move across scenarios (fixed seeds, manifests) | 1 wk |
-
-**DoD:** quantified change in CCR metrics under climate scenarios, fully reproducible with logged params.
-
----
-
-## Phase 5 — Visualization & results consolidation  ·  ~1.5–2 weeks
-
-| # | Task | Est. |
-|---|---|---|
-| 5.1 | `viz`: style config + core plots (exposure fans, distributions, calibration & test diagnostics) | 1 wk |
-| 5.2 | Reproducible figure/table pipeline driving every thesis exhibit from manifests | 3–4 d |
-
-**DoD:** every figure in the thesis regenerates from a single command + a config/seed.
-
----
-
-## Phase 6 — Writing & defense prep  ·  ~4–6 weeks (overlapping from Phase 0)
-Methods and literature written alongside the build; final integration, proofing, and defense slides
-at the end.
-
----
-
-## Rollup
-
-| Phase | Theme | Weeks (part-time) |
-|---|---|---|
-| 0 | Foundation / packaging | 2–3 |
-| 1 | Data | 2–3 |
-| 2 | Calibration + E2E | ~2 |
-| 3 | RQ1 (research core) | 4–6 |
-| 4 | RQ2 / fallback | 3–4 |
-| 5 | Visualization | 1.5–2 |
-| 6 | Writing (overlapping) | 4–6 |
-| | **Build subtotal (0–5)** | **~15–20 weeks** |
-
-Add a ~20% contingency buffer on the research phases. Sequence the *critical path* as
-**0 → 1 → 2 → 3 → 4 → 5**; writing (6) and the literature review run in parallel throughout.
-
-**Fit to your 8 months:** the build subtotal (~15–20 weeks) plus a ~20% research-phase buffer lands
-well inside ~34 weeks, leaving comfortable slack for write-up and the defense.
-
----
-
-## Immediate next actions (this week)
-1. Approve the `src/climateCCR` layout and confirm the package name.
-2. I scaffold Phase 0.1–0.2 (`pyproject.toml`, `infra`, repo skeleton) so you can `git init` and commit.
-3. Pick the **first market/universe** for the data layer (BMV subset, or a broader proxy) so calibration
-   has a concrete target.
+Rollup: about 10 weeks of writing at the original ~15 hrs/week; every figure and table is already regenerable from a committed config, so the writing phase adds no build work.
 
 ## Related
-[[CCR_MOC]] · Home: [[_INDEX]]
-
-#arm/ccr #type/plan
+Supersedes the 2026-06-28 plan (git history keeps it); [[PHASE_0]] is archived under `notes/plan/archive/`. Reads with: [[DECISIONS]] (`INT-38`) · [[OPEN_QUESTIONS]] · [[README]] (Status and roadmap). Arms: [[CCR_MOC]] · [[MKT_MOC]] · [[HAZ_MOC]] · Home: [[_INDEX]]
+#arm/int #type/plan

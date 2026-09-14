@@ -66,7 +66,7 @@ If you only had clean prices, you would need to add accrued interest before boot
 
 The natural way to assemble the curve is in two blocks:
 
-- **Short block (overnight to 1 year).** Built from F-TIIE: the overnight rate, plus the compounded-in-arrears 28-, 91- and 182-day tenors that Banxico publishes. These are zero-coupon by construction.
+- **Short block (overnight to 1 year).** Built from F-TIIE: the overnight rate, plus the compounded-in-advance 28-, 91- and 182-day tenors that Banxico publishes (the trailing 28-day index ratio extrapolated to each tenor, `MKT-SIE-09`). These are zero-coupon by construction.
 - **Long block (1Y onwards).** Built by stripping the six on-the-run Bonos M dirty prices (`Bonos_0_3` through `Bonos_20_30`), using the short block to discount the early coupons of the longer bonds.
 
 The two blocks meet at one year, and Section 4 deals with that join.
@@ -76,7 +76,7 @@ The two blocks meet at one year, and Section 4 deals with that join.
 The TIIE de Fondeo (F-TIIE) is the daily overnight risk-free rate for Mexican pesos, calculated by Banxico from observed wholesale repo transactions in government, IPAB and Banxico paper. As the central-bank documentation for the *Índice de TIIE de Fondeo y TIIEs de Fondeo compuestas por adelantado* (table CA766) describes, Banxico also publishes:
 
 - An **Índice de TIIE de Fondeo** (one with business-day capitalisation, one with calendar-day capitalisation), which lets you compute the realised compound return between any two dates as a simple ratio of index values.
-- **TIIE de Fondeo compuestas por adelantado** at the standard tenors of **28, 91 and 182 days**, which are forward-looking compounded-in-arrears term rates expressed in annualised form.
+- **TIIE de Fondeo compuestas por adelantado** at the standard tenors of **28, 91 and 182 days**, which are compounded-in-advance term rates: the trailing 28-day ratio of the business-day *Índice de TIIE de Fondeo* raised to $T/28$ and annualised as a simple Act/360 rate, $r_T = [(I_D/I_{D-28})^{T/28} - 1]\cdot 36000/T$ — reproduced on the published series to 0.003 bp (`MKT-SIE-09`, `pipelines/25`).
 
 For Hull–White calibration, the consequence is direct:
 

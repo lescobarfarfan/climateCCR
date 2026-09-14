@@ -43,15 +43,29 @@ changes once climate is incorporated. The three arms are one machine, not three 
 **RQ1 — detection / distillation.** Can the impact of climate-related events on asset prices and
 macro-financial risk factors (interest rates, equity indices, FX) be *identified and quantified*? In
 the integrated design the **primary estimation engine is the HAZ arm**: the Mexican hazard & loss
-panels yield the arrival intensity `λ` and the per-event impact / jump-mark. Rough-path methods — the
-**signature transform** and **randomized signatures** (Compagnoni et al. 2023) — were the CCR arm's
-original price-series detection route; their role is now **under review** (`OQ-CCR-07`): a
-complementary detector/validator of a climate signal in price series *independent of* the hazard
-panels, a robustness probe on the jump channel, or repositioned to future work.
+panels yield the arrival intensity `λ` and the per-event impact / jump-mark (`INT-16/17/20`). Direct
+market detection was tested twice under pre-registered gates and returned nulls (`INT-18/19` rates,
+`INT-27` equities). Rough-path methods — the **signature transform** and **randomized signatures**
+(Compagnoni et al. 2023) — were the CCR arm's original price-series detection route and are now
+**future work** (`CCR-SIG-05`): on the available episode sample they would only add a third
+pre-registered null.
 
 **RQ2 — modelling / propagation.** Given an estimated effect, calibrate it and **inject it into a
 Monte-Carlo simulation** of the risk factors, then read the resulting change in risk metrics — CCR
-(EE/PE/EPE/CVA, the spine), market (VaR/ES), and parametric loss.
+(EE/PE/EPE/EEPE/CVA, the spine), market (VaR/ES), and parametric loss.
+
+**Hypotheses (`INT-37`).** *H1 (market repricing):* Mexican sovereign yields and BMV equity prices
+reprice individual climate events within the event window — **rejected** (`INT-18/19`: lead-pillar β
+null, p = .734 over 100 episodes incl. Otis; `INT-27`: τ = +0.198, p_boot = .94 over 63 cyclone
+episodes × 26 names). *H2 (loss transmission):* a jump channel calibrated on realized Mexican climate
+losses materially changes counterparty credit exposure relative to a climate-free baseline —
+**supported** (book EPE −8.93 %, band −4.86 … −8.93 % across the regime-consistent `λ` legs,
+`INT-23`; first-year Effective-EPE −2.13 … −1.39 %, `CCR-RISK-08`). *H3 (separability):* the physical
+and transition channels are approximately additive on the book — **supported** (jump-within deltas
+invariant to ≤ 0.25 pp across the three NGFS flavors, `INT-35`). **Headline claim:** an empirically
+calibrated physical climate channel moves the book's expected positive exposure by 5–9 % under the
+current-climate arrival band while market prices show no measurable per-event response — transmission
+runs through realized losses, not anticipatory repricing.
 
 **The integrating mechanism — a climate-driven jump process (`INT-10`).** Climate enters the
 simulation as a **jump (compound-Poisson / Cox) component superimposed on the diffusion**:
@@ -60,12 +74,15 @@ each shock onto a diffusion — an asset price (**GBM**) or a risk factor (**Hul
 Monte Carlo over the resulting **jump-diffusion** — `dX = (diffusion) + (Σ marks at Poisson/Cox
 times)` — yields the climate-vs-baseline change in risk.
 
-**Fixed vs trajectory (`INT-12`).** A climate assumption enters either as a **fixed** level /
-parameter shift (e.g. an NGFS `Δr` level, a drift or curve perturbation) or as a **trajectory** (a
-path over time — an NGFS rate path, a time-varying `λ(t)`). Both go through the same injection hook.
-This subsumes the earlier **Path A / Path B** split: the **HAZ→jump injection is the concrete Path A**
-(estimate the effect, inject it dynamically); the **fixed parameter shift is Path B** (a justified
-perturbation rule, reported as sensitivity).
+**Fixed, trajectory, and phased (`INT-12`, `INT-33..36`).** A climate assumption enters as a
+**fixed** level / parameter shift (the NGFS *nivel* peak — the headline transition convention,
+`MKT-NGFS-09`), as a **trajectory** priced at each cashflow's own maturity (*trayectoria*), or as a
+**phased** in-simulation path (*fase* — scheduled deterministic marks through the jump-overlay seam,
+plus the valuation-side spread schedule); the HAZ jump channel itself takes a constant `λ` or a
+`λ(t)` rider. All go through the same injection hook, and the manuscript object is the
+**three-flavor table** (`INT-35`). This subsumes the earlier **Path A / Path B** split: the
+**HAZ→jump injection is the concrete Path A** (estimate the effect, inject it dynamically); a
+**fixed parameter shift is Path B** (a justified perturbation rule, reported as sensitivity).
 
 **Arm roles (`INT-11`).** **HAZ** = the estimation engine (`λ` + impact). **MKT (Hull–White) +
 PIMPA** = the calibration & simulation engine — HW and GBM are interchangeable risk-factor / asset
@@ -206,8 +223,8 @@ wind-field attribution), CENAPRED (A/B/A′ outputs), drought (SPEI). Land under
 | `processes.diffusions` | BM / GBM / Hull–White 1F | **Implemented** in PIMPA; promote |
 | `processes.jumps` / `processes.scheduled_shocks` | Poisson climate jump (+ trajectory `λ(t)`); deterministic scheduled scenario overlay | **Built** — the integrating contract (`DC-CCR-SIM-2`; `INT-14`, `INT-33/34`) |
 | `simulation` | correlated multi-factor MC + jump / scheduled-overlay injection | **Built** (correlated, seeded, substream-isolated jumps) |
-| `signatures` → `inference` | rough-path features + detection / validation | **Prototype with bugs**; role under review (`OQ-CCR-07`) |
-| `risk.ccr` (PIMPA) | EE / PE / EPE / CVA; IRS, options, fixed + FRN cebures | **Built** (`INT-23`, `CCR-RISK-02..07`); Effective-EPE future work |
+| `signatures` → `inference` | rough-path features + detection / validation | **Future work** (`CCR-SIG-05`): stubs only; the legacy prototype stays in `thesis_v0` |
+| `risk.ccr` (PIMPA) | EE / PE / EPE / Effective-EPE / CVA; IRS, options, fixed + FRN cebures | **Built** (`INT-23`, `CCR-RISK-02..08`) |
 | `risk.market` | VaR / ES, stress shocks | planned (MKT theory exists) |
 | `risk.loss` | compound-Poisson / Cox loss, parametric pricing | planned |
 | `viz` | thesis figures: CCR profiles, processes, market, validation, the NGFS flavor set | **Built** (`INT-15`, `GEN-22/33/34`; `pipelines/02`, `08`, `18`–`20`, `23`) |
@@ -288,27 +305,24 @@ package rename is needed — the scaffold carries straight over.
 
 ## Status & roadmap
 
-**Built & working:** the CCR `infra` layer (seeding, config, logger, `RunManifest`, `ProjectPaths`);
-infra tests pass.
+**Built (as of 2026-09-14):** the full `data → calibration → simulation → risk` chain on the Mexican
+book — `infra`; the SIE / Yahoo / NGFS data layers; HW1F, GBM and curve calibration; the HAZ jump
+calibration with sector- and peril-differentiated marks; the jump-diffusion engine with the
+scheduled-shock overlay; the CCR metrics (EE/PE, the PFE floor, EPE, Effective-EPE, CVA); the NGFS
+transition channel in three flavors; the validation and figure layers. Every result regenerates from
+a committed config with a run manifest (`GEN-06`).
 
-**Mature, migrating in:** PIMPA (`risk.ccr`) with the pandas-2.0 fix + a locked EE/PE regression test;
-the HAZ pipelines under `data/hazard_mx/`; the MKT theory + estimators (`calibration.financial`) and
-the Excel physical-risk dashboard.
+**Scope rulings (`INT-38`, 2026-09-14).** Signatures, weather derivatives, parametric pricing and
+stochastic spreads are **future work**; the structural credit overlay, the NGFS long-term join, Cox
+`λ(t)` and CLIMADA impact functions are discussed in the manuscript body as limitations but **not
+built**; the Excel physical-risk dashboard is context only.
 
-**Known issues to clear early** (`context/OPEN_QUESTIONS.md`, `notes/reviews/CODE_REVIEW.md`): the
-randomized-signature prototype cannot run as shipped (unseeded reservoir, solver arg/shape
-mismatches); `calibration` is genuinely new work; EPE/CVA are not yet implemented; CDMX drops out of
-the IBTrACS wind-field panel (discretization artifact).
+**Kept open, small:** the step-aware mark sampler (`OQ-INT-07` c), a P-measure stress appendix hook
+(`OQ-MKT-02`), the CENAPRED refresh triggers (`OQ-HAZ-19`), and the CDMX wind-field discretization
+artifact (`OQ-HAZ-01`, future work).
 
-**Build order.** `infra` → `src/` packaging + editable install (absorb PIMPA & rand-sig, fix
-pandas/seed/solver bugs) → promote `processes`/`simulation` (add the jump-injection hook) → `data` →
-`calibration` → end-to-end smoke test on real data → `signatures`/`inference` → `viz`. A time-boxed
-plan is in `notes/plan/PROJECT_PLAN.md`.
-
-**Immediate sequence.** ① confirm the unifying RQ (`OQ-INT-01`, largely settled) and the headline risk
-object (`OQ-INT-02`); ② initialise the repo from the existing scaffold + first commit; ③ migrate
-PIMPA behaviour-unchanged and lock its regression test; ④ fix the signature reservoir; ⑤ ship one
-climate-scenario connector end-to-end (`OQ-CCR-03`).
+**What is left: Phase 6, the manuscript.** The chapter-to-results map and its week estimates live in
+`notes/plan/PROJECT_PLAN.md`; the hypotheses are stated above (`INT-37`).
 
 ---
 
