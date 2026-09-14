@@ -36,6 +36,11 @@ sie:
     TasaRendimiento: SF45473
   fix:
     FIX: SF43718
+  tiies_compuestas: # CA766 — the TIIE de Fondeo index + compounded-in-advance term rates (MKT-SIE-09 check)
+    IndiceHabiles: SF355631 # Índice de TIIE de Fondeo, composición en días hábiles bancarios
+    FTIIE28C: SF355632 # TIIE de Fondeo compuesta por adelantado a 28 días
+    FTIIE91C: SF355633 # … a 91 días
+    FTIIE182C: SF355634 # … a 182 días
   bonos_ms: # sustainability-linked, port completeness only (starts 2023-07-24)
     Plazo: SF355417
     PrecioLimpio: SF355418

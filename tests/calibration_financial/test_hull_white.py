@@ -13,6 +13,8 @@ from climateCCR.calibration.financial.hull_white import (
     fit_vasicek_mle,
     sample_weekly_last,
     simple_to_continuous,
+    term_rate_readings,
+    tiie_fondeo_index,
 )
 from climateCCR.infra import get_rng
 
@@ -43,6 +45,32 @@ def test_simple_to_continuous_round_trip():
     assert np.exp(-z * days / 365.0) == pytest.approx(1.0 / (1.0 + rate * days / 360.0))
     with pytest.raises(ValueError, match="tenor_days"):
         simple_to_continuous(rate, 0.0)
+
+
+def test_tiie_fondeo_index_and_term_readings_closed_forms():
+    """Constant 8 % overnight: the index compounds calendar days, the simple reading
+    reproduces Banxico's formula and differs from the annual reading (MKT-SIE-09)."""
+    fixings = pd.Series(8.0, index=pd.bdate_range("2024-01-01", periods=300))
+    index = tiie_fondeo_index(fixings)
+    assert index.index.freqstr == "D" and index.iloc[0] == 100_000.0
+    # Monday 2024-01-08 compounds five weekday fixings, the Friday one over 3 days.
+    assert index.loc["2024-01-08"] == pytest.approx(
+        100_000.0 * (1 + 8.0 / 36000.0) ** 4 * (1 + 8.0 * 3 / 36000.0)
+    )
+    # A Saturday accrues simple interest on Friday's fixing for one day.
+    assert index.loc["2024-01-06"] == pytest.approx(
+        index.loc["2024-01-05"] * (1 + 8.0 * 1 / 36000.0)
+    )
+    readings = term_rate_readings(index, 91)
+    ratio = index.loc["2024-06-03"] / index.loc["2024-05-06"]
+    simple = ((ratio ** (91 / 28.0)) - 1.0) * 36000.0 / 91
+    assert readings.loc["2024-06-03", "simple"] == pytest.approx(simple)
+    # Intra-window daily compounding lifts the simple-equivalent a few bp above 8 %;
+    # the annual reading sits ~37 bp higher still, so the check can discriminate.
+    assert 8.0 < readings.loc["2024-06-03", "simple"] < 8.1
+    assert abs(readings.loc["2024-06-03", "compuesta_anual"] - simple) > 0.1
+    with pytest.raises(ValueError, match="days"):
+        term_rate_readings(index, 0)
 
 
 def test_ar1_and_mle_recover_and_agree(ou_series):
