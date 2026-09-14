@@ -31,6 +31,9 @@ in on (`INT-12`).
 - `OQ-MKT-10` `industria`↔GICS/SCIAN · `OQ-MKT-11` credit overlay in scope? · (`OQ-MKT-05` closed 2026-08-02 → `MKT-NGFS-05`; `OQ-MKT-12` closed 2026-08-02 → `MKT-CALIB-08`/`MKT-CURVE-06`.)
 
 ## Notes (under `notes/`)
+- Plan: [[PROJECT_PLAN]] — the cross-arm plan, re-baselined 2026-09-14 (`INT-38`; Phase 6 chapter map).
+- Reading: [[2026-09-14_scope_manuscript_gate]] — the scope & manuscript gate read-log (`INT-37/38`, `CCR-SIG-05`, `CCR-RISK-08`, `MKT-SIE-09`, `HAZ-CLEAN-CNSF-15`).
+- Explanation: [[2026-09-14_hypotheses_and_scope_explained]] — the hypotheses H1/H2/H3, the scope split, Effective-EPE, the compounding identity, the CNSF year finding.
 - Theory — Hull–White (`notes/theory/hull_white_1f/`): [[Hull_White_Comprehensive]], [[HWModel_Theory]],
   [[Hull-White-1F-calibration]], [[Hull‑White_theta_Intuition]], [[market_calibration]],
   [[Calibration_From_SIE_Banxico_01]], [[Calibration_From_SIE_Banxico_02]], [[all_info]].

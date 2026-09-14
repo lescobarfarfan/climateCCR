@@ -31,6 +31,9 @@ the intensity `λ` and the per-event **impact/jump-mark** that drive the climate
 - Estimation core (shared): `OQ-INT-07` jump-mark / impact estimation.
 
 ## Notes (import under `notes/`)
+- Plan: [[PROJECT_PLAN]] — the cross-arm plan, re-baselined 2026-09-14 (`INT-38`; Phase 6 chapter map).
+- Reading: [[2026-09-14_scope_manuscript_gate]] — the scope & manuscript gate read-log (`INT-37/38`, `CCR-SIG-05`, `CCR-RISK-08`, `MKT-SIE-09`, `HAZ-CLEAN-CNSF-15`).
+- Explanation: [[2026-09-14_hypotheses_and_scope_explained]] — the hypotheses H1/H2/H3, the scope split, Effective-EPE, the compounding identity, the CNSF year finding.
 - Theory (`notes/theory/`): [[referencias_riesgo_catastrofico]] (master), [[diseno_calibracion_funciones_impacto_mexico]] (CLIMADA design).
 - Sources (`notes/sources/`): [[cenapred]], [[ibtracs]].
 - Pipelines (`notes/pipelines/`): [[README_scraper_cnsf]], [[README_sequia]], [[DISENO_pipeline_autos_CNSF]], [[Guia_MDB_Automoviles_CNSF]], [[shared_entity_cleaner_clasificar_entidad]].
