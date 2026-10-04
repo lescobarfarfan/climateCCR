@@ -1,9 +1,14 @@
 """Run manifests.
 
 Each experiment writes a manifest capturing everything needed to reproduce it:
-the resolved config, the git commit, the seed, package versions, and
+the resolved config, the git commit (and whether the tree was dirty), the seed,
+package versions, the Python/OS platform and the BLAS backend numpy runs on, and
 timestamps. This is the backbone of the project's reproducibility contract —
 every figure or table in the thesis should be traceable to one manifest.
+
+The platform and BLAS fields are the ``GEN-30`` tripwire: byte-identity claims
+hold within one numerics stack, and an OS update can replace the system BLAS
+underneath an otherwise unchanged environment (macOS 27 / Accelerate, 2026-09-24).
 """
 
 from __future__ import annotations
@@ -14,7 +19,7 @@ import subprocess
 import sys
 import uuid
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from importlib import metadata
 from pathlib import Path
 from typing import Any
@@ -37,6 +42,21 @@ def _git_commit(root: Path | None = None) -> str | None:
         return None
 
 
+def _git_dirty(root: Path | None = None) -> bool | None:
+    """True when tracked files differ from HEAD (untracked files are ignored)."""
+    try:
+        out = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=str(root) if root else None,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return bool(out.stdout.strip())
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+
+
 def _package_versions() -> dict[str, str | None]:
     versions: dict[str, str | None] = {}
     for name in _TRACKED_PACKAGES:
@@ -45,6 +65,32 @@ def _package_versions() -> dict[str, str | None]:
         except metadata.PackageNotFoundError:
             versions[name] = None
     return versions
+
+
+def _blas_backend() -> str | None:
+    """Name the BLAS/LAPACK implementation behind numpy's linear algebra.
+
+    PyPI wheels report their bundled or system library directly (``openblas``,
+    ``accelerate``). conda-forge builds link the generic netlib interface and
+    report ``blas``; there the implementation is the ``libblas`` variant recorded
+    in the environment's ``conda-meta`` (e.g. ``9_h51639a9_openblas``).
+    """
+    try:
+        import numpy as np
+
+        build_deps = np.show_config(mode="dicts").get("Build Dependencies", {})
+        name = build_deps.get("blas", {}).get("name")
+    except Exception:  # show_config is best-effort diagnostics, never a run blocker
+        return None
+    if name in (None, "blas", "lapack"):
+        for meta_file in Path(sys.prefix).glob("conda-meta/libblas-*.json"):
+            try:
+                build = json.loads(meta_file.read_text()).get("build", "")
+            except (OSError, ValueError):
+                continue
+            if build:
+                return f"libblas {build}"
+    return name
 
 
 @dataclass
@@ -59,6 +105,9 @@ class RunManifest:
     python_version: str
     platform: str
     packages: dict[str, str | None] = field(default_factory=dict)
+    git_dirty: bool | None = None
+    env_prefix: str | None = None
+    blas: str | None = None
 
     @classmethod
     def create(
@@ -70,7 +119,7 @@ class RunManifest:
         """Build a manifest from a seed and a config (dict or ``Config``)."""
         if hasattr(config, "to_dict"):
             config = config.to_dict()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         run_id = f"{now:%Y%m%dT%H%M%SZ}_{uuid.uuid4().hex[:8]}"
         return cls(
             run_id=run_id,
@@ -81,6 +130,9 @@ class RunManifest:
             python_version=sys.version.split()[0],
             platform=platform.platform(),
             packages=_package_versions(),
+            git_dirty=_git_dirty(project_root),
+            env_prefix=sys.prefix,
+            blas=_blas_backend(),
         )
 
     def write(self, manifests_dir: str | Path) -> Path:

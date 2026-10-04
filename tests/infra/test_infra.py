@@ -6,6 +6,9 @@ guarantees (seeding) are pinned by a test, so any regression is caught.
 
 from __future__ import annotations
 
+import json
+import sys
+
 import numpy as np
 from climateCCR.infra import (
     Config,
@@ -59,3 +62,13 @@ def test_manifest_roundtrip(tmp_path):
     assert out.exists()
     assert manifest.seed == cfg.seed
     assert "numpy" in manifest.packages
+
+
+def test_manifest_records_the_numerics_layer(tmp_path):
+    # GEN-30 tripwire: the stack a run executed on, not only the package versions.
+    manifest = RunManifest.create(seed=1, config={})
+    assert manifest.env_prefix == sys.prefix
+    assert manifest.blas is None or isinstance(manifest.blas, str)
+    assert manifest.git_dirty in (True, False, None)
+    written = json.loads(manifest.write(tmp_path).read_text())
+    assert {"blas", "env_prefix", "git_dirty", "platform", "python_version"} <= written.keys()
