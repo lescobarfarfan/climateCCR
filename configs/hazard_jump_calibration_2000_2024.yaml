@@ -13,7 +13,9 @@
 # regime change with climate (the pooled row is kept only to document that
 # artifact); cross-regime trend statements ride on the ciclon_tropical bridge,
 # whose reporting grain is 1:1 comparable across the boundary.
-# 2024 is preliminary (resumen ejecutivo only) -> the 2016-2023 twin.
+# 2024 rode the preliminary resumen ejecutivo (12 rows) until 2026-10-03; the EXTENSO
+# 2024 capture (138 rows, control 20,679.95 MDP; HAZ-CENAPRED-13, OQ-HAZ-19 b) now
+# feeds every window ending in 2024. The 2016-2023 twin stays as the comparability row.
 
 events_csv: data/hazard_mx/datos_CENAPRED/consolidados_2000_2024/eventos_cenapred_climada.csv
 deflator: configs/inpc_anual.yaml
@@ -33,7 +35,7 @@ variants:
   mayores_200mdp_2016_2024: # report-regime lambda (measurement-censored floor)
     min_damage_mdp: 200.0
     window: { start: 2016, end: 2024 }
-  mayores_200mdp_2016_2023: # ex the preliminary 2024 resumen ejecutivo
+  mayores_200mdp_2016_2023: # ex 2024 -- the pre-extenso comparability row (OQ-HAZ-19 b)
     min_damage_mdp: 200.0
     window: { start: 2016, end: 2023 }
   mayores_200mdp_2002_2024: # pooled — DOCUMENTS the regime artifact, not climate

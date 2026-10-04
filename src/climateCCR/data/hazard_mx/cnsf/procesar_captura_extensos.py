@@ -70,7 +70,7 @@ CIFRAS_CONTROL = {
     2021: None,
     2022: 16600.0,  # resumen ejecutivo 2022
     2023: 88910.0,  # resumen ejecutivo 2023 (año Otis)
-    2024: 14434.0,  # resumen ejecutivo 2024
+    2024: 20679.95,  # extenso 2024, Tabla 1.1 (el resumen ejecutivo preliminar decia 14434.0)
 }
 TOLERANCIA = 0.05  # 5%: los extensos refinan cifras preliminares del resumen
 

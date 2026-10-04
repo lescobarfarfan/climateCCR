@@ -29,11 +29,11 @@ CENAPRED publica desde 2000 la serie *Impacto socioeconómico de los principales
    | 2021 | `unam.mx/.../487-RESUMENEJECUTIVOIMPACTO2021.PDF` ⚠️ | `unam.mx/.../493-IMPACTO_SOCIOECONOMICO_2021.PDF` |
    | 2022 | `gob.mx/.../494-RESUMENEJECUTIVOIMPACTO2022.pdf` | `olmeca/.../501-IMPACTO_SOCIOECONOMICO_2022.PDF` |
    | 2023 | `gob.mx/.../504-RESUMENEJECUTIVOIMPACTO2023.PDF` | `gob.mx/.../517-IMPACTO_SOCIOECONOMICO_2023.PDF` |
-   | 2024 | solo resumen (vía buscador de publicaciones) ⚠️ | aún no publicado |
+   | 2024 | resumen 521 (URL verificada 2026-10-03) | **extenso publicado 2026-09-23**; capturado 2026-09-29 (138 filas, control 20,679.95 MDP) y registrado a mano en `_procedencia.json` — los índices que recorre `sync` no lo listan, URL por confirmar (`HAZ-CENAPRED-13`) |
 
    **Serie de extensos 2016–2023 COMPLETA con URL verificada** (hueco real: solo 2024). Corrida real confirmó además que el descubrimiento sobre el índice olmeca recupera los **extensos 2000–2015** (corroboración del CSV) y que los espejos importan: los mismos archivos existen en los tres dominios pero **cada dominio bloquea rutas distintas con 403** (olmeca sirvió su índice y los PDFs antiguos pero bloqueó `501-…2022`; gob.mx sirve los PDFs pero bloquea su listado) → el scraper hace **fallback automático entre espejos** y registra la `url_efectiva` en la procedencia. ⚠️ = el resumen de ese año reporta estados solo como **porcentajes de los top** y agrupa el resto en "otros estados" (2021: 32% en "otros") → **no utilizable** para el panel estatal (ver §6bis). Último recurso: `olmeca/.../archivos.zip` (4.5 GB, el acervo completo).
 
-3. Cifras de control para validar la ingesta (de los propios resúmenes): 2022 = 16,600 MDP en 570 eventos; 2023 = 88,910 MDP en 393 eventos (año Otis); 2024 = 14,434 MDP en 283 eventos.
+3. Cifras de control para validar la ingesta (de los propios resúmenes): 2022 = 16,600 MDP en 570 eventos; 2023 = 88,910 MDP en 393 eventos (año Otis); 2024 = 14,434 MDP en 283 eventos según el resumen preliminar → **20,679.95 MDP (Tabla 1.1) en el extenso** publicado 2026-09-23 (John/Guerrero 12,910.21 vs 6,659.0 MDP).
 
 ## 3. Almacenamiento robusto, log y procedencia
 
@@ -120,7 +120,7 @@ El **empalme B↔IBTrACS** para ciclones: `nombre_evento` (p. ej. "Ciclón Odile
 
 La regla operativa: **el alcance climático se decide por SUBTIPO, no por capítulo** (deslizamiento es capítulo geológico pero clima=sí; incendio forestal es químico-tecnológico pero clima=sí; COVID queda fuera automáticamente). Esto es exactamente lo que codifica `mapear_peril` y garantiza que la serie 2016+ capturada sea homogénea con la 2000–2015 procesada del CSV.
 
-**Cobertura resultante por ventana:** 2000–2015 → CSV abierto (pipeline automático); 2016–2023 → capturas estructuradas de los **extensos** (serie disponible, protocolo de arriba; 2023 con cifra de control 88,910 MDP); **2024 → único hueco real** (solo resumen): puente provisional con los totales nacionales *por fenómeno* del resumen + DesInventar/EM-DAT para el detalle por evento, hasta que el extenso 2024 se publique (`sync` lo detectará).
+**Cobertura resultante por ventana:** 2000–2015 → CSV abierto (pipeline automático); 2016–2023 → capturas estructuradas de los **extensos** (serie disponible, protocolo de arriba; 2023 con cifra de control 88,910 MDP); **2024 → cerrado el 2026-10-03** (`HAZ-CENAPRED-13`, `OQ-HAZ-19` b): el extenso 2024 (publicado 2026-09-23) se capturó el 2026-09-29 con el mismo protocolo (138 filas, control 20,679.95 MDP; `rows_2024.json`) y sustituye la captura preliminar sobre el resumen (12 filas, 14,434.9 MDP, archivada en `pdfs_procesados_2016-2024_resumen2024_20260721/`); `sync` no lo detectó porque los índices que recorre no listan el archivo — URL del portal por confirmar.
 
 **Sobre reconstruir montos desde noticias/comunicados: NO.** Contraviene los estándares del proyecto: cifras periodísticas son preliminares, metodológicamente heterogéneas (daño ≠ pérdida ≠ gasto fiscal), con sesgo de cobertura y no re-derivables. Uso aceptable: desambiguación cualitativa puntual de un evento (fecha/estado), documentada, nunca como cifra del panel. El complemento institucional correcto para validación cruzada 2016+ es **DesInventar Sentinel** (evento/municipal, etiquetado por fenómeno, machine-readable; Tier 2 #6) y **EM-DAT** para eventos mayores.
 

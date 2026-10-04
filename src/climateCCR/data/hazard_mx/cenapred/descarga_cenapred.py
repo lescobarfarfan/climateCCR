@@ -39,7 +39,7 @@ import re
 import sys
 import time
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from climateCCR.infra import project_paths
@@ -72,6 +72,8 @@ PDFS_CONOCIDOS = {
     2021: "https://www.cenapred.unam.mx/es/Publicaciones/archivos/487-RESUMENEJECUTIVOIMPACTO2021.PDF",
     2022: "https://www.cenapred.gob.mx/es/Publicaciones/archivos/494-RESUMENEJECUTIVOIMPACTO2022.pdf",
     2023: "https://www.cenapred.gob.mx/es/Publicaciones/archivos/504-RESUMENEJECUTIVOIMPACTO2023.PDF",
+    # 2024 verificado 2026-10-03 (gob.mx/cenapred, articulo "Conoce el Impacto ... 2024")
+    2024: "https://www.cenapred.gob.mx/es/Publicaciones/archivos/521-RESUMENEJECUTIVOIMPACTO2024.PDF",
 }
 
 # --- DOCUMENTOS EXTENSOS (volúmenes completos) con URL verificada. ---
@@ -88,7 +90,9 @@ EXTENSOS_CONOCIDOS = {
     2022: "https://www.cenapred.gob.mx/es/Publicaciones/archivos/501-IMPACTO_SOCIOECONOMICO_2022.PDF",
     2023: "https://www.cenapred.gob.mx/es/Publicaciones/archivos/517-IMPACTO_SOCIOECONOMICO_2023.PDF",
     # Serie de extensos 2016-2023 COMPLETA (URLs verificadas por el usuario).
-    # Hueco real: solo 2024 (sin extenso publicado aún; el sync lo detectará).
+    # 2024: extenso publicado 2026-09-23 y registrado A MANO en crudos/_procedencia.json
+    # (clave extenso_2024, url null; HAZ-CENAPRED-13) porque los indices que recorre
+    # `sync` no lo listan (comprobado 2026-10-03). Cuando aparezca su URL, anadirla aqui.
     # Nota: cada archivo suele existir espejado en los tres dominios, pero cada dominio
     # bloquea rutas distintas (403) -> _get_con_espejos prueba los espejos en orden.
     # El acervo COMPLETO existe como archivos.zip (4.5 GB) en el índice olmeca, último recurso.
@@ -232,7 +236,7 @@ def cargar_procedencia() -> dict:
 
 
 def guardar_procedencia(proc: dict):
-    proc["fecha_actualizacion_utc"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    proc["fecha_actualizacion_utc"] = datetime.now(UTC).isoformat(timespec="seconds")
     ARCHIVO_PROCEDENCIA.write_text(json.dumps(proc, indent=2, ensure_ascii=False), encoding="utf-8")
     log.info("procedencia escrita en %s", ARCHIVO_PROCEDENCIA)
 
@@ -298,7 +302,7 @@ def descargar_archivo(url: str, destino: Path, proc: dict, clave: str, force: bo
         "url_efectiva": url_efectiva,
         "sha256": _sha256(destino),
         "bytes": destino.stat().st_size,
-        "fecha_descarga_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "fecha_descarga_utc": datetime.now(UTC).isoformat(timespec="seconds"),
     }
     log.info(
         "guardado %s (%d bytes, sha256=%s...)",

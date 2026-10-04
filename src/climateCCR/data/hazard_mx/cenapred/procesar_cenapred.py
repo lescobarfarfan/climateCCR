@@ -41,11 +41,22 @@ import numpy as np
 import pandas as pd
 from climateCCR.infra import project_paths
 
-# limpieza_cnsf vive en la raíz del repo o junto a src/
-sys.path.extend([".", "..", str(Path(__file__).resolve().parent.parent)])
+# limpieza_cnsf vive en el script layer hermano hazard_mx/cnsf/ (importes por nombre
+# simple entre CLIs, HAZ-SCRAPER-CNSF-09 / INT-07; nunca desde el paquete).
+_HAZARD_MX = Path(__file__).resolve().parent.parent
+sys.path.extend([".", "..", str(_HAZARD_MX), str(_HAZARD_MX / "cnsf")])
 try:
     from limpieza_cnsf import CAT_ESTADO, clasificar_entidad  # type: ignore
-except ImportError:  # fallback mínimo para no romper si se corre aislado
+except ImportError:  # respaldo mínimo para correr aislado -- NUNCA para calibración
+    import warnings
+
+    warnings.warn(
+        "limpieza_cnsf no importable: clasificador de entidades de respaldo SIN canon "
+        "(p. ej. 'Varios Estados' pasaría como estado). Los consolidados resultantes no "
+        "son válidos para calibración (DC-CONV-5).",
+        RuntimeWarning,
+        stacklevel=1,
+    )
 
     def clasificar_entidad(x):  # type: ignore
         return ("estado", str(x).strip())
