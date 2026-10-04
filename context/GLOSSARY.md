@@ -19,7 +19,8 @@ A. Project & architecture · B. Reproducibility & engineering · C. Stochastic m
 
 ## B. Reproducibility & engineering
 - **Provenance (`_procedencia.json`)** — per raw artifact: URL/dataset, sha256, bytes, date (+ version/DOI/request).
-- **Run manifest** — per-run JSON (config + git commit + seed + package versions + timestamps) to `results/`, making every figure traceable.
+- **Run manifest** — per-run JSON (config + git commit and dirty flag + seed + package versions + OS platform + BLAS backend + env prefix + timestamps) to `results/`, making every figure traceable (`GEN-06`, `GEN-37`).
+- **Canonical numerics stack** — the pinned conda-forge/OpenBLAS env built from `conda-lock.yml` (`GEN-37`); byte-identity claims hold only within it, and the OS's own BLAS (Apple Accelerate) is never part of the pin because it changes with OS updates (the 2026-09-24 incident).
 - **Deterministic reconstructor** — script that re-derives an artifact from raw; the source of truth (never a pickle).
 - **Inspección de datos (`data.inspeccion`)** — source-agnostic QA step (`GEN-27`): robust median/MAD z per group × time + `log10` ratio checks; findings get a deterministic **triaje** — `error_probable` (fix), `atipico_a_revisar` (domain review), `inconsistencia_estructural` (fix in pipeline).
 - **Idempotent** — re-running does not redo completed work (e.g. `descargar` skips existing raw unless `--forzar`).
@@ -40,6 +41,8 @@ A. Project & architecture · B. Reproducibility & engineering · C. Stochastic m
 - **Hull–White 1F (extended Vasicek)** — one-factor short-rate model `dr = [θ(t) − a r] dt + σ dW`; affine bond prices; closed-form transition density (exact simulation possible). Simulated via the Andersen–Piterbarg scheme. `[Hull1990]` `[AndersenPiterbarg2010]`
 - **Vasicek** — constant-θ special case; used here as the estimation device for `a`, `σ`. `[Vasicek1977]`
 - **θ(t)** — deterministic HW drift calibrated so the model reproduces today's forward curve: `θ = ∂f/∂T + a·f + (σ²/2a)(1 − e^{−2at})`.
+- **Cholesky colouring (canonical draw)** — correlated increments `Z @ L.T` with `L = cholesky(C)` on the engine's standard-normal stream (`CCR-SIM-02`); unique and continuous in `C`, unlike the SVD/eigen routes whose ordering of (near-)equal singular values can flip on an ulp and swap two factors' streams.
+- **Tail-quantile precision (Monte Carlo)** — a 99 % quantile on `n` paths is an order statistic with standard error ≈ `√(p(1−p)/n) / f(q_p)`; on 10,000 paths a new realization moves the 1-year book-exposure q99 by ~10 % while EPE (a mean) moves ~0.15 % — report tail levels with their uncertainty and climate deltas as same-seed paired differences (`GEN-30`, `GEN-34`).
 - **a** — mean-reversion speed (weakly identified; flat likelihood). **σ** — short-rate volatility.
 - **f(0,t)** — instantaneous forward curve `= z(T) + T·∂z/∂T`; input to θ(t). **z(T)** — continuous zero-coupon (spot) curve from the strip.
 - **λ(t) — market price of interest-rate risk** — links Q and P drifts (`dW^Q = dW^P − λ dt`); usually negative.
@@ -164,6 +167,7 @@ A. Project & architecture · B. Reproducibility & engineering · C. Stochastic m
 | The compound-Poisson/Cox plan | **compound Poisson Cox doubly stochastic aggregated tail CENAPRED** |
 | The headline-λ regime band | **headline lambda regime band floor CT anchor regime-consistent severity pairing scenario** |
 | Per-peril severity & the Phase C null | **per-peril severity mean-matched sigma truncation ciclon 1.33 Phase C sector event study FALLA tau episode bootstrap canonical env climateCCR manifests** |
+| Numerics pin, canonical draw & the 2024 EXTENSO | **macOS 27 Accelerate golden break SVD tie-break stream swap Cholesky colouring eigh repair conda-lock OpenBLAS pinned env manifest blas CI matrix tail quantile precision caveat EXTENSO 2024 extenso refit John Guerrero floor severity 1287 CT bridge 10.0870** |
 | The knowledge-graph tooling + its versioning | **understand-anything /understand dashboard .ua knowledge graph understandignore scope tracked GEN-29** |
 | The weekly-sampling adoption + Svensson rejection | **weekly sampling W-WED W-FRI anchor sample_weekly_last agreement check restored policy-step microstructure MKT-CALIB-08 GEN-31 adopt-if-material S_rate_eff 175 million Svensson rejected long-end sparsity densification** |
 | The NGFS short-term connector + first transition results | **NGFS short term connector IIASA guest token EIRIN North America region proxy sovereign spread incl policy two anchor peak shock overlay etiqueta transition-only delta non-monotone exposure kink DAPS_NAM counterpoint channel separation** |

@@ -32,6 +32,8 @@ in on (`INT-12`).
 
 ## Notes (under `notes/`)
 - Plan: [[PROJECT_PLAN]] — the cross-arm plan, re-baselined 2026-09-14 (`INT-38`; Phase 6 chapter map).
+- Reading: [[2026-10-03_numerics_pin_cenapred_2024]] — the numerics-pin read-log (`GEN-37`, `CCR-SIM-02`): Monte-Carlo quantile-estimator variance behind the tail-precision caveat on the NGFS/aggregate-loss readouts, and the lockfile/BLAS mechanics (`notes/reading/`, `GEN-21`).
+- Explanation: [[2026-10-03_canonical_draw_and_extenso_2024_explained]] — the re-based three-flavor table (nivel −5.72 / −8.16 / −20.01, trayectoria −1.49 / −1.23 / +0.16, fase −4.57 / −6.62 / −7.37 %: transition legs move only through the numerics stage), the tail-quantile precision caveat, and the institutional-scale reading (`notes/summary_explanations/`, `GEN-26`).
 - Reading: [[2026-09-14_scope_manuscript_gate]] — the scope & manuscript gate read-log (`INT-37/38`, `CCR-SIG-05`, `CCR-RISK-08`, `MKT-SIE-09`, `HAZ-CLEAN-CNSF-15`).
 - Explanation: [[2026-09-14_hypotheses_and_scope_explained]] — the hypotheses H1/H2/H3, the scope split, Effective-EPE, the compounding identity, the CNSF year finding.
 - Theory — Hull–White (`notes/theory/hull_white_1f/`): [[Hull_White_Comprehensive]], [[HWModel_Theory]],

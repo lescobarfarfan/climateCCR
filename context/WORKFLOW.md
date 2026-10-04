@@ -82,7 +82,8 @@ You can also point at an ID directly: "expand on `HAZ-IBTRACS-05` and its refere
 Every result a thesis figure depends on must be reconstructible from raw inputs + a recorded seed.
 
 - **Seeds** — all randomness routes through `infra.set_seed` / `get_rng`; the seed is recorded in the run manifest. (`GEN-07`)
-- **Run manifests** — every stochastic run writes `results/manifests/<run_id>.json` (config + git commit + seed + package versions + timestamps). Nothing stochastic runs outside it. (`GEN-06`)
+- **Run manifests** — every stochastic run writes `results/manifests/<run_id>.json` (config + git commit and dirty flag + seed + package versions + OS platform + BLAS backend + env prefix + timestamps). Nothing stochastic runs outside it. (`GEN-06`, `GEN-37`)
+- **Numerics stack** — pipelines and pytest run in the pinned `climateCCR` env built from `conda-lock.yml` (conda-forge on OpenBLAS; `conda-lock install -n climateCCR conda-lock.yml && pip install -e . --no-deps`); byte-identity claims are stack-pinned, the manifest's `blas`/`platform` fields are the tripwire, and tail quantiles carry Monte-Carlo sampling error that means and paired deltas do not. (`GEN-30`, `GEN-37`)
 - **Raw-data provenance** — every raw artifact carries a provenance record (`_procedencia.json`-style): URL/dataset, sha256, bytes, date, version/DOI/request. (`GEN-02`)
 - **Deterministic reconstructors** — derived artifacts come from scripts, never pickles. (`GEN-04`)
 - **Idempotent pipelines** — re-running skips completed work unless forced (`--forzar`/`--force`). (`GEN-05`)

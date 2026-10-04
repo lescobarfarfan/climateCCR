@@ -169,6 +169,7 @@ Verified 2026-09-14 (web pass for the scope & manuscript gate).
 - **`[Ousterhout2018]`** — Ousterhout, J. (2018). *A Philosophy of Software Design.* Yaknyam Press. — Confirm edition (a 2nd ed., 2021, exists) + ISBN. Backs `GEN-25` (complexity as the design enemy; deep modules over shallow abstractions).
 - **`[Beck2004]`** — Beck, K., with Andres, C. (2004). *Extreme Programming Explained: Embrace Change* (2nd ed.). Addison-Wesley. — Confirm edition/ISBN. Backs `GEN-25` (YAGNI / simple design).
 - **`[BanxicoFIX2024]`** — Banco de México. FIX MXN/USD representative exchange rate, annual averages (Informe Anual compilation 2024, cuadro "Tipos de cambio representativos"; also derivable from SIE series SF43718). — Confirm the exact publication/URL (or re-anchor to the SIE series). Backs `HAZ-CLEAN-CNSF-13` (the ÷FIX factors 2022 = 20.1274, 2023 = 17.7587, 2024 = 18.3049).
+- **`[GolubVanLoan2013]`** — Golub, G. H., & Van Loan, C. F. (2013). *Matrix Computations* (4th ed.). Johns Hopkins University Press. — Confirm edition/ISBN. §4.2 (positive definite systems: existence and uniqueness of the Cholesky factor) and §8.6 (computing the SVD: the ordering and sign/basis freedom of singular vectors). Backs `CCR-SIM-02` (why the Cholesky colouring is canonical and the SVD route could swap two factors' streams on a one-ulp change).
 - **Climate-finance `.bib` (the 60 MKT entries)** — verify each DOI in `literature/refs.bib` before the literature review hardens (the canon-key entries added 2026-09-14 carry the DOIs/ISBNs verified above).
 
 
