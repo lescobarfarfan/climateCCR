@@ -2,9 +2,11 @@
 
 Every stochastic operation in the project should obtain its randomness from
 here, so that a single integer seed fully determines a run. ``set_seed`` seeds
-the legacy global generators (needed by libraries such as SciPy that accept an
-integer ``random_state``, e.g. PIMPA's ``multivariate_normal``) *and* returns a
-modern :class:`numpy.random.Generator` for new code to use explicitly.
+the legacy global generators (for third-party code that still reads them) *and*
+returns a modern :class:`numpy.random.Generator` for new code to use explicitly;
+``get_legacy_rng`` hands the CCR engine its MT19937 ``RandomState`` stream
+(CCR-MIG-08) and ``get_stream_rng`` derives independent substreams (the climate
+jump overlay, DC-CCR-SIM-2).
 """
 
 from __future__ import annotations
@@ -52,11 +54,11 @@ def get_stream_rng(seed: int, stream: int) -> np.random.Generator:
 def get_legacy_rng(seed: int | None = None) -> np.random.RandomState:
     """Return an independent legacy ``RandomState`` without touching global state.
 
-    The single seeding entry point for code that must feed SciPy's int-style
-    ``random_state`` (e.g. ``scipy.stats.multivariate_normal``): SciPy builds a
-    ``RandomState`` from an integer seed, so passing ``RandomState(seed)``
-    reproduces the integer-seed stream bit-for-bit while keeping the seed under
-    ``infra`` control (``GEN-07``). Prefer :func:`get_rng` in new code; this exists
-    for legacy MT19937 consumers that cannot use a modern ``Generator``.
+    The single seeding entry point for the CCR engine's correlated draw
+    (``simulation.MultiRiskFactorSimulation``): ``RandomState(seed)`` is the MT19937
+    stream PIMPA's integer ``random_state`` always produced, so the standard
+    normals behind the locked EE/PE baselines are preserved bit-for-bit while the
+    seed stays under ``infra`` control (``GEN-07``, ``CCR-MIG-08``). Prefer
+    :func:`get_rng` in new code; this exists for that legacy consumer only.
     """
     return np.random.RandomState(seed)

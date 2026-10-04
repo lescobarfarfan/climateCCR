@@ -37,25 +37,33 @@ class CorrelationMatrix:
         if (self.correlation_matrix != self.correlation_matrix.T).any():
             raise ValueError("The raw correlation matrix is not symmetric.")
 
-        # Enforce positive-semidefined with Rebonato-Jaeckel rule
-        # len([*filter(lambda x: x >= 0, eigen_values)]) != len(eigen_values)
-        eigen_values, _ = np.linalg.eig(self.correlation_matrix)
-        if np.any(eigen_values < 0):
+        # Enforce positive-semidefiniteness with the Rebonato-Jaeckel rule. The
+        # matrix is symmetric (checked above), so the symmetric eigensolver is the
+        # right tool: real, sorted eigenvalues, no ndarray/matrix mixing (CCR-SIM-02).
+        self.correlation_matrix = np.asarray(self.correlation_matrix, dtype=float)
+        if np.any(np.linalg.eigvalsh(self.correlation_matrix) < 0):
             self.find_nearest_psd_matrix()
 
-    # Based on Rebonato-Jaeckal:
+    # Based on Rebonato-Jaeckel:
     # https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1969689
     # https://stackoverflow.com/questions/10939213/how-can-i-calculate-the-nearest-positive-semi-definite-matrix
     # SEE DOMPAZ solution
     def find_nearest_psd_matrix(self):
-        n = self.correlation_matrix.shape[0]
-        eigval, eigvec = np.linalg.eig(self.correlation_matrix)
-        val = np.matrix(np.maximum(eigval, self.epsilon))
-        vec = np.matrix(eigvec)
-        T = 1 / (np.multiply(vec, vec) * val.T)
-        T = np.matrix(np.sqrt(np.diag(np.array(T).reshape(n))))
-        B = T * vec * np.diag(np.array(np.sqrt(val)).reshape(n))
-        self.correlation_matrix = B * B.T
+        """Replace the matrix by its nearest unit-diagonal PSD matrix (Rebonato-Jaeckel).
+
+        Eigenvalues are floored at ``epsilon``; the reconstruction ``B @ B.T`` is
+        invariant to the eigenvector sign/order conventions of the LAPACK build, so
+        only ulp-level differences can arise across BLAS implementations. The result
+        is symmetrised explicitly because the constructor's exact-symmetry check runs
+        on every sub-matrix and a blocked GEMM is not guaranteed to return bit-equal
+        (i, j) and (j, i) entries on every platform.
+        """
+        eigval, eigvec = np.linalg.eigh(self.correlation_matrix)
+        val = np.maximum(eigval, self.epsilon)
+        scale = 1.0 / ((eigvec * eigvec) @ val)  # T_i = 1 / sum_k v_ik^2 lambda_k
+        B = (np.sqrt(scale)[:, None] * eigvec) * np.sqrt(val)[None, :]
+        nearest = B @ B.T
+        self.correlation_matrix = 0.5 * (nearest + nearest.T)
 
     def get_correlation_matrix(self):
         return self.correlation_matrix

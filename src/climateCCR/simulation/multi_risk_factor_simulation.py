@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.stats import multivariate_normal
 
 from climateCCR.infra import get_legacy_rng
 
@@ -27,26 +26,20 @@ class MultiRiskFactorSimulation:
         seam (OQ-INT-12) — identical across paths, consuming no RNG, so every
         stream is unchanged with the block on or off.
         """
-        nr_risk_drivers = 0
-        for rf in self.simulated_risk_factors:
-            nr_risk_drivers += rf.model.number_of_risk_drivers
+        nr_risk_drivers = sum(rf.model.number_of_risk_drivers for rf in self.simulated_risk_factors)
+        n_paths = simulation_parameters["n_paths"]
+        n_steps = len(valuation_dates) - 1
 
-        # Seed the correlated Gaussian draw through infra's single entry point
-        # (GEN-07). A legacy RandomState reproduces SciPy's int-seed stream exactly,
-        # so the locked EE/PE baseline is unchanged (OQ-CCR-09 resolved, CCR-MIG-03).
+        # Correlated Gaussian increments, path-major (DC-CONV-10). The standard
+        # normals come from infra's single seeding entry point (GEN-07) on the legacy
+        # RandomState stream of CCR-MIG-08, and are coloured by the Cholesky factor of
+        # the correlation matrix (CCR-SIM-02). Cholesky is unique and continuous in the
+        # matrix, so no BLAS/OS build can flip the factor <-> stream assignment the way
+        # an SVD/eigen ordering tie-break can (the 2026-09-24 macOS/Accelerate incident).
         rng = get_legacy_rng(simulation_parameters["random_state"])
-        random_increments = multivariate_normal(
-            mean=[0] * nr_risk_drivers,
-            cov=self.correlation_matrix,
-            seed=rng,
-        ).rvs(size=(simulation_parameters["n_paths"], len(valuation_dates) - 1))
-
-        if nr_risk_drivers == 1:
-            pass_random_increments = random_increments
-            random_increments = np.empty(
-                (simulation_parameters["n_paths"], len(valuation_dates) - 1, 1)
-            )
-            random_increments[:, :, 0] = pass_random_increments
+        standard_normals = rng.standard_normal((n_paths, n_steps, nr_risk_drivers))
+        cholesky_factor = np.linalg.cholesky(np.asarray(self.correlation_matrix, dtype=float))
+        random_increments = standard_normals @ cholesky_factor.T
 
         random_paths = {}
         index_risk_drivers = 0
@@ -107,7 +100,6 @@ class MultiRiskFactorSimulation:
                     )
                 alphas[name] = calibration["alpha"]
             shock_marks = scheduled_shocks.step_marks(valuation_dates, alphas, targets=present)
-            n_paths = simulation_parameters["n_paths"]
             for name, marks in shock_marks.items():
                 random_paths[name] = simulated[name].model.apply_jump_overlay(
                     random_paths[name],
