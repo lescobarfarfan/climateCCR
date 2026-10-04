@@ -59,10 +59,12 @@ BANDS = {
 }
 #: CT bridge spec (INT-20): pooled ciclon 2002-2024, unthresholded — lambda only.
 CT_SPEC = {"start_year": 2002, "end_year": 2024, "perils": ["Ciclón tropical"]}
-#: Row-grain expectations (2026-08-01 profiling of the INT-25-era base). A
+#: Row-grain expectations (re-profiled 2026-10-03 on the EXTENSO-2024 base,
+#: HAZ-CENAPRED-13: the CT set gains three 2024 cyclone rows / one storm cluster;
+#: registry and report sets unchanged; 2026-08-01 values were ct (229, 164)). A
 #: mismatch means the underlying event base changed — re-profile before trusting
 #: this sensitivity (the pipelines/12 pattern: loud failure demands fresh triage).
-EXPECTED_EVENTS = {"registro": (270, 252), "reporte": (65, 42), "ct": (229, 164)}
+EXPECTED_EVENTS = {"registro": (270, 252), "reporte": (65, 42), "ct": (232, 165)}
 
 
 def _scale_from_artifact(path: Path, column: str) -> float:

@@ -29,7 +29,7 @@ shock_config: configs/ngfs_shock.yaml # equity_leg.sectors / bond_leg.sectors ->
 # Rider configs carry the {times_years, values} intensity trajectory (INT-34).
 riders:
   "Registry trend (+8.08%/yr)": configs/climate_jump_real_mexican_trend_registry.yaml
-  "CT bridge (+1.37%/yr)": configs/climate_jump_real_mexican_trend_ct_bridge.yaml
+  "CT bridge (+1.68%/yr)": configs/climate_jump_real_mexican_trend_ct_bridge.yaml
 headline_intensity: 19.2857 # INT-20 headline lambda (events/yr)
 horizon_years: 10.0 # display horizon; the riders hold their 2031.0 value beyond
 

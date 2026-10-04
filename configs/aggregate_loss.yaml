@@ -22,7 +22,7 @@ per_path:
   horizons_years: [1.0, 5.0, 10.0]
   runs:
     "Headline (lambda 19.29/yr)": climate_jump_real_mexican
-    "CT anchor (lambda 9.96/yr)": climate_jump_real_mexican_ct_anchor
+    "CT anchor (lambda 10.09/yr)": climate_jump_real_mexican_ct_anchor
     "Floor (lambda 7.22/yr)": climate_jump_real_mexican_floor
 
 compound_poisson:
@@ -32,7 +32,7 @@ compound_poisson:
     "Headline (lambda 19.29/yr)":
       intensity_row: mayores_200mdp_2002_2015
       severity_row: mayores_200mdp_2002_2015
-    "CT anchor (lambda 9.96/yr)":
+    "CT anchor (lambda 10.09/yr)":
       intensity_row: ciclon_tropical_2002_2024
       severity_row: mayores_200mdp_2002_2015
     "Floor (lambda 7.22/yr)":
