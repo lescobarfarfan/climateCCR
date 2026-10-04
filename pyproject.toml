@@ -7,7 +7,7 @@ name = "climateCCR"                     # kept (INT-02); the climrisk rename was
 version = "0.0.1"
 description = "Climate-risk-aware financial-risk pipeline for Mexico: data -> calibration -> simulation -> risk metrics, integrating counterparty-credit (CCR), market/rate (MKT) and physical-hazard (HAZ) arms via a climate-driven jump-diffusion."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"           # numpy 2.4 (the pinned stack, environment.yml) needs 3.11+
 license = { text = "MIT" }
 authors = [{ name = "Thesis author" }]  # TODO: fill in name / institution
 
@@ -22,6 +22,8 @@ dependencies = [
     "matplotlib>=3.7",
     "pyyaml>=6.0",
     "python-dateutil>=2.8",
+    "requests>=2.31",       # data/market: the Banxico SIE client (MKT-SIE-06) and the Yahoo fetcher
+    "urllib3>=1.26",        # data/market/sie.py imports the retry adapter directly
 ]
 
 [project.optional-dependencies]
@@ -36,8 +38,7 @@ dev = [
 # HAZ pipelines (CNSF / IBTrACS / CENAPRED / drought).
 # Grounded in the imports of src/climateCCR/data/hazard_mx/** and notas/requirements_sequia.txt.
 haz = [
-    "requests>=2.31",       # scrapers (CNSF, CENAPRED, IBTrACS downloads)
-    "beautifulsoup4>=4.12", # HTML parsing
+    "beautifulsoup4>=4.12", # HTML parsing (scrapers; requests itself is a core dependency)
     "lxml>=5.0",            # bs4 backend / XML
     "openpyxl>=3.1",        # CNSF .xlsx consolidation
     "geopandas>=0.13",      # INEGI shapefiles, state attribution

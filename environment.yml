@@ -1,14 +1,44 @@
-# Conda environment for the climateCCR project.
-# Usage:
+# Conda environment for the climateCCR project — the canonical runtime (GEN-30, GEN-37).
+#
+# Preferred (exact, multi-platform, from the committed lockfile):
+#   conda-lock install -n climateCCR conda-lock.yml
+# Or solve from the pins below:
 #   conda env create -f environment.yml
-#   conda activate climateCCR
-# The editable install (-e ".[dev]") below pulls runtime + dev dependencies
-# from pyproject.toml, keeping a single source of truth for versions.
+# Then, in either case (the package itself; its range dependencies in pyproject.toml are
+# already satisfied by the pinned stack, so nothing is re-resolved):
+#   conda activate climateCCR && pip install -e . --no-deps && pre-commit install
+#
+# Why exact pins and OpenBLAS: results are byte-reproducible only within one numerics
+# stack. PyPI numpy/scipy wheels link the OS's own BLAS on macOS (Apple Accelerate), which
+# changed with the macOS 27 update of 2026-09-24 and flipped an SVD ordering tie-break in
+# the engine's correlated draw with no package change (DECISIONS.md GEN-37). conda-forge
+# builds on OpenBLAS pin the BLAS like any other package, on every OS. Accelerate stays an
+# opt-in variant — swap the libblas line for `libblas=*=*accelerate` — never canonical; the
+# run manifest records the backend either way. Regenerate the lockfile after editing:
+#   conda-lock lock -f environment.yml -p osx-arm64 -p linux-64 -p win-64
 name: climateCCR
 channels:
   - conda-forge
+  - nodefaults
 dependencies:
-  - python=3.11
+  - python=3.11.15
+  - libblas=*=*openblas
+  - numpy=2.4.6
+  - scipy=1.17.1
+  - pandas=3.0.6 # 3.0.4 (the 2026-08/09 manifests) has no conda-forge build; pandas carries no engine numerics
+  - matplotlib=3.11.0
+  - pyyaml=6.0.3
+  - python-dateutil
+  - requests # data/market (SIE client, Yahoo fetcher) and the HAZ downloaders
+  # the CNSF script layer + its tests (the light half of the pyproject `haz` extra;
+  # the geo/climate stack -- geopandas, xarray, cdsapi, climada -- stays opt-in)
+  - openpyxl
+  - beautifulsoup4
+  - lxml
   - pip
-  - pip:
-      - -e ".[dev]"
+  # dev tools (the pyproject `dev` extra); black/ruff pinned to the pre-commit hook (GEN-36)
+  - pytest
+  - black=24.4.2
+  - ruff=0.4.10
+  - pre-commit
+  - mypy

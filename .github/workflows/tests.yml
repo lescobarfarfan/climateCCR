@@ -1,0 +1,30 @@
+# Cross-OS test matrix (GEN-37): the golden EE/PE baselines must agree on Linux and
+# macOS when the numerics stack is the committed lockfile. Network-marked tests are
+# deselected by pyproject's pytest addopts; data-gated tests skip without the local data.
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pytest:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: conda-lock.yml
+          environment-name: climateCCR
+          cache-environment: true
+      - run: pip install -e . --no-deps
+      - run: python -c "import numpy as np; print(np.show_config(mode='dicts')['Build Dependencies']['blas'])"
+      - run: pytest
