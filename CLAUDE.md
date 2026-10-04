@@ -102,7 +102,7 @@ When editing or creating notes, **maintain the graph**:
 
 ### Common commands
 ```bash
-pip install -e ".[dev]"   # editable install (run once); or: conda env create -f environment.yml
+conda-lock install -n climateCCR conda-lock.yml && pip install -e . --no-deps   # pinned env (GEN-37); or: conda env create -f environment.yml
 pytest                    # run the test suite
 ruff check . && black .   # lint + format
 pre-commit install        # enable the ruff+black hooks

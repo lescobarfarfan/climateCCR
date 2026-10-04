@@ -261,7 +261,9 @@ The full standard is in `context/WORKFLOW.md` (§4 reproducibility, §5 version 
 - **Seeds** — every stochastic operation routes through `infra.set_seed` / `get_rng`; the seed is
   recorded in the run manifest. (The randomized-signature reservoir must be fixed to comply.)
 - **Run manifests** — every stochastic run writes `results/manifests/<run_id>.json` (config + git
-  commit + seed + package versions + timestamps). Nothing stochastic runs outside one.
+  commit and dirty flag + seed + package versions + OS platform + BLAS backend + env prefix +
+  timestamps). Nothing stochastic runs outside one. Byte-identity claims hold within one numerics
+  stack (`GEN-30/37`); the manifest is the tripwire when a stored artifact fails to reproduce.
 - **Raw-data provenance** — every raw artifact carries a provenance record (URL/dataset, sha256,
   bytes, date, version/DOI/request).
 - **Deterministic reconstructors**, never pickles; **idempotent** pipelines (re-runs skip completed
@@ -290,11 +292,20 @@ The full standard is in `context/WORKFLOW.md` (§4 reproducibility, §5 version 
 ## Environment & installation
 
 ```bash
-conda env create -f environment.yml          # or: python -m venv .venv && source .venv/bin/activate
+conda-lock install -n climateCCR conda-lock.yml   # exact, multi-platform (osx-arm64 / linux-64 / win-64)
+#   or solve from the pins: conda env create -f environment.yml
 conda activate climateCCR
-pip install -e .                             # editable install — enables clean imports everywhere
-pip install -e ".[dev]" && pre-commit install   # optional dev extras
+pip install -e . --no-deps                       # the package itself; its deps are already the pinned stack
+pre-commit install
 ```
+
+The canonical runtime is the pinned conda-forge stack on **OpenBLAS** (`GEN-37`): the BLAS is a
+pinned package on every OS instead of the OS's own library, so results no longer move when the
+operating system updates (the macOS 27 / Apple Accelerate incident of 2026-09-24). `environment.yml`
+carries the exact versions, `conda-lock.yml` the solved builds per platform; regenerate the lock after
+editing the pins (`conda-lock lock -f environment.yml -p osx-arm64 -p linux-64 -p win-64`). The run
+manifest records the BLAS backend, the env prefix and the OS, and the GitHub Actions matrix
+(`.github/workflows/tests.yml`, ubuntu + macos) runs the suite from the lockfile.
 
 After the editable install, `import climateCCR` works from any working directory. The `infra`,
 packaging, and config scaffolding (`pyproject.toml`, `environment.yml`, `configs/default.yaml`,

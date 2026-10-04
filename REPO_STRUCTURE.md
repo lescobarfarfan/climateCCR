@@ -15,7 +15,9 @@ Conventions referenced here are defined in `context/DECISIONS.md` (`GEN-*`, `INT
 ```
 climateCCR/
 ├── pyproject.toml              # distribution name "climateCCR"; import pkg "climateCCR"; src-layout
-├── environment.yml             # conda env (python=3.11) + pip install -e ".[dev]"
+├── environment.yml             # canonical env: exact conda-forge pins on OpenBLAS (GEN-37)
+├── conda-lock.yml              # solved builds for osx-arm64 / linux-64 / win-64 (conda-lock)
+├── .github/workflows/tests.yml # CI matrix (ubuntu + macos) running pytest from the lockfile
 ├── README.md                   # project map (the integrated_knowledge_base/README.md)
 ├── .gitignore                  # data/ and results/ ignored; notes/, context/, literature/*.md tracked
 ├── .pre-commit-config.yaml     # ruff + black (line length 100)
@@ -181,7 +183,7 @@ Key contracts that make the wiring work (full text in `context/DATA_CONTRACTS.md
 2. Keep the name `climateCCR` (`INT-02`): distribution `name = "climateCCR"` in `pyproject.toml`
    and import package `src/climateCCR/` carry over unchanged — **no rename needed**.
 3. Drop in `integrated_knowledge_base/context/` → `context/`, and `README.md` → repo root.
-4. `conda env create -f environment.yml && conda activate <env> && pip install -e ".[dev]"` then
+4. `conda-lock install -n climateCCR conda-lock.yml && conda activate climateCCR && pip install -e . --no-deps` then
    `pre-commit install`.
 5. Create the empty tracked structure: `data/{raw,interim,processed}/…` and `results/{manifests,figures,logs}/`
    with `.gitkeep`; confirm `.gitignore` covers `data/` and `results/`.
