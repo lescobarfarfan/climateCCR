@@ -37,10 +37,15 @@ is incorporated — applied to Mexico. The integrating mechanism is a **climate-
 
 ## Literature
 
-- `literature/refs.bib` — the 47-entry climate-finance BibTeX bibliography (authoritative for DOIs).
+- `literature/refs.bib` — the reconciled BibTeX bibliography, 123 entries (`CCR-LIT-04`; authoritative for DOIs).
 - [[Compagnoni_2023_RandomizedSignatures]] — the randomized-signature paper (CCR).
 - [[Cuchiero_2022_DiscreteTimeSignatures]] — discrete-time signatures & reservoir computing (CCR).
 - [[Mandel_2025_MappingFinancialRisks]] — mapping global financial risks under climate change (INT).
+
+## Manuscript
+
+- [[proposal_guide]] — structure guide for the thesis-registration proposal (2026-10-08): section skeleton, the methods' formulas as implemented, core references, reading map. The proposal itself is written by hand; the earlier 2024 proposal sits beside it in `notes/manuscript/`.
+- [[PROJECT_PLAN]] §4 — the Phase 6 chapter-to-results map.
 
 ---
 

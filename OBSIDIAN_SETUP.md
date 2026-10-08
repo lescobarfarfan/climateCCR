@@ -67,7 +67,7 @@ filenames in `ASSET_MAP.md`** (e.g. `[[Hull_White_Comprehensive]]`,
 import those files they appear as **hollow nodes** (unresolved links) in the graph — that's expected.
 When you drop the real notes into `notes/` with those names, the links light up automatically. So:
 
-1. Import each theory note under `notes/{theory,sources,pipelines,plan,reviews,summary_explanations}/`
+1. Import each theory note under `notes/{theory,sources,pipelines,plan,reviews,reading,summary_explanations,manuscript}/`
    keeping the filename from `ASSET_MAP.md`.
 2. The matching MOC link resolves; the note is now in the graph.
 3. Optionally add `#arm/*` + `#type/theory` and a one-line backlink to its MOC at the top.

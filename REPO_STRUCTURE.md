@@ -31,14 +31,17 @@ climateCCR/
 │   ├── OPEN_QUESTIONS.md
 │   └── WORKFLOW.md
 │
-├── notes/                      # tracked prose: theory, sources, pipelines, plan, reviews
+├── notes/                      # tracked prose: theory, sources, pipelines, plan, reviews, reading, explanations, manuscript
 │   ├── theory/                 # MKT Hull–White/Vasicek/measure notes; HAZ catastrophe-risk master doc; CLIMADA design
 │   ├── sources/                # per-source provenance notes (cenapred.md, ibtracs.md, mexican_data_sources.md, …)
 │   ├── pipelines/              # how-to / design docs for the data pipelines (CNSF scraper, drought, autos)
 │   ├── plan/                   # PROJECT_PLAN.md, PHASE_0.md
-│   └── reviews/                # CODE_REVIEW.md (PIMPA + randomized-signature findings)
+│   ├── reviews/                # CODE_REVIEW.md (PIMPA + randomized-signature findings)
+│   ├── reading/                # per-session read-logs (GEN-21)
+│   ├── summary_explanations/   # per-session explanation notes (GEN-26)
+│   └── manuscript/             # thesis-registration proposal support (proposal_guide.md; proposal.pdf)
 │
-├── literature/                 # marker output folders (Author_Year_ShortTitle/) + refs.bib (47 climate-finance entries)
+├── literature/                 # marker output folders (Author_Year_ShortTitle/) + refs.bib (123 entries, CCR-LIT-04)
 │
 ├── configs/                    # YAML configs (default.yaml: seed 233423, n_paths 10000, …); per-experiment overrides
 │
