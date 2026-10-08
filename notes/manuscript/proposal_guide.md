@@ -162,7 +162,7 @@ The current state is the 2026-10-03 two-stage re-base (`INT-23`) plus the 2026-1
 | Book EPE shift, headline / CT anchor / floor | −8.97 / −5.54 / −4.99 % | `INT-23` |
 | Effective EPE shift, same legs | −2.20 / −1.59 / −1.46 % | `CCR-RISK-08` |
 | Supervisory PFE99 shift (time-averaged, book), same legs | −17.07 / −10.51 / −9.46 % | `results/seed_sensitivity/seed_metrics.csv` |
-| 1y book-exposure q99, baseline → climate (headline) | 3,433,541 → 2,999,986 MXN (−12.6 %) | `GEN-34` |
+| 1y book-exposure q99, baseline → climate (headline) | 3,433,541 → 2,999,986 MXN (−12.6 %) — caveat: the per-path *book* aggregate sums netting sets that the engine simulates one at a time under a shared seed, so its cross-counterparty dependence is an implementation artefact (2026-10-08 finding, open for the digest); quote per-counterparty tails instead until it is resolved | `GEN-34` |
 | Nivel transition, HWTP / SWUC / DAPS_NAM | −5.72 / −8.16 / −20.01 % | `INT-32`, `INT-35` |
 | Fase transition, same scenarios | −4.57 / −6.62 / −7.37 % | `INT-35` |
 | Base book CVA (LGD 0.60) | 515,139 MXN | `CCR-RISK-06` |

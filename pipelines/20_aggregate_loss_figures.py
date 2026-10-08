@@ -5,7 +5,12 @@ headline:
 
 - ``book_exposure_<run>`` — per-path whole-book exposure distributions
   (baseline vs climate legs, q99 marked) at configured horizons, from the
-  ``pipelines/01 --trayectorias`` npz artifacts (settlement currency).
+  ``pipelines/01 --trayectorias`` npz artifacts (settlement currency). Caveat
+  (2026-10-08): netting sets are simulated one at a time under the shared master
+  seed, so the per-path book sum's cross-counterparty dependence is an
+  implementation artefact, not the modelled correlation — its quantiles are not
+  a model output until the book is simulated jointly (per-netting-set metrics
+  and their additive sums are unaffected).
 - ``annual_aggregate_loss`` — the compound-Poisson annual aggregate loss
   ``S = sum of severities`` per lambda leg, simulated directly from the fitted
   jump parameters (real MDP-2025; the classic aggregate-loss object

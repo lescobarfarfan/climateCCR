@@ -16,7 +16,12 @@ from the stored adopted runs, and summarizes the spread across seeds of:
 
 Within a seed the jump-OFF and jump-ON legs share the diffusion stream, so the
 paired climate deltas are far tighter than the tail *levels* — the distinction the
-manuscript draws between reporting a level and reporting a delta. Generated configs
+manuscript draws between reporting a level and reporting a delta. Caveat on the
+``book_q*`` rows (2026-10-08 finding): netting sets are simulated one at a time under
+the shared master seed, so the per-path *book* sum carries an implementation-level
+cross-counterparty dependence (same-structure netting sets ride the same latent
+streams), not the modelled correlation; the EPE / EEPE / PFE99 rows are per-netting-set
+marginals (and additive sums) and are unaffected. Generated configs
 live under results/ (unversioned; this runner is their deterministic reconstructor,
 GEN-04) and every simulated seed writes its own pipelines/01 manifest.
 
