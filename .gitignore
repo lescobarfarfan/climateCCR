@@ -51,3 +51,5 @@ results/*
 
 # Obsidian per-machine workspace/config state (vault content is tracked; this is UI state)
 .obsidian/
+
+notes/manuscript/proposal.pdf
