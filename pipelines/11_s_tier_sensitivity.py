@@ -24,8 +24,16 @@ the band headline depend on them, two ways:
      compression/amplification bounds on the ordinal levels.
    - ``drop_alex``     — H minus Hurricane Alex's Nuevo León row
      (CEN-2010-03494/96 registry id CEN-2010-03496, 21,501 MDP nominal 2010):
-     H[NL, ciclón] is ~74% this one event, the "history = one draw"
-     concentration check.
+     H[NL, ciclón] is dominated by this one event (~74% on the 2026-07 panel),
+     the "history = one draw" concentration check.
+
+   The two merged variants also re-fit the per-label severity block
+   (``equity_marks.peril_severity``, INT-26) on the merged label groups — the
+   pipelines/14 recipe: per-label sigma on the band's regime window, median
+   mean-matched to the pooled fit — so the engine's label check passes and only
+   the S matrix / label grain moves; the other variants keep the adopted block
+   verbatim. Every generated block is validated through
+   ``ClimateJumpProcess.from_config`` before it is written.
 
    Variant band configs are generated under results/ (unversioned; this runner
    is their deterministic reconstructor, GEN-04) and reuse pipelines/01
@@ -60,6 +68,8 @@ BAND_CONFIGS = [
 N_JITTER = 500
 HIDRO = ["ciclon_tropical", "lluvia", "inundacion"]
 FLUVIAL = ["lluvia", "inundacion"]
+#: variant -> (labels merged, merged label); only these re-fit per-label severity.
+MERGES = {"hidro_merged": (HIDRO, "hidro"), "fluvial_merged": (FLUVIAL, "fluvial")}
 ALEX_NL = {"entidad": "Nuevo León", "peril": "ciclon_tropical", "anio": 2010, "danio_mdp": 21501.0}
 
 
@@ -110,6 +120,11 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    from climateCCR.calibration.impact.hazard_jump import (
+        fit_peril_severity,
+        fit_severity,
+        load_climate_events,
+    )
     from climateCCR.calibration.impact.sector_scales import (
         book_equity_weights,
         compose_scales,
@@ -117,6 +132,7 @@ def main() -> None:
         peril_mix_from_events,
     )
     from climateCCR.infra import RunManifest, get_logger, get_rng, load_config
+    from climateCCR.processes.jumps import ClimateJumpProcess
     from climateCCR.viz.ccr import epe_summary
     from climateCCR.viz.style import apply_style, save_figure
 
@@ -157,6 +173,25 @@ def main() -> None:
         end_year=int(mix_spec["window"]["end_year"]),
         min_damage_mdp=float(mix_spec["min_damage_mdp"]),
     )
+    # Pooled severity per regime window (the pipelines/10 recipe): the merged
+    # variants re-fit their per-label block mean-matched to it (INT-26).
+    sev_spec = extra["peril_severity"]
+    window_of = {
+        Path(c).stem: v for v, s in sev_spec["variants"].items() for c in s["jump_configs"]
+    }
+    missing = [b for b in BAND_CONFIGS if b not in window_of]
+    if missing:
+        sys.exit(f"peril_severity.variants names no regime window for {missing}")
+    sev_fits = {}
+    for variant, spec in sev_spec["variants"].items():
+        events = load_climate_events(
+            config.paths.root / mix_spec["events_csv"],
+            start_year=int(spec["window"]["start_year"]),
+            end_year=int(spec["window"]["end_year"]),
+            min_damage_mdp=float(mix_spec["min_damage_mdp"]),
+            deflator=deflator,
+        )
+        sev_fits[variant] = (events, fit_severity(events, deflated=True))
 
     def compose(s_dict, h_frame):
         return compose_scales(
@@ -277,6 +312,31 @@ def main() -> None:
                 name: {p: round(float(c_v.loc[name, p]), 6) for p in peril_cols}
                 for name in c_v.index
             }
+            if vname in MERGES:
+                merged, label = MERGES[vname]
+                base_groups = extra["peril_groups"]
+                groups = {g: list(ps) for g, ps in base_groups.items() if g not in merged}
+                groups[label] = [p for g in merged for p in base_groups[g]]
+                events, pooled = sev_fits[window_of[band]]
+                if abs(float(eq["sigma"]) - pooled.sigma) > 1e-3:
+                    sys.exit(
+                        f"{band}: equity sigma {eq['sigma']} != {window_of[band]} pooled fit "
+                        f"{pooled.sigma:.6f} — wrong regime window for this config?"
+                    )
+                table = fit_peril_severity(
+                    events,
+                    peril_groups=groups,
+                    pooled=pooled,
+                    min_events=int(sev_spec["min_events"]),
+                )
+                eq["peril_severity"] = {
+                    p: {
+                        "median": round(float(eq["median"] * table.loc[p, "median_multiplier"]), 7),
+                        "sigma": round(float(table.loc[p, "sigma"]), 4),
+                    }
+                    for p in peril_cols
+                }
+            ClimateJumpProcess.from_config(band_cfg["climate_jumps"])  # loud label/shape check
             (config_dir / f"{band}__{vname}.yaml").write_text(
                 yaml.safe_dump(band_cfg, sort_keys=False, allow_unicode=True)
             )

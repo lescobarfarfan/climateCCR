@@ -6,7 +6,7 @@ and Ernesto as 6. ``load_climate_events(cluster_storms=True)`` merges same-storm
 rows — one event per ``(anio, nombre_evento, peril_canonico)``, damage summed,
 after the trigger filters — so total damage (hence ``lambda * E[L]``) is
 conserved exactly and only the grain moves: fewer, larger events (registro
-trigger set 270 -> 252, report-regime floor 65 -> 42, CT bridge 229 -> 164).
+trigger set 270 -> 252, report-regime floor 65 -> 42, CT bridge 232 -> 165).
 The *tail* is not invariant — that is the question this sensitivity answers
 with a full 3-config band re-run vs the adopted base.
 
@@ -392,6 +392,13 @@ def main() -> None:
     if not deltas.empty and deltas["variant"].nunique() == 2:
         pivot = deltas.pivot(index="band", columns="variant", values="book_epe_shift_pct")
         params = pd.DataFrame(param_rows).set_index("conjunto")
+        tail = (
+            pd.concat(tail_rows)
+            .groupby(["band", "variant"])["pfe99_shift_mean"]
+            .sum()
+            .unstack("variant")
+        )
+        eases = int((tail["agrupado"].abs() < tail["base"].abs()).sum())
         nota = out_dir / "nota.md"
         nota.write_text(
             "# Sensibilidad de agrupamiento por tormenta (OQ-INT-11 f)\n\n"
@@ -414,8 +421,10 @@ def main() -> None:
             "CCR-RISK-03).\n"
             "- Auditoria de fusiones: `cluster_audit.csv`.\n\n"
             "La media por nombre y libro se preserva por construccion (INT-24/25/26); "
-            "la lectura esperada es una banda EPE ~estable con colas mas pesadas por "
-            "evento (menos eventos, mas grandes).\n"
+            "la banda EPE es ~estable y la cola (PFE99 supervisorio, suma por libro del "
+            f"shift medio por contraparte, MXN) se atenua al agrupar en {eases}/{len(tail)} "
+            "bandas:\n\n"
+            f"```\n{tail.round(0).to_string()}\n```\n"
         )
         logger.info("nota written: %s", nota)
 
