@@ -1,0 +1,25 @@
+# Multi-seed Monte-Carlo precision of the band headline (pipelines/24) — the GEN-30
+# tail-precision caveat quantified. Each adopted band config is re-run under the extra
+# master seeds below with ONLY `seed` changed (asserted per generated config; the
+# generated configs land under results/seed_sensitivity/configs/). The stored adopted
+# runs under results/<band>/ are the canonical realization (seed 233423 = the configs'
+# own seed — pipelines/24 checks it) and cost nothing. The spread across seeds is read
+# on BOOK EPE, Effective EPE, the time-averaged supervisory PFE99 (per counterparty +
+# BOOK) and the per-path book-exposure quantile (both legs + paired delta %) at the
+# horizons below.
+#
+# Cost: ~4 min of OpenBLAS per extra seed for the three legs (118 + 70 + 55 s) and
+# ~37 MB of per-path npz per run; N = 10 is ~40 min and ~1.1 GB under results/
+# (unversioned; the npz can be deleted after collection — seed_metrics.csv is the
+# artifact, GEN-04).
+#
+#   python pipelines/24_seed_sensitivity.py [--forzar] [--ejecutar-bandas]
+
+seed: 233423              # canonical seed: must equal every band config's own seed
+bands:
+  - climate_jump_real_mexican            # headline (registry lambda 19.2857)
+  - climate_jump_real_mexican_ct_anchor  # CT anchor (10.0870)
+  - climate_jump_real_mexican_floor      # report-regime floor (7.2222)
+extra_seeds: [1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010]  # N = 10, user ruling 2026-10-08
+quantile: 0.99            # book-exposure tail (the pipelines/20 convention)
+horizons_years: [1.0, 5.0, 10.0]
