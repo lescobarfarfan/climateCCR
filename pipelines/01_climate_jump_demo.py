@@ -16,6 +16,12 @@ Idempotent (GEN-*): skips if the output exists, rerun with --forzar/--force.
 With ``--trayectorias``, both legs also materialize the per-path portfolio
 values at the reporting dates (``per_path_values_{baseline,climate}.npz``,
 the OQ-GEN-02 c artifact) — the profiles themselves are byte-identical.
+The book is simulated ONCE per leg by default (CCR-SIM-03): every factor the
+counterparties simulate, on the union of their grids, from the master seed —
+so every netting set values its trades on the same market and climate-event
+paths and book-level per-path aggregates carry the modelled dependence;
+``--por-contraparte`` draws each netting set separately (the pre-2026-10-08
+engine path, diagnostics only; the manifest records the mode).
 With ``--choques-programados <fragmento>``, the INT-33 scheduled overlay
 (a pipelines/22 fragment) applies to BOTH legs — the "fase" NGFS state
 (OQ-INT-12 a) — so the jump-ON vs jump-OFF contrast stays the pure physical
@@ -30,6 +36,7 @@ and must name at least one issuer of the book.
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 
@@ -47,30 +54,36 @@ VALUE_COLS = ["uncollateralized_ee", "uncollateralized_pe_0.99"]
 def run_book(
     global_parameters: dict,
     today_date: str,
-    data_root: Path = FIXTURE,
     per_path_store: dict | None = None,
+    por_contraparte: bool = False,
 ) -> pd.DataFrame:
     """EE/PE profiles for every counterparty in the book's ledger.
 
-    With ``per_path_store`` a dict, each counterparty's per-path netted
-    portfolio values at the reporting dates land there as
-    ``naid -> (dates, values)`` — the OQ-GEN-02 c artifact seam. The engine
-    run is unchanged either way (the values are read off the session after
-    ``run``, no extra draws).
+    By default the book is simulated once — the union of the counterparties'
+    factors on the union of their grids, from the master seed — and each netting
+    set values its trades on its slice of that draw (CCR-SIM-03). With
+    ``por_contraparte`` each netting set draws its own scenarios (the
+    pre-2026-10-08 engine path). With ``per_path_store`` a dict, each
+    counterparty's per-path netted portfolio values at the reporting dates land
+    there as ``naid -> (dates, values)`` — the OQ-GEN-02 c artifact seam (the
+    values are read off the session after valuation, no extra draws).
     """
     from climateCCR.risk.ccr.evaluators.artifacts import grid_dates, reporting_slice
-    from climateCCR.risk.ccr.evaluators.ccr_valuation_session import CCR_Valuation_Session
-    from climateCCR.risk.ccr.trade_models.portfolio import Portfolio
+    from climateCCR.risk.ccr.evaluators.ccr_valuation_session import prepare_book, simulate_book
 
-    ledger = pd.read_csv(
-        data_root / "portfolio_data" / "positions_keeping_system" / "master_ledger.csv"
-    )
+    sessions = prepare_book(today_date, global_parameters)
+    joint = None if por_contraparte else simulate_book(sessions, global_parameters)
+    if joint is not None:
+        names = [k for k in joint if not k.endswith("_dates")]
+        logging.getLogger("climateCCR.climate_jump_demo").info(
+            "Joint draw: %d factors on %d dates", len(names), joint[names[0]].shape[1]
+        )
     frames = []
-    for naid in sorted(ledger["netting_agreement_id"].unique()):
-        portfolio = Portfolio(naid)
-        portfolio.load(global_parameters)
-        session = CCR_Valuation_Session(portfolio)
-        session.run(today_date, global_parameters)
+    while sessions:  # pop: a valued session's MtM arrays are released before the next one
+        session = sessions.pop(0)
+        session.simulate(global_parameters, joint_scenarios=joint)
+        session.value(global_parameters)
+        naid = session.portfolio.netting_agreement_id
         exposures = session.get_exposures().copy()
         exposures.insert(0, "netting_agreement_id", naid)
         frames.append(exposures)
@@ -180,6 +193,14 @@ def main() -> None:
         "el contraste ON-OFF queda como el canal físico puro; su canal spread_shocks "
         "(fase 2, OQ-INT-12 b) entra por valuación en los pricers de bonos",
     )
+    parser.add_argument(
+        "--por-contraparte",
+        "--per-counterparty",
+        action="store_true",
+        help="simula cada netting set por separado (cada uno extrae sus propios normales del "
+        "mismo seed maestro — el modo anterior a 2026-10-08, solo diagnóstico); por defecto la "
+        "cartera se simula de forma conjunta sobre la unión de rejillas (CCR-SIM-03)",
+    )
     args = parser.parse_args()
 
     from climateCCR.infra import RunManifest, get_logger, load_config
@@ -246,13 +267,19 @@ def main() -> None:
             sorted(block),
         )
 
+    simulation_mode = "por_contraparte" if args.por_contraparte else "conjunta"
+    logger.info("Simulation mode: %s", simulation_mode)
     baseline_store: dict | None = {} if args.trayectorias else None
     jumped_store: dict | None = {} if args.trayectorias else None
     logger.info("Running jump-OFF (baseline) ...")
-    baseline = run_book(gp, today_date, data_root=args.data_root, per_path_store=baseline_store)
+    baseline = run_book(
+        gp, today_date, per_path_store=baseline_store, por_contraparte=args.por_contraparte
+    )
     logger.info("Running jump-ON (climate) ...")
     gp["climate_jumps"] = jump_process
-    jumped = run_book(gp, today_date, data_root=args.data_root, per_path_store=jumped_store)
+    jumped = run_book(
+        gp, today_date, per_path_store=jumped_store, por_contraparte=args.por_contraparte
+    )
 
     comparison = baseline[["netting_agreement_id", "default_times"]].copy()
     for col in VALUE_COLS:
@@ -277,6 +304,7 @@ def main() -> None:
         "max_step_days": max_step_days,
     }
     config.extra["data_root"] = str(args.data_root)
+    config.extra["simulation"] = simulation_mode
     if args.etiqueta:
         config.extra["run_label"] = args.etiqueta
     manifest = RunManifest.create(seed=config.seed, config=config, project_root=config.paths.root)

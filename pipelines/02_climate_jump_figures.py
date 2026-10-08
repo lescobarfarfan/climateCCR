@@ -12,6 +12,9 @@ Poisson-arrival mechanism check.
 
 Requires the matching pipeline-01 output (same --config/--data-root/--book-config
 and horizon). Same config, same seed: figures reproduce bit-for-bit (GEN-06/07).
+The process-level figures re-simulate the book's joint draw (CCR-SIM-03), so the
+paths plotted are the ones behind the CSV; the per-counterparty mode of
+pipeline 01 is a regression lock, not a figure source.
 The analysis horizon (--horizonte largo|corto, a key of the config's `horizons`
 block) selects the B3 reporting grid; figures land in results/figures/<run_name>/,
 with <run_name> the config stem — so the demo, the estimated-parameter runs, and
@@ -57,50 +60,36 @@ def _scenario_label(config, path: Path, base_stem: str) -> str:
     return f"{name} (λ = {intensity:g}/yr)"
 
 
-def select_path_factors(
-    jump_config: dict, global_parameters: dict, data_root: Path
-) -> list[tuple[str, str, int]]:
-    """One representative ``(factor, family, counterparty)`` per mark channel.
+def select_path_factors(jump_config: dict, scenarios: dict) -> list[tuple[str, str]]:
+    """One representative ``(factor, family)`` per mark channel.
 
     The channel's targets are the jump config's own (never hardcoded), and the
-    representative is the first one some counterparty in *this* book actually
-    simulates — a config may list targets the book does not trade (the fixture
-    is USD-only yet the demo marks EUR/GBP curves too).
+    representative is the first one the book's joint draw actually simulates — a
+    config may list targets the book does not trade (the fixture is USD-only yet
+    the demo marks EUR/GBP curves too).
     """
-    from climateCCR.risk.ccr.trade_models.portfolio import Portfolio
-
-    ledger = pd.read_csv(
-        data_root / "portfolio_data" / "positions_keeping_system" / "master_ledger.csv"
-    )
-    simulated: dict[str, int] = {}
-    for naid in sorted(ledger["netting_agreement_id"].unique()):
-        portfolio = Portfolio(naid)
-        portfolio.load(global_parameters)
-        for factor in portfolio.portfolio_underlyings:
-            simulated.setdefault(factor, naid)
-
     selected = []
     for channel, family in CHANNEL_LABELS.items():
         block = jump_config.get(channel)
         if block is None:
             continue
-        factor = next((t for t in block["targets"] if t in simulated), None)
+        factor = next((t for t in block["targets"] if t in scenarios), None)
         if factor is None:
-            raise ValueError(f"No counterparty simulates any {channel} target: {block['targets']}")
-        selected.append((factor, family, simulated[factor]))
+            raise ValueError(f"The book simulates no {channel} target: {block['targets']}")
+        selected.append((factor, family))
     return selected
 
 
-def run_scenarios(global_parameters: dict, today_date: str, naid: int):
-    """Run one counterparty's session; return (simulation_dates, scenarios, default_grid)."""
-    from climateCCR.risk.ccr.evaluators.ccr_valuation_session import CCR_Valuation_Session
-    from climateCCR.risk.ccr.trade_models.portfolio import Portfolio
+def simulate_paths(global_parameters: dict, today_date: str):
+    """The book's joint draw (CCR-SIM-03) — the very paths pipeline 01 slices per netting set.
 
-    portfolio = Portfolio(naid)
-    portfolio.load(global_parameters)
-    session = CCR_Valuation_Session(portfolio)
-    session.run(today_date, global_parameters)
-    return session.simulation_dates, session.scenarios, session.b3_default_grid
+    Returns ``(scenarios, b3_default_grid)``; the scenarios dict carries every
+    simulated factor on the union grid (``<name>_dates``).
+    """
+    from climateCCR.risk.ccr.evaluators.ccr_valuation_session import prepare_book, simulate_book
+
+    sessions = prepare_book(today_date, global_parameters)
+    return simulate_book(sessions, global_parameters), sessions[0].b3_default_grid
 
 
 def main() -> None:
@@ -238,8 +227,9 @@ def main() -> None:
         table.to_csv(table_csv, index=False)
         logger.info("%s -> %s", stem, table_csv)
 
-    # -- Process-level figures: re-simulate under the demo config (same master
-    #    seed as pipeline 01, so these paths are the ones behind the CSV).
+    # -- Process-level figures: re-simulate the book's joint draw (same master
+    #    seed and union grid as pipeline 01, so these paths are the ones behind
+    #    the CSV, CCR-SIM-03).
     today_date = config.extra["valuation_date"]
     jump_process = ClimateJumpProcess.from_config(config.extra["climate_jumps"])
     book_config = load_config(args.book_config)
@@ -253,13 +243,15 @@ def main() -> None:
         gp["simulation_max_step_days"] = int(max_step_days)
 
     intensity = config.extra["climate_jumps"]["intensity"]
-    path_factors = select_path_factors(config.extra["climate_jumps"], gp, args.data_root)
-    for factor, family, naid in path_factors:
-        logger.info("Simulating %s (%s) via counterparty %s ...", factor, family, naid)
-        gp.pop("climate_jumps", None)
-        dates, baseline, default_grid = run_scenarios(gp, today_date, naid)
-        gp["climate_jumps"] = jump_process
-        _, jumped, _ = run_scenarios(gp, today_date, naid)
+    gp.pop("climate_jumps", None)
+    logger.info("Simulating the book's joint draw, jump-off then jump-on ...")
+    baseline, default_grid = simulate_paths(gp, today_date)
+    gp["climate_jumps"] = jump_process
+    jumped, _ = simulate_paths(gp, today_date)
+    path_factors = select_path_factors(config.extra["climate_jumps"], baseline)
+    for factor, family in path_factors:
+        logger.info("Rendering %s (%s) ...", factor, family)
+        dates = list(baseline[f"{factor}_dates"])
         events = jump_process.generate(dates, config.n_paths, config.seed).event_counts
 
         # Clip the figures to the reporting horizon: the simulation always runs

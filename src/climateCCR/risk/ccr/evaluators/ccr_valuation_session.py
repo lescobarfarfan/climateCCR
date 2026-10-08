@@ -5,15 +5,29 @@ import pandas as pd
 from dateutil.relativedelta import relativedelta
 
 from climateCCR.calibration.financial.market_data_builder import MarketDataBuilder
-from climateCCR.simulation.multi_risk_factor_simulation import MultiRiskFactorSimulation
+from climateCCR.simulation.multi_risk_factor_simulation import (
+    MultiRiskFactorSimulation,
+    slice_scenarios,
+)
 
 from ..pricing_models.equity_european_option_pricer import EquityEuropeanOptionPricer
 from ..pricing_models.fixed_coupon_bond_pricer import FixedCouponBondPricer
 from ..pricing_models.floating_rate_note_pricer import FloatingRateNotePricer
 from ..pricing_models.interest_rate_swap_pricer import InterestRateSwapPricer
+from ..trade_models.portfolio import Portfolio
 
 
 class CCR_Valuation_Session:
+    """One netting agreement's exposure run: ``prepare`` -> ``simulate`` -> ``value``.
+
+    ``run`` chains the three steps on the netting set's own draw (the PIMPA path,
+    goldens CCR-MIG-03). A book is valued on ONE joint draw by preparing every
+    session (:func:`prepare_book`), simulating the union of their factors once on
+    the union of their grids (:func:`simulate_book`) and handing each session its
+    slice (``simulate(..., joint_scenarios=...)``) — the CCR-SIM-03 default of
+    ``pipelines/01``, which makes cross-counterparty dependence the modelled one.
+    """
+
     def __init__(self, portfolio):
         self.portfolio = portfolio
         self.market_data_builder = MarketDataBuilder()
@@ -288,7 +302,8 @@ class CCR_Valuation_Session:
 
             count_array += 1
 
-    def run(self, today_date, global_parameters, pe_quantiles=None, mpor_d=14):
+    def prepare(self, today_date, global_parameters, pe_quantiles=None, mpor_d=14):
+        """Grids, risk factors, pricers, market data, calibration: everything before the draw."""
         if pe_quantiles is None:
             pe_quantiles = [0.99]
         self.pe_quantiles = pe_quantiles
@@ -313,15 +328,36 @@ class CCR_Valuation_Session:
             self.market_dependencies, global_parameters
         )
         self.calibrate_models(global_parameters)
-        self.scenarios = self.scenario_generator.generate_scenarios(
-            self.simulation_dates, global_parameters
-        )
+
+    def simulate(self, global_parameters, joint_scenarios=None):
+        """This netting set's own draw, or its slice of a book-wide draw (CCR-SIM-03).
+
+        With ``joint_scenarios`` (the :func:`simulate_book` dict) the session consumes
+        no random numbers of its own: every counterparty then values its trades on
+        the same market and climate-event paths, so book-level per-path aggregates
+        carry the modelled cross-counterparty dependence.
+        """
+        if joint_scenarios is None:
+            self.scenarios = self.scenario_generator.generate_scenarios(
+                self.simulation_dates, global_parameters
+            )
+        else:
+            names = [rf.name for rf in self.scenario_generator.simulated_risk_factors]
+            self.scenarios = slice_scenarios(joint_scenarios, names, self.simulation_dates)
+
+    def value(self, global_parameters):
+        """Price the trades on ``self.scenarios`` and compute the exposure profiles."""
         self.mtm_scenarios_valuation(global_parameters)
 
         # computing exposures
         self.mtm_trades_aggregation(global_parameters)
         self.collateral_requirements_calculation(global_parameters)
         self.compute_exposures()
+
+    def run(self, today_date, global_parameters, pe_quantiles=None, mpor_d=14):
+        self.prepare(today_date, global_parameters, pe_quantiles, mpor_d)
+        self.simulate(global_parameters)
+        self.value(global_parameters)
 
     def get_exposures(self):
         result = pd.DataFrame(
@@ -339,3 +375,50 @@ class CCR_Valuation_Session:
                 result[f"collateralized_pe_{quantile}"] = self.collateralised_pe[quantile][0, :]
 
         return result
+
+
+def prepare_book(today_date, global_parameters, pe_quantiles=None, mpor_d=14):
+    """One prepared session per netting agreement of the master ledger, in NAID order."""
+    ledger = pd.read_csv(
+        global_parameters["prototype_data_paths"]["position_keeping_system"]
+        + global_parameters["prototype_data_files"]["position_keeping_system"]
+    )
+    sessions = []
+    for naid in sorted(ledger["netting_agreement_id"].unique()):
+        portfolio = Portfolio(naid)
+        portfolio.load(global_parameters)
+        session = CCR_Valuation_Session(portfolio)
+        session.prepare(today_date, global_parameters, pe_quantiles, mpor_d)
+        sessions.append(session)
+    return sessions
+
+
+def simulate_book(sessions, global_parameters):
+    """One correlated draw of every factor the book simulates, on the union grid (CCR-SIM-03).
+
+    The grid is the sorted union of the sessions' simulation dates — each netting
+    set's grid is a subset by construction, densified or not, and the exact-transition
+    diffusions keep every marginal law on the finer grid (CCR-SIM-01). The factors are
+    the sessions' already-calibrated ``RiskFactor`` objects, first occurrence per name
+    (NAID order, then the mapping-file order), and that order IS the stream-column
+    assignment of the Cholesky draw; the correlation is the book file's sub-matrix in
+    the same order. The call is the ordinary ``generate_scenarios`` path run once, so
+    the climate-jump substream and the scheduled overlay apply once to the whole book
+    — every counterparty sees the same market scenario and the same events on path j.
+    """
+    if len({session.simulation_dates[0] for session in sessions}) != 1:
+        raise ValueError("the sessions do not share a valuation date")
+    union_dates = sorted(set().union(*(session.simulation_dates for session in sessions)))
+    risk_factors = {}
+    for session in sessions:
+        for rf in session.scenario_generator.simulated_risk_factors:
+            risk_factors.setdefault(rf.name, rf)
+    correlation = sessions[0].market_data_builder.load_covariance_matrix(
+        global_parameters, list(risk_factors)
+    )
+    # ponytail: the whole-book store lives in memory (28 factors x 10,000 paths x 58
+    # dates = 130 MB on the Mexican book); chunk over paths if a daily union grid is
+    # ever simulated jointly (the legacy RandomState stream fills C-order, so path
+    # chunks reproduce the one-shot draw exactly).
+    generator = MultiRiskFactorSimulation(list(risk_factors.values()), correlation)
+    return generator.generate_scenarios(union_dates, global_parameters)

@@ -63,8 +63,10 @@ class MultiRiskFactorSimulation:
                 simulation_parameters["random_state"],
             )
             # Targets a portfolio does not simulate are skipped: marks are drawn
-            # for every configured target either way, so the jump stream (and any
-            # shared factor's shocks) is identical across portfolios.
+            # for every configured target either way, so two portfolios on the SAME
+            # grid see identical event streams. Portfolios on different grids draw
+            # different Poisson counts — the reason the book is simulated once on
+            # the union grid by default (CCR-SIM-03, `simulate_book`).
             for rf in self.simulated_risk_factors:
                 if rf.name in jump_scenario.step_marks:
                     random_paths[rf.name] = rf.model.apply_jump_overlay(
@@ -108,3 +110,28 @@ class MultiRiskFactorSimulation:
                 )
 
         return random_paths
+
+
+def slice_scenarios(joint, risk_factor_names, valuation_dates):
+    """A netting set's view of a book-wide ``generate_scenarios`` dict (CCR-SIM-03).
+
+    Returns the same ``{name: (n_paths, n_dates), name + "_dates": dates}`` layout on
+    ``valuation_dates``, every one of which must lie on the joint grid. Only the
+    named factors are returned (the pricers tell simulated underlyings from spread
+    inputs by name membership). Copies by fancy indexing and consumes no RNG; a
+    missing factor or date is a loud error, never a silent re-draw.
+    """
+    out = {}
+    for name in risk_factor_names:
+        if name not in joint:
+            raise ValueError(f"joint scenarios do not simulate {name}")
+        column = {date: i for i, date in enumerate(joint[name + "_dates"])}
+        missing = [date for date in valuation_dates if date not in column]
+        if missing:
+            raise ValueError(
+                f"{len(missing)} valuation date(s) of {name} are not on the joint grid "
+                f"(first: {missing[0]})"
+            )
+        out[name] = joint[name][:, [column[date] for date in valuation_dates]]
+        out[name + "_dates"] = valuation_dates
+    return out
