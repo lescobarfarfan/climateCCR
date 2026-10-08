@@ -167,7 +167,7 @@ The current state is the 2026-10-03 two-stage re-base (`INT-23`) plus the 2026-1
 | Fase transition, same scenarios | −4.57 / −6.62 / −7.37 % | `INT-35` |
 | Base book CVA (LGD 0.60) | 515,139 MXN | `CCR-RISK-06` |
 | H1 gates | rates $p = 0.73$ (n = 100); equities $\tau = +0.198$, $p_{\text{boot}} = 0.94$ | `INT-19`, `INT-27` |
-| Monte-Carlo spread across master seeds | see `results/seed_sensitivity/seed_intervals.csv` (pipelines/24; filled in at the end of the 2026-10-08 session) | `GEN-30` amendment |
+| Monte-Carlo spread across 11 master seeds (sd; canonical 233423 plus ten extra) | book EPE shift ± 0.03–0.04 pp; Effective EPE shift ± 0.02–0.03 pp; book PFE99 shift ± 0.13–0.23 pp; 1y book-exposure q99 level ± 0.6 % (range 2 %); its paired climate delta ± 0.3–0.5 pp | `results/seed_sensitivity/seed_intervals.csv` (pipelines/24, 2026-10-08) |
 
 ## 6. Checklist before you submit
 
