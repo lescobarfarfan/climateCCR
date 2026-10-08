@@ -11,7 +11,7 @@ the safety net that protects the Step-2 decomposition and the YAML/paths rewirin
 import numpy as np
 import pandas as pd
 import pytest
-from pimpa_baseline import BASELINE_CSV, run_all
+from pimpa_baseline import BASELINE_CSV, JOINT_BASELINE_CSV, run_all
 
 VALUE_COLS = [
     "uncollateralized_ee",
@@ -23,8 +23,17 @@ VALUE_COLS = [
 
 @pytest.mark.integration
 def test_pimpa_ee_pe_matches_baseline():
-    got = run_all()
-    expected = pd.read_csv(BASELINE_CSV)
+    _assert_matches(run_all(), BASELINE_CSV)
+
+
+@pytest.mark.integration
+def test_pimpa_joint_ee_pe_matches_baseline():
+    """The whole-book draw sliced per netting set (CCR-SIM-03) is locked the same way."""
+    _assert_matches(run_all(joint=True), JOINT_BASELINE_CSV)
+
+
+def _assert_matches(got: pd.DataFrame, baseline_csv) -> None:
+    expected = pd.read_csv(baseline_csv)
 
     # Same shape and columns.
     assert list(got.columns) == list(expected.columns)
