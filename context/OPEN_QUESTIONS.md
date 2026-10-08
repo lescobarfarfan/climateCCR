@@ -4,7 +4,7 @@ Only what is genuinely open. When something is resolved, move it to `DECISIONS.m
 
 ## Table of contents
 - **Integration (decide first)** — `OQ-INT-01`–`OQ-INT-12`
-- **CCR arm** — none open (2026-09-14; see *Recently resolved*)
+- **CCR arm** — `OQ-CCR-11`–`OQ-CCR-13` (engine details found 2026-10-08; none on the results chain)
 - **MKT arm** — `OQ-MKT-02`, `OQ-MKT-04`, `OQ-MKT-13`
 - **HAZ arm** — `OQ-HAZ-17`, `OQ-HAZ-19`
 
@@ -25,7 +25,9 @@ Only what is genuinely open. When something is resolved, move it to `DECISIONS.m
 
 ## CCR arm
 
-- *No open CCR items — `OQ-CCR-02/05/07` resolved 2026-09-14 (`CCR-ARCH-06`, `CCR-SIG-05`); see Recently resolved.*
+- `OQ-CCR-11` **Close-out collateral pairing (found 2026-10-08 in the joint-simulation exploration).** `CCR_Valuation_Session.compute_exposures` pairs each close-out date with the most recently seen default-grid collateral balance, so the 0D / 1D / 1W close-outs use the 2W balance rather than their own paired one. Not on the results chain — the reported metrics are the uncollateralised profiles (`DC-CCR-RISK-3`) — so it waits for the first collateralised readout; the fix re-bases the collateralised columns of the PIMPA goldens (`CCR-MIG-03` supersede). [eng]
+- `OQ-CCR-12` **Option-pricer underlying selection by list position (found 2026-10-08).** `EquityEuropeanOptionPricer` picks the non-share underlying as `underlyings[1]`, which is right only because of the current mapping order; make it name-based (zero behaviour change on both books). [eng]
+- `OQ-CCR-13` **GBM term-structure volatility at the last surface tenor (found 2026-10-08).** `GeometricBrownianMotion.volatility` reuses the previous date's variance when a simulation time equals the last surface tenor exactly (5.0 y); only the fixture's market-implied CREDIT_SUISSE share under daily densification is exposed, never the `largo` runs. [eng]
 
 ## MKT arm
 
@@ -94,6 +96,7 @@ Only what is genuinely open. When something is resolved, move it to `DECISIONS.m
 - ~~CNSF year convention (`OQ-HAZ-04`)~~ → **closed 2026-09-14** (`HAZ-CLEAN-CNSF-15`): no occurrence field exists; report-year aggregation stated with the β report-lag limitation; glossary corrected.
 - ~~HAZ residuals off the calibrated path (`OQ-HAZ-01/02/03/05/06/07/08/09/10/11/12/13/14`)~~ → **future work 2026-09-14** (`HAZ-SOURCES-05`); `OQ-HAZ-17` slimmed to a documented approximation; `OQ-HAZ-19` (b, c) kept as `GEN-31` refresh triggers.
 - ~~Replace the preliminary 2024 CENAPRED rows when the extenso appears and refit (`OQ-HAZ-19` b)~~ → **done 2026-10-03** (`HAZ-CENAPRED-13`, `HAZ-STOCH-07`): the EXTENSO 2024 (138 rows, control 20,679.95 MDP) ingested with provenance, both consolidado directories rebuilt (rows ≤ 2023 byte-identical), refits adopted as a data correction, the `INT-19`/`INT-27` gates re-applied verbatim (both FALLA), the full matrix re-based in two stages after the `CCR-SIM-02` canonical draw and the `GEN-37` numerics pin (band −8.97 / −5.54 / −4.99 %).
+- ~~Per-path book aggregation across separately simulated netting sets (found 2026-10-08: the per-path book sum's cross-counterparty dependence was an artefact of seed sharing, 0.06 vs 0.21 mean pairwise correlation under two valid mixings with identical marginals; the 2026-10-03 "+10 % q99 sampling error" was that artefact)~~ → **resolved the same day (`CCR-SIM-03`, `GEN-38`)**: the book is simulated jointly by default (union grid, union factors, one draw per leg, each netting set sliced), the full matrix re-based (band −9.00 / −5.51 / −4.99 %), the seed study measures 0.4 % sd on the 1y book q99 level and 0.3 pp on its delta, and the `GEN-30` tail caveat is corrected in place; superseded artifacts under `results/_archive/20261008_per_naid_draw/`. The three engine details the exploration surfaced are `OQ-CCR-11/12/13`.
 
 
 ---

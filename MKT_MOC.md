@@ -32,7 +32,9 @@ in on (`INT-12`).
 
 ## Notes (under `notes/`)
 - Plan: [[PROJECT_PLAN]] — the cross-arm plan, re-baselined 2026-09-14 (`INT-38`; Phase 6 chapter map).
-- Manuscript: [[proposal_guide]] — structure guide for the thesis-registration proposal (2026-10-08, `notes/manuscript/`): the Hull–White / Nelson–Siegel / GBM calibration and the NGFS two-anchor shock as implemented, core references, reading map.
+- Manuscript: [[proposal_guide]] — structure guide for the thesis-registration proposal (2026-10-08, `notes/manuscript/`): the Hull–White / Nelson–Siegel / GBM calibration and the NGFS two-anchor shock as implemented, the book's structure and position assumptions, core references, reading map.
+- Reading: [[2026-10-08_results_freeze_joint_draw]] — the joint-draw read-log (`CCR-SIM-03`, `GEN-38`): the three-flavour transition legs are jump-off ratios and moved only by a re-draw; the precision of the NGFS readouts measured across seeds (`notes/reading/`, `GEN-21`).
+- Explanation: [[2026-10-08_joint_draw_and_seed_precision_explained]] — the re-based three-flavour table (nivel −5.72 / −8.16 / −20.02, trayectoria and fase unchanged), the CVA legs, and why the transition conclusions never depended on the aggregation artefact (`notes/summary_explanations/`, `GEN-26`).
 - Reading: [[2026-10-03_numerics_pin_cenapred_2024]] — the numerics-pin read-log (`GEN-37`, `CCR-SIM-02`): Monte-Carlo quantile-estimator variance behind the tail-precision caveat on the NGFS/aggregate-loss readouts, and the lockfile/BLAS mechanics (`notes/reading/`, `GEN-21`).
 - Explanation: [[2026-10-03_canonical_draw_and_extenso_2024_explained]] — the re-based three-flavor table (nivel −5.72 / −8.16 / −20.01, trayectoria −1.49 / −1.23 / +0.16, fase −4.57 / −6.62 / −7.37 %: transition legs move only through the numerics stage), the tail-quantile precision caveat, and the institutional-scale reading (`notes/summary_explanations/`, `GEN-26`).
 - Reading: [[2026-09-14_scope_manuscript_gate]] — the scope & manuscript gate read-log (`INT-37/38`, `CCR-SIG-05`, `CCR-RISK-08`, `MKT-SIE-09`, `HAZ-CLEAN-CNSF-15`).

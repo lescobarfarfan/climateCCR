@@ -59,8 +59,8 @@ reprice individual climate events within the event window — **rejected** (`INT
 null, p = .734 over 100 episodes incl. Otis; `INT-27`: τ = +0.198, p_boot = .94 over 63 cyclone
 episodes × 26 names). *H2 (loss transmission):* a jump channel calibrated on realized Mexican climate
 losses materially changes counterparty credit exposure relative to a climate-free baseline —
-**supported** (book EPE −8.93 %, band −4.86 … −8.93 % across the regime-consistent `λ` legs,
-`INT-23`; first-year Effective-EPE −2.13 … −1.39 %, `CCR-RISK-08`). *H3 (separability):* the physical
+**supported** (book EPE −9.00 %, band −4.99 … −9.00 % across the regime-consistent `λ` legs,
+`INT-23`; first-year Effective-EPE −2.18 … −1.43 %, `CCR-RISK-08`). *H3 (separability):* the physical
 and transition channels are approximately additive on the book — **supported** (jump-within deltas
 invariant to ≤ 0.25 pp across the three NGFS flavors, `INT-35`). **Headline claim:** an empirically
 calibrated physical climate channel moves the book's expected positive exposure by 5–9 % under the
@@ -316,12 +316,14 @@ package rename is needed — the scaffold carries straight over.
 
 ## Status & roadmap
 
-**Built (as of 2026-09-14):** the full `data → calibration → simulation → risk` chain on the Mexican
+**Built (as of 2026-10-08):** the full `data → calibration → simulation → risk` chain on the Mexican
 book — `infra`; the SIE / Yahoo / NGFS data layers; HW1F, GBM and curve calibration; the HAZ jump
 calibration with sector- and peril-differentiated marks; the jump-diffusion engine with the
-scheduled-shock overlay; the CCR metrics (EE/PE, the PFE floor, EPE, Effective-EPE, CVA); the NGFS
-transition channel in three flavors; the validation and figure layers. Every result regenerates from
-a committed config with a run manifest (`GEN-06`).
+scheduled-shock overlay, simulated **jointly across counterparties** since 2026-10-08 (`CCR-SIM-03`);
+the CCR metrics (EE/PE, the PFE floor, EPE, Effective-EPE, CVA); the NGFS transition channel in three
+flavors; the validation and figure layers; the Monte-Carlo precision of every headline number measured
+across master seeds (`GEN-38`). Every result regenerates from a committed config with a run manifest
+(`GEN-06`).
 
 **Scope rulings (`INT-38`, 2026-09-14).** Signatures, weather derivatives, parametric pricing and
 stochastic spreads are **future work**; the structural credit overlay, the NGFS long-term join, Cox
