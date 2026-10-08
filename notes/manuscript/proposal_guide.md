@@ -154,20 +154,21 @@ The climate-finance survey keys of [[REFERENCES]] §9 (`[Battiston2017]`, `[Bolt
 
 ## 5. Numbers available after the freeze (optional for a registration text)
 
-The current state is the 2026-10-03 two-stage re-base (`INT-23`) plus the 2026-10-08 results freeze; every figure below regenerates from a committed config and carries a manifest. A registration proposal usually states the expected contribution rather than results; if you quote numbers, quote them as preliminary.
+The current state is the 2026-10-08 joint-draw re-base (`CCR-SIM-03`: the book is simulated once per leg on the union of the netting sets' grids, so every counterparty sees the same market and climate-event paths and book-level per-path aggregates are model outputs), on top of the 2026-10-03 two-stage re-base (`INT-23`); every figure below regenerates from a committed config and carries a manifest. A registration proposal usually states the expected contribution rather than results; if you quote numbers, quote them as preliminary.
 
 | Readout | Value | Where |
 |---|---|---|
-| Baseline book EPE | 255,670.01 MXN | `INT-23` |
-| Book EPE shift, headline / CT anchor / floor | −8.97 / −5.54 / −4.99 % | `INT-23` |
-| Effective EPE shift, same legs | −2.20 / −1.59 / −1.46 % | `CCR-RISK-08` |
-| Supervisory PFE99 shift (time-averaged, book), same legs | −17.07 / −10.51 / −9.46 % | `results/seed_sensitivity/seed_metrics.csv` |
-| 1y book-exposure q99, baseline → climate (headline) | 3,433,541 → 2,999,986 MXN (−12.6 %) — caveat: the per-path *book* aggregate sums netting sets that the engine simulates one at a time under a shared seed, so its cross-counterparty dependence is an implementation artefact (2026-10-08 finding, open for the digest); quote per-counterparty tails instead until it is resolved | `GEN-34` |
-| Nivel transition, HWTP / SWUC / DAPS_NAM | −5.72 / −8.16 / −20.01 % | `INT-32`, `INT-35` |
+| Baseline book EPE | 255,735.47 MXN | `INT-23` |
+| Book EPE shift, headline / CT anchor / floor | −9.00 / −5.51 / −4.99 % | `INT-23` |
+| Effective EPE shift, same legs | −2.18 / −1.56 / −1.43 % | `CCR-RISK-08` |
+| Supervisory PFE99 shift (time-averaged, book), same legs | −17.20 / −10.03 / −8.89 % | `results/seed_sensitivity/seed_metrics.csv` |
+| 1y book-exposure q99, baseline → climate, headline / CT anchor / floor | 3,041,356 → 2,727,327 / 2,855,976 / 2,872,875 MXN (−10.3 / −6.1 / −5.5 %) | `GEN-34` |
+| Nivel transition, HWTP / SWUC / DAPS_NAM | −5.72 / −8.16 / −20.02 % | `INT-32`, `INT-35` |
+| Trayectoria transition, same scenarios | −1.49 / −1.23 / +0.16 % | `MKT-NGFS-09` |
 | Fase transition, same scenarios | −4.57 / −6.62 / −7.37 % | `INT-35` |
-| Base book CVA (LGD 0.60) | 515,139 MXN | `CCR-RISK-06` |
+| Base book CVA (LGD 0.60) | 515,270 MXN | `CCR-RISK-06` |
 | H1 gates | rates $p = 0.73$ (n = 100); equities $\tau = +0.198$, $p_{\text{boot}} = 0.94$ | `INT-19`, `INT-27` |
-| Monte-Carlo spread across 11 master seeds (sd; canonical 233423 plus ten extra) | book EPE shift ± 0.03–0.04 pp; Effective EPE shift ± 0.02–0.03 pp; book PFE99 shift ± 0.13–0.23 pp; 1y book-exposure q99 level ± 0.6 % (range 2 %); its paired climate delta ± 0.3–0.5 pp | `results/seed_sensitivity/seed_intervals.csv` (pipelines/24, 2026-10-08) |
+| Monte-Carlo spread across 11 master seeds (sd; canonical 233423 plus ten extra) | book EPE shift ± 0.01–0.03 pp; Effective EPE shift ± 0.02 pp; book PFE99 shift ± 0.20–0.25 pp; 1y book-exposure q99 level ± 0.4 % (range 1 %); its paired climate delta ± 0.3 pp | `results/seed_sensitivity/seed_intervals.csv` (pipelines/24, 2026-10-08) |
 
 ## 6. Checklist before you submit
 
