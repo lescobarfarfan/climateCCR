@@ -5,8 +5,9 @@ currency) on the full simulation grid but exports only summary exposures
 (``CCR_Valuation_Session.get_exposures``). ``pipelines/01 --trayectorias``
 materializes the reporting-date slice per counterparty — one compressed
 ``.npz`` per run leg — from which the aggregate-loss / distribution figures
-draw (``pipelines/20``). Plain numeric/string arrays only, never pickles
-(GEN-04); the run's manifest covers provenance (GEN-06).
+(``pipelines/20``) and the seed-precision study (``pipelines/24``) draw. Plain
+numeric/string arrays only, never pickles (GEN-04); the run's manifest covers
+provenance (GEN-06).
 """
 
 from __future__ import annotations
@@ -77,3 +78,26 @@ def read_per_path_values(path: Path | str) -> dict[str, tuple[np.ndarray, np.nda
     if not out:
         raise ValueError(f"No per-path arrays in {path}")
     return out
+
+
+def book_exposure(per_path: PerPathStore) -> tuple[np.ndarray, np.ndarray]:
+    """(dates, book values): sum over counterparties of ``max(V, 0)`` per path/date."""
+    dates = None
+    total = None
+    for naid, (naid_dates, values) in per_path.items():
+        if dates is None:
+            dates, total = naid_dates, np.maximum(values, 0.0)
+        else:
+            if not np.array_equal(naid_dates, dates):
+                raise ValueError(f"Counterparty {naid!r} reporting grid differs from the book's")
+            total = total + np.maximum(values, 0.0)
+    if dates is None:
+        raise ValueError("per_path is empty: no counterparty values")
+    return dates, total
+
+
+def horizon_index(dates: Sequence, years: float) -> int:
+    """Column of the reporting date nearest ``years`` (365.25-day) after the first date."""
+    stamps = pd.to_datetime(pd.Series(dates))
+    target = stamps.iloc[0] + pd.Timedelta(days=round(365.25 * float(years)))
+    return int((stamps - target).abs().idxmin())

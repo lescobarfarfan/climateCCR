@@ -7,7 +7,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 from climateCCR.risk.ccr.evaluators.artifacts import (
+    book_exposure,
     grid_dates,
+    horizon_index,
     read_per_path_values,
     reporting_slice,
     write_per_path_values,
@@ -56,22 +58,30 @@ def _load_pipeline_20():
 
 
 def test_book_exposure_sums_positive_parts_across_counterparties():
-    pipeline = _load_pipeline_20()
     dates = grid_dates(["2026-01-01", "2026-07-01"])
     per_path = {
         "1": (dates, np.array([[1.0, -5.0], [2.0, 3.0]])),
         "2": (dates, np.array([[-1.0, 4.0], [1.0, -3.0]])),
     }
-    got_dates, book = pipeline.book_exposure(per_path)
+    got_dates, book = book_exposure(per_path)
     np.testing.assert_array_equal(got_dates, dates)
     np.testing.assert_array_equal(book, np.array([[1.0, 4.0], [3.0, 3.0]]))
     with pytest.raises(ValueError, match="grid differs"):
-        pipeline.book_exposure(
+        book_exposure(
             {
                 "1": (dates, np.zeros((1, 2))),
                 "2": (grid_dates(["2026-01-01", "2026-08-01"]), np.zeros((1, 2))),
             }
         )
+    with pytest.raises(ValueError, match="empty"):
+        book_exposure({})
+
+
+def test_horizon_index_picks_nearest_reporting_date():
+    dates = grid_dates(["2026-07-17", "2026-07-24", "2027-07-16", "2027-07-19", "2031-07-17"])
+    assert horizon_index(dates, 0.0) == 0
+    assert horizon_index(dates, 1.0) == 2  # target 2027-07-17: 1 day to 07-16, 2 to 07-19
+    assert horizon_index(dates, 5.0) == 4  # 1826 days lands exactly on 2031-07-17
 
 
 def test_simulate_annual_losses_matches_compound_poisson_moments():

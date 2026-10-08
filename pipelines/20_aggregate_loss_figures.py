@@ -30,22 +30,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = REPO_ROOT / "configs" / "aggregate_loss.yaml"
 
 
-def book_exposure(
-    per_path: dict[str, tuple[np.ndarray, np.ndarray]]
-) -> tuple[np.ndarray, np.ndarray]:
-    """(dates, book values): sum over counterparties of ``max(V, 0)`` per path/date."""
-    dates = None
-    total = None
-    for naid, (naid_dates, values) in per_path.items():
-        if dates is None:
-            dates, total = naid_dates, np.maximum(values, 0.0)
-        else:
-            if not np.array_equal(naid_dates, dates):
-                raise ValueError(f"Counterparty {naid!r} reporting grid differs from the book's")
-            total = total + np.maximum(values, 0.0)
-    return dates, total
-
-
 def simulate_annual_losses(
     intensity_per_yr: float, sev_median: float, sev_sigma: float, n_sims: int, rng
 ) -> np.ndarray:
@@ -66,7 +50,11 @@ def main() -> None:
 
     from climateCCR import viz
     from climateCCR.infra import RunManifest, get_logger, get_rng, load_config
-    from climateCCR.risk.ccr.evaluators.artifacts import read_per_path_values
+    from climateCCR.risk.ccr.evaluators.artifacts import (
+        book_exposure,
+        horizon_index,
+        read_per_path_values,
+    )
 
     config = load_config(args.config)
     config.paths.ensure()
@@ -93,8 +81,7 @@ def main() -> None:
         dates = pd.to_datetime(pd.Series(legs["baseline"][0]))
         panels = {}
         for years in list(pp_cfg["horizons_years"]):
-            target = dates.iloc[0] + pd.Timedelta(days=round(365.25 * float(years)))
-            pos = int((dates - target).abs().idxmin())
+            pos = horizon_index(legs["baseline"][0], float(years))
             panels[f"{years:g}y ({dates.iloc[pos].date()})"] = {
                 leg: values[:, pos] for leg, (_, values) in legs.items()
             }
