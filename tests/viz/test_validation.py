@@ -30,6 +30,30 @@ def fan_data():
     return dates, paths, observed
 
 
+def test_reliability_draws_diagonal_band_and_one_curve_per_series():
+    nominal = [0.05, 0.5, 0.95]
+    fig = viz.plot_reliability(
+        nominal, {"a": [0.04, 0.5, 0.96], "b": [0.1, 0.6, 0.9]}, se=[0.01, 0.02, 0.01], title="t"
+    )
+    ax = fig.axes[0]
+    assert len(ax.lines) == 3  # 45° line + two series
+    assert len(ax.collections) == 1  # the ±2·se band
+    assert ax.get_legend() is not None
+    with pytest.raises(ValueError, match="match nominal"):
+        viz.plot_reliability(nominal, {"a": [0.04, 0.5]})
+
+
+def test_pit_histograms_one_panel_per_label_with_uniform_reference():
+    rng = np.random.default_rng(1)
+    pits = {f"name{i}": rng.uniform(size=50) for i in range(3)}
+    fig = viz.plot_pit_histograms(pits, bins=5, ncols=2, title="t")
+    visible = [ax for ax in fig.axes if ax.get_visible()]
+    assert len(visible) == 3 and len(fig.axes) == 4
+    assert len(visible[0].patches) == 5 and len(visible[0].lines) == 1
+    with pytest.raises(ValueError):
+        viz.plot_pit_histograms({})
+
+
 def test_paths_vs_observed_draws_bands_median_observed_and_coverage(fan_data):
     dates, paths, observed = fan_data
     fig = viz.plot_paths_vs_observed(dates, paths, observed, ylabel="rate", title="t")

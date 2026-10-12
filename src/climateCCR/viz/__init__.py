@@ -10,7 +10,8 @@ is plottable with no change here.
 Modules: ``style`` (palette + matplotlib defaults + saving), ``ccr`` (EE/PE
 profiles and climate shifts), ``processes`` (simulated paths, fans, jump
 diagnostics), ``market`` (rate-path fans, calibration diagnostics),
-``validation`` (model-vs-observed fans, arrival staircases, marked stems, QQ).
+``validation`` (model-vs-observed fans, arrival staircases, marked stems, QQ,
+reliability diagrams and PIT histograms).
 Planned: ``hazard`` (λ panels, impact functions) as that arm produces
 artifacts (Phase 5, PROJECT_PLAN).
 """
@@ -46,7 +47,9 @@ from .validation import (
     plot_marked_arrivals,
     plot_paths_vs_observed,
     plot_paths_vs_observed_grid,
+    plot_pit_histograms,
     plot_qq,
+    plot_reliability,
 )
 
 __all__ = [
@@ -80,4 +83,6 @@ __all__ = [
     "plot_arrival_staircase",
     "plot_marked_arrivals",
     "plot_qq",
+    "plot_reliability",
+    "plot_pit_histograms",
 ]

@@ -364,3 +364,92 @@ def plot_qq(
     if title:
         ax.set_title(title)
     return fig
+
+
+def plot_reliability(
+    nominal: Sequence[float],
+    empirical: Mapping[str, Sequence[float]],
+    se: Sequence[float] | None = None,
+    title: str = "",
+) -> Figure:
+    """Reliability diagram: empirical coverage against nominal percentile, one curve per series.
+
+    The Basel reliability criterion drawn (BCBS 2010 ¶25/¶31 — several
+    percentiles, never one): a reliable forecasting system sits on the 45° line;
+    ``se`` (one value per nominal level) shades the ±2·se binomial band around
+    it. Inputs are the plain ``nominal`` / ``empirical`` columns of
+    ``risk.market.coverage_by_percentile`` — arrays, never model objects.
+    """
+    x = np.asarray(list(nominal), dtype=float)
+    if x.ndim != 1 or not x.size:
+        raise ValueError("nominal must be a non-empty 1-D sequence")
+    fig, ax = plt.subplots(figsize=(4.6, 4.2))
+    ax.plot([0.0, 1.0], [0.0, 1.0], color=TEXT_SECONDARY, linestyle="--", linewidth=1.0, zorder=2)
+    if se is not None:
+        s = np.asarray(list(se), dtype=float)
+        if s.shape != x.shape:
+            raise ValueError(f"se must match nominal: {s.shape} vs {x.shape}")
+        ax.fill_between(
+            x, x - 2.0 * s, x + 2.0 * s, color=TEXT_SECONDARY, alpha=0.12, linewidth=0, zorder=1
+        )
+    many = len(empirical) > 8
+    for label, values in empirical.items():
+        y = np.asarray(list(values), dtype=float)
+        if y.shape != x.shape:
+            raise ValueError(f"{label}: empirical must match nominal: {y.shape} vs {x.shape}")
+        ax.plot(
+            x,
+            y,
+            marker="o",
+            markersize=3.0,
+            linewidth=1.0,
+            color=COLOR_MODEL,
+            alpha=0.35 if many else 0.85,
+            label=None if many else str(label),
+            zorder=3,
+        )
+    ax.set_xlim(0.0, 1.0)
+    ax.set_ylim(0.0, 1.0)
+    ax.set_xlabel("Nominal percentile")
+    ax.set_ylabel("Empirical frequency of PIT ≤ nominal")
+    if not many and empirical:
+        ax.legend(frameon=False, fontsize=7, loc="upper left")
+    if title:
+        ax.set_title(title)
+    return fig
+
+
+def plot_pit_histograms(
+    pits: Mapping[str, Sequence[float]],
+    bins: int = 10,
+    ncols: int = 4,
+    title: str = "",
+) -> Figure:
+    """Grid of PIT histograms (density scale) with the U(0, 1) reference line, one panel per label.
+
+    A calibrated forecast distribution leaves iid uniform PIT values
+    ([DieboldGuntherTay1998]); a hump means over-dispersed forecasts, a U shape
+    under-dispersed, a slope a biased location. Panel titles carry the label and
+    the number of PIT values.
+    """
+    labels = list(pits)
+    if not labels:
+        raise ValueError("pits must hold at least one series")
+    ncols = max(1, min(int(ncols), len(labels)))
+    nrows = -(-len(labels) // ncols)
+    fig, axes = plt.subplots(
+        nrows, ncols, figsize=(2.7 * ncols, 2.3 * nrows), squeeze=False, sharex=True
+    )
+    for ax, label in zip(axes.flat, labels, strict=False):
+        u = np.asarray(list(pits[label]), dtype=float)
+        ax.hist(u, bins=int(bins), range=(0.0, 1.0), density=True, color=COLOR_MODEL, alpha=0.8)
+        ax.axhline(1.0, color=TEXT_SECONDARY, linestyle="--", linewidth=1.0, zorder=3)
+        ax.set_xlim(0.0, 1.0)
+        ax.set_title(f"{label} (n={u.size})", fontsize=8)
+    for ax in list(axes.flat)[len(labels) :]:
+        ax.set_visible(False)
+    fig.supxlabel("PIT", fontsize=9)
+    fig.supylabel("Density", fontsize=9)
+    if title:
+        fig.suptitle(title, fontweight="bold", x=0.01, ha="left")
+    return fig
