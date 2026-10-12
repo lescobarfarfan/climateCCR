@@ -44,7 +44,7 @@ is incorporated — applied to Mexico. The integrating mechanism is a **climate-
 
 ## Manuscript
 
-- [[proposal_guide]] — structure guide for the thesis-registration proposal (2026-10-08): section skeleton, the methods' formulas as implemented, core references, reading map. The proposal itself is written by hand; the earlier 2024 proposal sits beside it in `notes/manuscript/`.
+- [[proposal_guide]] — structure guide for the thesis-registration proposal (2026-10-08, revised 2026-10-12): section skeleton, the methods' formulas as implemented, the control book (§2.8) and the validation layer (§2.9), core references, reading map. The proposal itself is written by hand; the earlier 2024 proposal sits beside it in `notes/manuscript/`.
 - [[PROJECT_PLAN]] §4 — the Phase 6 chapter-to-results map.
 
 ---
