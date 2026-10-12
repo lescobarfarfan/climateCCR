@@ -1,0 +1,43 @@
+# Two-book climate-impact comparison readout (INT-39) — pipelines/26_book_comparison_readout.py.
+#
+# Reads the stored DC-CCR-RISK-3 comparison frames of the Mexican climate book
+# and the comparison (control) book for the three lambda bands plus the
+# rate-channel-only runs, and tabulates per band x book: the BOOK EPE shift
+# (viz.epe_summary), the rate-only shift (common component), the equity
+# (sector) component as the residual, sum w*gamma (1 for the Mexican anchor,
+# anchor.csv for the comparison book) and the Monte-Carlo sd of the BOOK shift
+# from each book's seed study; then the Mexican-minus-comparison difference with
+# the unpaired yardstick sqrt(sd_mx^2 + sd_cmp^2). A guard asserts every equity
+# of a book appears in its jump config's equity targets (the silent no-jump trap).
+#
+#   python pipelines/26_book_comparison_readout.py [--config CFG] [--forzar]
+
+seed: 233423   # deterministic readout; the seed only stamps the manifest
+out_dir: book_comparison
+
+bands:
+  headline: "Headline (lambda 19.29/yr)"
+  ct_anchor: "CT anchor (lambda 10.09/yr)"
+  floor: "Floor (lambda 7.22/yr)"
+
+books:
+  mexican:
+    label: "Mexican climate book"
+    data_root: data/ccr_book_mx
+    runs:
+      headline: climate_jump_real_mexican
+      ct_anchor: climate_jump_real_mexican_ct_anchor
+      floor: climate_jump_real_mexican_floor
+    rate_only_run: climate_jump_real_mexican_solo_tasas
+    seed_intervals: results/seed_sensitivity/seed_intervals.csv
+    anchor_csv: null            # the anchor book: sum w*gamma = 1 by construction
+  comparison:
+    label: "Comparison (control) book"
+    data_root: data/ccr_book_cmp
+    runs:
+      headline: climate_jump_real_comparison
+      ct_anchor: climate_jump_real_comparison_ct_anchor
+      floor: climate_jump_real_comparison_floor
+    rate_only_run: climate_jump_real_comparison_solo_tasas
+    seed_intervals: results/seed_sensitivity_comparison/seed_intervals.csv
+    anchor_csv: results/equity_mark_scales_comparison/anchor.csv

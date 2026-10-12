@@ -1,0 +1,21 @@
+# Multi-seed Monte-Carlo precision of the COMPARISON-BOOK band (INT-39) — the
+# GEN-38 study re-run on data/ccr_book_cmp. Same seeds, horizons and quantile as
+# configs/seed_sensitivity.yaml so the two books' spreads are comparable; the
+# A-minus-B yardstick in pipelines/26 is sqrt(sd_mx^2 + sd_cmp^2) on the BOOK
+# epe_shift_pct rows (the two books are NOT paired realisations: different
+# correlation matrices and union grids draw different paths under one seed).
+#
+#   python pipelines/24_seed_sensitivity.py --config configs/seed_sensitivity_comparison.yaml --ejecutar-bandas
+
+seed: 233423              # canonical seed: must equal every band config's own seed
+bands:
+  - climate_jump_real_comparison            # headline (registry lambda 19.2857)
+  - climate_jump_real_comparison_ct_anchor  # CT anchor (10.0870)
+  - climate_jump_real_comparison_floor      # report-regime floor (7.2222)
+data_root: data/ccr_book_cmp
+book_config: configs/comparison_book.yaml
+out_dir: seed_sensitivity_comparison
+band_prefix: climate_jump_real_comparison
+extra_seeds: [1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010]  # N = 10 (GEN-38)
+quantile: 0.99            # book-exposure tail (the pipelines/20 convention)
+horizons_years: [1.0, 5.0, 10.0]

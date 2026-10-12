@@ -1,0 +1,42 @@
+# Sector-differentiated equity mark scales for the COMPARISON book (INT-39).
+#
+# Same producer and composition rule as configs/equity_mark_scales.yaml, whose
+# top-level keys this file inherits through `shared:` (S tiers incl. the
+# comparison-book rows, poblacion_2020, peril_groups, the CENAPRED panel +
+# window, peril_mix_events) — keys written here win. `anchor:` recomposes the
+# Mexican book in-process on the same S / population / H and reuses its
+# normalizer, so the comparison names sit on the Mexican absolute per-capita
+# damage scale and `sum w*gamma` is a model output (results/<output_dir>/
+# anchor.csv), not 1 — the homogeneity measure itself.
+#
+#   python pipelines/10_equity_mark_scales.py --config configs/equity_mark_scales_comparison.yaml
+#
+# All names use the population-share national proxy for G (no hand-collected
+# state tables for the control universe — GEN-03; [Bressan2024]'s coarse tier,
+# documented to understate concentrated exposure, which for a low-exposure
+# control book biases the comparison AGAINST finding heterogeneity).
+
+shared: configs/equity_mark_scales.yaml
+book_config: configs/comparison_book.yaml
+eq_desk: data/ccr_book_cmp/portfolio_data/desks/EQ/EQ_EUROPEAN_OPTIONS.csv
+output_dir: equity_mark_scales_comparison
+anchor:
+  scales_config: configs/equity_mark_scales.yaml   # the Mexican composition = the normalizer
+
+exposicion_geografica: {}   # national proxy everywhere (see header)
+
+# Per-label severity paste blocks for the comparison jump configs: identical
+# fits to the Mexican ones (book-independent — the CENAPRED trigger rows), the
+# sigma consistency check runs against the comparison configs.
+peril_severity:
+  min_events: 10
+  variants:
+    registro:
+      window: {start_year: 2002, end_year: 2015}
+      jump_configs:
+        - configs/climate_jump_real_comparison.yaml
+        - configs/climate_jump_real_comparison_ct_anchor.yaml
+    reporte:
+      window: {start_year: 2016, end_year: 2024}
+      jump_configs:
+        - configs/climate_jump_real_comparison_floor.yaml

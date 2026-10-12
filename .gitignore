@@ -53,3 +53,6 @@ results/*
 .obsidian/
 
 notes/manuscript/proposal.pdf
+
+# Comparison book root (INT-39; reconstructor pipelines/09 --config configs/comparison_book.yaml)
+data/ccr_book_cmp

@@ -1,0 +1,28 @@
+# Climate jump injection on the COMPARISON BOOK — RATE CHANNEL ONLY (INT-39 decomposition row).
+#
+# configs/climate_jump_real_comparison.yaml with the equity channel removed —
+# the same rate marks as configs/climate_jump_real_mexican_solo_tasas.yaml, so
+# the two solo_tasas runs give each book's common rate-channel component.
+#
+#   python pipelines/01_climate_jump_demo.py --config configs/climate_jump_real_comparison_solo_tasas.yaml \
+#       --book-config configs/comparison_book.yaml --data-root data/ccr_book_cmp --horizonte largo
+
+seed: 233423        # master seed; jumps draw from a derived substream (GEN-07)
+n_paths: 10000      # matches the locked baseline discipline (CCR-MIG-03)
+valuation_date: "2026-07-17"   # Mexican calibration anchor (MKT-CURVE-05/CALIB-07)
+
+horizons:
+  largo:
+    b3_grid: null
+    max_step_days: null
+  corto:
+    b3_grid: ["0D", "1D", "1W", "2W", "1M", "2M", "3M", "6M", "9M", "1Y", "18M", "2Y", "3Y"]
+    max_step_days: 1
+
+climate_jumps:
+  intensity: 19.2857 # events/year: mayores_200mdp registry lambda (INT-20 headline)
+  rate_marks:
+    median: 5.1658e-6 # sev_median 905.53 MDP-2025 / S_rate_eff_MX 175,293,784 -> +0.052 bp
+    sigma: 1.2106     # transfers exactly from the registry lognormal severity fit
+    sign: 1.0         # adverse event -> yields UP (decays through HW1F mean reversion)
+    targets: [MXN_ZERO_YIELD_CURVE]

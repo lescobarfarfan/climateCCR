@@ -38,6 +38,13 @@ groups:
     "Headline (constant lambda 19.29/yr)": climate_jump_real_mexican
     "CT-bridge rider (+1.68%/yr)": climate_jump_real_mexican_trend_ct_bridge
     "Registry rider (+8.08%/yr)": climate_jump_real_mexican_trend_registry
+  books:   # INT-39: the climate book vs the low-exposure control book, each vs its own baseline
+    "Mexican book, headline": climate_jump_real_mexican
+    "Comparison book, headline": climate_jump_real_comparison
+    "Mexican book, CT anchor": climate_jump_real_mexican_ct_anchor
+    "Comparison book, CT anchor": climate_jump_real_comparison_ct_anchor
+    "Mexican book, floor": climate_jump_real_mexican_floor
+    "Comparison book, floor": climate_jump_real_comparison_floor
 
 # The INT-23 -> INT-26 re-base chain as one walk (OQ-GEN-02 c): BOOK EPE shift
 # per lambda leg across the mark-state stages. Run dir = base + leg + stage

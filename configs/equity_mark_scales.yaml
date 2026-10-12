@@ -111,6 +111,27 @@ susceptibility:                # ciclon, lluvia, inundacion, sequia, incendio_fo
   energia:         {ciclon_tropical: 0.1, lluvia: 0.1, inundacion: 0.1, sequia: 0.1, incendio_forestal: 0.0,  otros: 0.1}   # VISTA producing assets are in Vaca Muerta (Argentina) -> minimal Mexican physical exposure [eng]
   comercio:        {ciclon_tropical: 0.4, lluvia: 0.3, inundacion: 0.5, sequia: 0.1, incendio_forestal: 0.05, otros: 0.15}  # store/DC network + logistics [CNSF USO=TIENDA]
   restaurantes:    {ciclon_tropical: 0.3, lluvia: 0.2, inundacion: 0.3, sequia: 0.1, incendio_forestal: 0.0,  otros: 0.1}   # leisure demand + urban premises [eng]
+  # --- comparison-book sectors (INT-39, 2026-10-12): DIRECT physical exposure of
+  # the issuer's own assets/operations only — banks' and insurers' credit/claims
+  # channel is deliberately outside this matrix (the heterogeneity hypothesis);
+  # tiers are author judgement [eng] ordered by [ECB2021EconomyWide] sectoral
+  # physical vulnerability and the CNSF USO evidence (comercio/oficinas), with a
+  # minimal nonzero cell everywhere (gamma_raw > 0 guard). Unused by the Mexican
+  # book, so its gamma composition is unchanged. Rows to reference: OQ-INT-13.
+  bancos:          {ciclon_tropical: 0.10, lluvia: 0.10, inundacion: 0.15, sequia: 0.05, incendio_forestal: 0.00, otros: 0.05}  # branch network / data centres; credit channel excluded [eng]
+  bolsa:           {ciclon_tropical: 0.05, lluvia: 0.05, inundacion: 0.05, sequia: 0.00, incendio_forestal: 0.00, otros: 0.05}  # exchange operator, single urban site [eng]
+  telecom:         {ciclon_tropical: 0.30, lluvia: 0.10, inundacion: 0.10, sequia: 0.00, incendio_forestal: 0.05, otros: 0.10}  # towers/fibre wind + flood damage, diversified network [ECB2021EconomyWide]
+  torres:          {ciclon_tropical: 0.30, lluvia: 0.10, inundacion: 0.10, sequia: 0.00, incendio_forestal: 0.05, otros: 0.10}  # tower infrastructure = telecom tier [eng]
+  medios:          {ciclon_tropical: 0.10, lluvia: 0.05, inundacion: 0.10, sequia: 0.00, incendio_forestal: 0.00, otros: 0.05}  # studios/transmission, urban premises [eng]
+  consumo_basico:  {ciclon_tropical: 0.20, lluvia: 0.15, inundacion: 0.20, sequia: 0.30, incendio_forestal: 0.00, otros: 0.10}  # plants + distribution; agricultural inputs under sequia [ECB2021EconomyWide]
+  farma:           {ciclon_tropical: 0.10, lluvia: 0.10, inundacion: 0.10, sequia: 0.05, incendio_forestal: 0.00, otros: 0.05}  # light manufacturing, urban [eng]
+  conglomerado:    {ciclon_tropical: 0.20, lluvia: 0.20, inundacion: 0.20, sequia: 0.20, incendio_forestal: 0.05, otros: 0.10}  # diversified industrial/retail/infra mix [eng]
+  quimica:         {ciclon_tropical: 0.20, lluvia: 0.20, inundacion: 0.30, sequia: 0.40, incendio_forestal: 0.05, otros: 0.10}  # water-intensive process, riverside plants [ECB2021EconomyWide]
+  infraestructura_carretera: {ciclon_tropical: 0.40, lluvia: 0.40, inundacion: 0.50, sequia: 0.00, incendio_forestal: 0.05, otros: 0.20}  # toll roads/bridges: fixed linear infra, flood/slide-led [CEPAL2014]
+  inmobiliario_industrial:   {ciclon_tropical: 0.20, lluvia: 0.20, inundacion: 0.30, sequia: 0.05, incendio_forestal: 0.05, otros: 0.10}  # industrial parks: fixed assets, flood-led [eng]
+  ferrocarril:     {ciclon_tropical: 0.30, lluvia: 0.30, inundacion: 0.40, sequia: 0.00, incendio_forestal: 0.05, otros: 0.20}  # track/bridges: fixed linear infra [CEPAL2014]
+  bebidas_alcohol: {ciclon_tropical: 0.20, lluvia: 0.15, inundacion: 0.20, sequia: 0.60, incendio_forestal: 0.05, otros: 0.10}  # agave supply: drought-led [ECB2021EconomyWide]
+  autopartes:      {ciclon_tropical: 0.10, lluvia: 0.10, inundacion: 0.15, sequia: 0.10, incendio_forestal: 0.00, otros: 0.05}  # northern plants, water use [eng]
 
 # INEGI Censo de Población y Vivienda 2020 — total population by entidad
 # (https://www.inegi.org.mx/programas/ccpv/2020/ -> tabulados básicos).
