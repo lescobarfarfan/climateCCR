@@ -1,0 +1,34 @@
+# Hazard-model out-of-time backtest — tier A of the INT-40 validation layer
+# (pipelines/27_hazard_backtest.py).
+#
+# Fit the frequency–severity model on the registry window and score the report
+# window it never saw (BCBS 2010 ¶24/¶41 back-pricing applied to the HAZ
+# estimator): Poisson counts, lognormal severity, compound-Poisson annual loss.
+# Streams: the ciclón-tropical stream is regime-continuous across the 2016
+# publication break (HAZ-CENAPRED-10) and is the fair test; the all-perils
+# trigger set is run only to show the censoring and is labelled `censored`.
+
+seed: 233423
+out_dir: hazard_backtest
+events_csv: data/hazard_mx/datos_CENAPRED/consolidados_2000_2024/eventos_cenapred_climada.csv
+deflator: configs/inpc_anual.yaml        # losses restated to MDP-2025 before any threshold (GEN-13)
+fit_window: {start_year: 2002, end_year: 2015}
+test_window: {start_year: 2016, end_year: 2024}
+n_sims: 100000                            # compound-Poisson predictive draws per stream
+levels: [0.5, 0.8, 0.95]                  # central bands scored on the annual aggregate
+streams:
+  ciclon_all:
+    label: "Ciclón tropical, all discrete events"
+    perils: ["Ciclón tropical"]
+    min_damage_mdp: null
+    censored: false
+  ciclon_200:
+    label: "Ciclón tropical >= 200 MDP-2025"
+    perils: ["Ciclón tropical"]
+    min_damage_mdp: 200.0
+    censored: false
+  trigger_all_perils:
+    label: "All perils >= 200 MDP-2025 (censored after 2016)"
+    perils: null
+    min_damage_mdp: 200.0
+    censored: true

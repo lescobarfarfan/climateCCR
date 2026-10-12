@@ -1,0 +1,22 @@
+# Loss->mark seam backtest against realised CNSF loss ratios — tier B of the
+# INT-40 validation layer (pipelines/28_loss_ratio_backtest.py).
+#
+# The INT-17 mark reads a trigger-set loss L as an insured loss-ratio contribution
+# beta * L / K of the climate-exposed CNSF book; summed over a year the modelled
+# mark is beta * S / K — an annual insured loss ratio — and CNSF publishes the
+# realised paid/premium every year 2008–2024 with no publication break. Inputs
+# shared with the scale derivation (configs/loss_to_mark_scale.yaml: cnsf
+# paid/premium entries, events_csv, deflator, beta_window, k_year).
+
+seed: 233423
+out_dir: loss_ratio_backtest
+shared: configs/loss_to_mark_scale.yaml
+scale_csv: results/loss_to_mark_scale/scale.csv                       # beta, k_mdp (INT-17)
+parameters_csv: results/hazard_jump_calibration_2000_2024/parameters.csv
+intensity_row: mayores_200mdp_2002_2015                               # the INT-20 headline lambda
+severity_row: mayores_200mdp_2002_2015                                # registry lognormal severity
+trigger_min_damage_mdp: 200.0        # the trigger set behind S (MDP-2025, after deflation)
+in_sample: {start_year: 2008, end_year: 2015}    # the beta window (paid/damage overlap)
+out_of_time: {start_year: 2016, end_year: 2024}  # years the scale never saw
+n_sims: 100000
+levels: [0.5, 0.8, 0.95]
