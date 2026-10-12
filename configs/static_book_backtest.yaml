@@ -1,0 +1,43 @@
+# Static representative-portfolio back-pricing — tier E of the INT-40 validation
+# layer (pipelines/31_static_book_backtest.py), BCBS 2010 ¶33/¶34/¶41.
+#
+# The Mexican book is re-struck at past initialisation dates (option strikes ATM
+# at the dated spot, IRS fixed rates and fixed-bond coupons at the dated curve,
+# every maturity shifted by the same offset — "in the spirit of their first
+# introduction", ¶34), the market calibration and the book are rebuilt strictly
+# on pre-date data (¶24 / ¶41 back-pricing: pipelines/07 and 09 on dated configs
+# generated here), the exposure engine simulates jump-off / jump-on to 1W … 3Y,
+# and the SAME book is repriced on the realised market path (closes, FIX, F-TIIE
+# as the short-rate state — the HW1F curve is rebuilt from it, so the rate side
+# is model-mapped: a documented caveat) through the engine's joint-scenario
+# seam with a single path. The realised netted MtM per counterparty and
+# reporting date is scored against the forecast paths (PIT, reliability at
+# several percentiles, central coverage) for both legs, aggregated across
+# counterparties, dates and initialisation dates (¶17).
+#
+#   python pipelines/31_static_book_backtest.py --generar     # dated configs
+#   python pipelines/31_static_book_backtest.py --ejecutar    # 07 -> 09 -> 01 x bands per date
+#   python pipelines/31_static_book_backtest.py               # score the realised reprice
+
+seed: 233423
+out_dir: static_book_backtest
+init_dates: ["2016-07-15", "2019-07-15", "2022-07-15"]
+reference_valuation_date: "2026-07-17"          # the adopted book's date; tenors shift relative to it
+book_config: configs/mexican_book.yaml
+market_calibration_config: configs/market_calibration.yaml
+jump_configs:
+  headline: configs/climate_jump_real_mexican.yaml
+  ct_anchor: configs/climate_jump_real_mexican_ct_anchor.yaml
+  floor: configs/climate_jump_real_mexican_floor.yaml
+reference_rate_scale_csv: results/loss_to_rate_scale_mx/scale.csv   # S_rate_eff at the reference date
+b3_grid: ["0D", "1W", "1M", "3M", "1Y", "2Y", "3Y"]   # the backtest reporting grid (one horizon each)
+cache_subdir: data/market_mx/yahoo/book_bt            # one Yahoo cache for every dated build
+realised:
+  fix_csv: data/market_mx/sie/fix.csv
+  tiies_csv: data/market_mx/sie/tiies.csv
+  rate_column: FTIIE
+  tenor_days: 1.0
+  price_column: Close
+  max_stale_days: 10
+percentiles: [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
+levels: [0.5, 0.8, 0.95]

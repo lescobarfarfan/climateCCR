@@ -23,7 +23,7 @@ import argparse
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -46,6 +46,13 @@ def _sha256(path: Path) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
+        "--config",
+        type=Path,
+        default=CALIBRATION_CONFIG,
+        help="calibration config (default configs/market_calibration.yaml); a dated config "
+        "with its own `output_dir` back-prices the calibration at a past valuation date",
+    )
+    parser.add_argument(
         "--forzar", "--force", action="store_true", help="recompute even if the output exists"
     )
     args = parser.parse_args()
@@ -62,11 +69,11 @@ def main() -> None:
     from climateCCR.infra import RunManifest, get_logger, load_config
     from climateCCR.utils.calendar_utils import translate_tenor_to_years
 
-    config = load_config(CALIBRATION_CONFIG)
+    config = load_config(args.config)
     config.paths.ensure()
     logger = get_logger("climateCCR.market_calibration", log_dir=config.paths.logs)
 
-    out_dir = config.paths.results / "market_calibration"
+    out_dir = config.paths.results / str(config.extra.get("output_dir", "market_calibration"))
     out_direct = out_dir / "direct_input"
     if (out_direct / "RFE_HW1F_Calibration_MX.csv").exists() and not args.forzar:
         logger.info("Output exists, nothing to do (rerun with --forzar): %s", out_direct)
@@ -90,7 +97,7 @@ def main() -> None:
         (ipc_path.parent / "_procedencia.json").write_text(
             json.dumps(
                 {
-                    "descargado_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                    "descargado_utc": datetime.now(UTC).isoformat(timespec="seconds"),
                     "fuente": "Yahoo Finance, v8 chart API",
                     "url_base": CHART_URL,
                     "simbolo": ipc_cfg["symbol"],
