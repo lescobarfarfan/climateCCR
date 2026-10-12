@@ -1,0 +1,39 @@
+# Risk-factor forecast-distribution backtests — tier C of the INT-40 validation
+# layer (pipelines/29_risk_factor_backtest.py), the BCBS 2010 sound-practices
+# design: non-overlapping fixed-horizon forecasts aggregated over many
+# initialisation dates (¶13), every risk-factor model that feeds EPE backtested
+# separately at several horizons incl. one year (¶18–19), calibration data cut at
+# each initialisation date (¶24 / ¶41 back-pricing), reliability read at several
+# percentiles, never one (¶25 / ¶31). Equities, the IPC and the FIX are GBM
+# log-price forecasts (fit_gbm on the expanding pre-date window, crisis windows
+# excluded per MKT-CALIB-03); the F-TIIE short rate is the P-measure Vasicek
+# (weekly-MLE refit, MKT-CALIB-08; AR(1) fallback when the MLE fails).
+
+seed: 233423
+out_dir: risk_factor_backtest
+market_calibration_config: configs/market_calibration.yaml   # crisis windows + weekly anchor
+equities:
+  book_dir: data/market_mx/yahoo/book    # the Mexican book's Yahoo cache (<RF>.csv)
+  names: []                              # empty = every *_SHARE.csv in book_dir
+  price_column: Close
+ipc: {csv: data/market_mx/yahoo/ipc_mxx.csv, name: IPC_EQUITY_INDEX, column: Close}
+fx: {csv: data/market_mx/sie/fix.csv, name: MXN_USD_FX_RATE, column: FIX}
+rate:
+  csv: data/market_mx/sie/tiies.csv
+  name: FTIIE
+  column: FTIIE          # percent, simple Act/360 at 1 day -> continuous decimals (MKT-SIE-04)
+  tenor_days: 1.0
+  anchor: W-WED          # the MKT-CALIB-08 weekly sampling
+horizons:
+  1W: {days: 7}
+  1M: {months: 1}
+  3M: {months: 3}
+  1Y: {months: 12}
+start: "2008-01-02"      # first initialisation date (series start 2001/2006 + min history)
+end: "2026-07-17"        # the valuation anchor; forecasts must realise on or before it
+min_history_years: 3.0   # a refit needs this much pre-date history
+max_stale_days: 7        # an initialisation/realisation needs an observation within this
+percentiles: [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
+levels: [0.5, 0.8, 0.95]
+daily_var:
+  levels: [0.95, 0.99]   # one-day VaR exceptions at the market-risk levels (Kupiec / Christoffersen)
