@@ -24,6 +24,17 @@ def seed_study():
     return _load("seed_sensitivity", "pipelines/24_seed_sensitivity.py")
 
 
+def test_band_label_strips_the_configured_prefix(seed_study):
+    assert seed_study.band_label("climate_jump_real_mexican_floor") == "floor"
+    assert seed_study.band_label("climate_jump_real_mexican") == "headline"
+    assert (
+        seed_study.band_label(
+            "climate_jump_real_comparison_ct_anchor", prefix="climate_jump_real_comparison"
+        )
+        == "ct_anchor"
+    )
+
+
 def test_write_seed_config_changes_only_seed(tmp_path, seed_study):
     adopted = tmp_path / "band.yaml"
     adopted.write_text(

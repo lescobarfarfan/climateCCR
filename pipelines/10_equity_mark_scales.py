@@ -3,7 +3,7 @@
 Composes per-name relative sensitivities ``gamma_i`` for the Mexican book
 equities (G x S x H per ``configs/equity_mark_scales.yaml``), renormalized so
 the book-notional-weighted mean is exactly 1 — the INT-17 book-level mark is
-redistributed, never re-estimated. Emits the ``target_scales:`` YAML block for
+redistributed, never re-estimated. Emits the peril-typed paste blocks for
 ``configs/climate_jump_real_mexican*.yaml`` plus the CNSF hidro USO x evento
 evidence table backing the S-matrix ordering.
 
@@ -21,10 +21,18 @@ paste block per jump config — each label's mark-scale median is the config's
 equity median times ``exp((sigma^2 - sigma_p^2)/2)``, so ``E[L_p] = E[L]`` and
 only the conditional shape moves.
 
+A second book (the comparison book, INT-39) runs the same producer with its own
+config: ``shared:`` names the scales config whose top-level keys (S tiers,
+population, peril groups, damage panel, windows) it inherits — keys in the file
+itself win —, ``output_dir`` keeps its artifacts apart, and
+``anchor: {scales_config: ...}`` composes the anchor book in-process and reuses
+its normalizer, so the comparison names sit on the anchor book's absolute scale
+and ``sum w*gamma`` is a model output (written to ``anchor.csv``), not 1.
+
 Deterministic (no RNG); idempotent (GEN-05): skips if the output exists, rerun
 with --forzar/--force.
 
-    python pipelines/10_equity_mark_scales.py [--forzar]
+    python pipelines/10_equity_mark_scales.py [--config CFG] [--forzar]
 """
 
 from __future__ import annotations
@@ -37,10 +45,19 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCALES_CONFIG = REPO_ROOT / "configs" / "equity_mark_scales.yaml"
+#: ``infra.Config`` typed fields — never inherited from a ``shared`` scales config.
+_TYPED_KEYS = {"seed", "n_paths", "settlement_currency", "date_format"}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=SCALES_CONFIG,
+        help="scales config (default configs/equity_mark_scales.yaml); a comparison-book "
+        "config inherits it via `shared:` and anchors on it via `anchor:`",
+    )
     parser.add_argument(
         "--forzar", "--force", action="store_true", help="recompute even if the output exists"
     )
@@ -61,17 +78,21 @@ def main() -> None:
     )
     from climateCCR.infra import RunManifest, get_logger, load_config
 
-    config = load_config(SCALES_CONFIG)
+    config = load_config(args.config)
     config.paths.ensure()
     logger = get_logger("climateCCR.equity_mark_scales", log_dir=config.paths.logs)
 
-    out_dir = config.paths.results / "equity_mark_scales"
+    extra = dict(config.extra)
+    shared = extra.get("shared")
+    if shared:
+        base = yaml.safe_load((config.paths.root / str(shared)).read_text())
+        extra = {k: v for k, v in base.items() if k not in _TYPED_KEYS} | extra
+    out_dir = config.paths.results / str(extra.get("output_dir", "equity_mark_scales"))
     out_csv = out_dir / "target_scales.csv"
     if out_csv.exists() and not args.forzar:
         logger.info("Output exists, nothing to do (rerun with --forzar): %s", out_csv)
         return
 
-    extra = config.extra
     deflator_file = config.paths.root / extra["deflator"]
     deflator = {
         int(y): float(v) for y, v in yaml.safe_load(deflator_file.read_text())["inpc"].items()
@@ -90,6 +111,35 @@ def main() -> None:
     weights = book_equity_weights(
         config.paths.root / extra["eq_desk"], [eq["rf"] for eq in equities]
     )
+
+    # Anchored book (INT-39): recompose the anchor book on the SAME S / population /
+    # H inputs and reuse its normalizer, so both books share one absolute scale.
+    denominator = None
+    anchor_spec = extra.get("anchor")
+    if anchor_spec:
+        anchor_cfg = yaml.safe_load(
+            (config.paths.root / str(anchor_spec["scales_config"])).read_text()
+        )
+        anchor_book = yaml.safe_load((config.paths.root / anchor_cfg["book_config"]).read_text())
+        anchor_equities = anchor_book["equities"]
+        anchor_scales = compose_scales(
+            anchor_equities,
+            susceptibility=extra["susceptibility"],
+            geo_exposure=anchor_cfg["exposicion_geografica"],
+            population=extra["poblacion_2020"],
+            intensity=intensity,
+            weights=book_equity_weights(
+                config.paths.root / anchor_cfg["eq_desk"], [eq["rf"] for eq in anchor_equities]
+            ),
+        )
+        denominator = float(anchor_scales.attrs["denominator"])
+        logger.info(
+            "anchored on %s (%d names): denominator = %.6e",
+            anchor_cfg["book_config"],
+            len(anchor_scales),
+            denominator,
+        )
+
     scales = compose_scales(
         equities,
         susceptibility=extra["susceptibility"],
@@ -97,9 +147,10 @@ def main() -> None:
         population=extra["poblacion_2020"],
         intensity=intensity,
         weights=weights,
+        denominator=denominator,
     )
     anchor = float((weights.reindex(scales.index) * scales["gamma"]).sum())
-    if abs(anchor - 1.0) > 1e-9:
+    if denominator is None and abs(anchor - 1.0) > 1e-9:
         sys.exit(f"renormalization broken: sum w*gamma = {anchor!r} != 1")
     logger.info(
         "gamma composed for %d names (sum w*gamma = %.12f); range %.3f (%s) - %.3f (%s)",
@@ -195,13 +246,25 @@ def main() -> None:
     mix.rename("pi").round(6).to_csv(out_dir / "peril_mix.csv")
     c_scales.round(6).to_csv(out_dir / "target_peril_scales.csv")
     pd.concat(sev_frames).round(6).to_csv(out_dir / "peril_severity.csv")
+    if denominator is not None:
+        pd.DataFrame(
+            [
+                {
+                    "book_config": extra["book_config"],
+                    "anchor_scales_config": anchor_spec["scales_config"],
+                    "anchor_book_config": anchor_cfg["book_config"],
+                    "denominator": denominator,
+                    "sum_w_gamma": anchor,
+                }
+            ]
+        ).to_csv(out_dir / "anchor.csv", index=False)
     manifest = RunManifest.create(seed=config.seed, config=config, project_root=config.paths.root)
     manifest_path = manifest.write(config.paths.manifests)
 
     print(scales.round(4).to_string())
     print(f"\nsum w*gamma = {anchor:.12f}")
     print(f"max |sum_p pi_p c_ip - gamma_i| = {identity.abs().max():.2e}")
-    print("\n# --- paste into equity_marks of configs/climate_jump_real_mexican*.yaml ---")
+    print(f"\n# --- paste into equity_marks of the jump configs for {extra['book_config']} ---")
     print("    peril_mix:  # trigger-set frequency shares (pipelines/10, OQ-INT-11 Phase B)")
     for p in peril_cols:
         # 8 decimals: six rounded probabilities must still sum to 1 within the

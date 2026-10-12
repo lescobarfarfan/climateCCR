@@ -85,10 +85,11 @@ def test_horizon_index_picks_nearest_reporting_date():
 
 
 def test_simulate_annual_losses_matches_compound_poisson_moments():
-    pipeline = _load_pipeline_20()
+    from climateCCR.calibration.impact import simulate_annual_losses
+
     rng = np.random.default_rng(7)
     lam, median, sigma = 2.0, 100.0, 0.8
-    losses = pipeline.simulate_annual_losses(lam, median, sigma, 200_000, rng)
+    losses = simulate_annual_losses(lam, median, sigma, 200_000, rng)
     mean_severity = median * np.exp(sigma**2 / 2)
     assert losses.mean() == pytest.approx(lam * mean_severity, rel=0.02)
     assert (losses == 0).mean() == pytest.approx(np.exp(-lam), rel=0.05)

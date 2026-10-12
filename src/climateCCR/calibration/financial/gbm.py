@@ -59,3 +59,25 @@ def fit_gbm(
         n_returns=int(keep.sum()),
         n_returns_dropped=int((~keep).sum()),
     )
+
+
+def simulate_gbm(
+    s0: float,
+    drift: float,
+    volatility: float,
+    dates: pd.DatetimeIndex,
+    n_paths: int,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """Exact lognormal GBM paths on ``dates`` (path-major, DC-CONV-10), Act/365 like the engine.
+
+    Column 0 is ``s0``; each step draws ``(drift - sigma^2/2) dt + sigma sqrt(dt) Z``
+    with ``dt`` the calendar-day gap over 365 — the P-measure cone the validation
+    layer overlays on observed closes (GEN-33) and the backtests score (INT-40).
+    """
+    dt = (np.diff(pd.DatetimeIndex(dates).to_numpy()) / np.timedelta64(1, "D")) / 365.0
+    steps = (drift - 0.5 * volatility**2) * dt + volatility * np.sqrt(dt) * rng.standard_normal(
+        (int(n_paths), len(dt))
+    )
+    log_paths = np.concatenate([np.zeros((int(n_paths), 1)), np.cumsum(steps, axis=1)], axis=1)
+    return float(s0) * np.exp(log_paths)

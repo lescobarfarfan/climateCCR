@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
-from climateCCR.calibration.financial.gbm import fit_gbm
+from climateCCR.calibration.financial.gbm import fit_gbm, simulate_gbm
 from climateCCR.infra import get_rng
 
 TRUE_MU, TRUE_SIGMA = 0.12, 0.22
@@ -28,6 +28,16 @@ def test_recovers_parameters(gbm_series):
     # Drift carries se ~ sigma/sqrt(T) ~ 0.05 — a loose check by nature.
     assert fit.drift == pytest.approx(TRUE_MU, abs=0.12)
     assert fit.n_returns == len(gbm_series) - 1
+
+
+def test_simulate_gbm_terminal_log_price_moments_are_exact():
+    dates = pd.date_range("2026-07-17", periods=366, freq="D")  # one Act/365 year
+    paths = simulate_gbm(100.0, TRUE_MU, TRUE_SIGMA, dates, 40_000, get_rng(3))
+    assert paths.shape == (40_000, 366)
+    assert (paths[:, 0] == 100.0).all()
+    terminal = np.log(paths[:, -1] / 100.0)
+    assert terminal.mean() == pytest.approx(TRUE_MU - TRUE_SIGMA**2 / 2, abs=0.005)
+    assert terminal.var() == pytest.approx(TRUE_SIGMA**2, rel=0.03)
 
 
 def test_formulas_match_hand_computation(gbm_series):

@@ -30,7 +30,7 @@ import argparse
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -122,6 +122,13 @@ def nearest_psd_correlation(corr: pd.DataFrame, floor: float = 1e-8) -> tuple[pd
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
+        "--config",
+        type=Path,
+        default=BOOK_CONFIG,
+        help="book config (default configs/mexican_book.yaml); another config with its own "
+        "book_root / fetch.cache_subdir builds a second book root (the comparison book)",
+    )
+    parser.add_argument(
         "--forzar", "--force", action="store_true", help="rebuild even if the book exists"
     )
     args = parser.parse_args()
@@ -133,9 +140,9 @@ def main() -> None:
     from climateCCR.infra import RunManifest, get_logger, load_config
     from dateutil.relativedelta import relativedelta
 
-    config = load_config(BOOK_CONFIG)
+    config = load_config(args.config)
     config.paths.ensure()
-    logger = get_logger("climateCCR.mexican_book", log_dir=config.paths.logs)
+    logger = get_logger(f"climateCCR.{args.config.stem}", log_dir=config.paths.logs)
     extra = config.extra
 
     book_root = config.paths.root / extra["book_root"]
@@ -187,7 +194,7 @@ def main() -> None:
     (cache_dir / "_procedencia.json").write_text(
         json.dumps(
             {
-                "descargado_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "descargado_utc": datetime.now(UTC).isoformat(timespec="seconds"),
                 "fuente": "Yahoo Finance, v8 chart API",
                 "url_base": CHART_URL,
                 "rango": [start, end],

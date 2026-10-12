@@ -58,9 +58,9 @@ INTERVAL_COLUMNS = [
 ]
 
 
-def band_label(stem: str) -> str:
+def band_label(stem: str, prefix: str = BAND_PREFIX) -> str:
     """``climate_jump_real_mexican_floor`` -> ``floor``; the bare headline stem -> ``headline``."""
-    return stem.removeprefix(BAND_PREFIX).strip("_") or "headline"
+    return stem.removeprefix(prefix).strip("_") or "headline"
 
 
 def write_seed_config(adopted: Path, seed: int, out_dir: Path) -> Path:
@@ -218,7 +218,12 @@ def main() -> None:
     config.paths.ensure()
     logger = get_logger("climateCCR.seed_sensitivity", log_dir=config.paths.logs)
     extra = config.extra
-    out_dir = config.paths.results / "seed_sensitivity"
+    # Book under study (INT-39): the Mexican book by default; a comparison-book
+    # config names its own data root, book config, output dir and band prefix.
+    data_root = str(extra.get("data_root", "data/ccr_book_mx"))
+    book_config = str(extra.get("book_config", "configs/mexican_book.yaml"))
+    band_prefix = str(extra.get("band_prefix", BAND_PREFIX))
+    out_dir = config.paths.results / str(extra.get("out_dir", "seed_sensitivity"))
     intervals_csv = out_dir / "seed_intervals.csv"
     if intervals_csv.exists() and not args.forzar and not args.ejecutar_bandas:
         logger.info("Output exists, nothing to do (rerun with --forzar): %s", intervals_csv)
@@ -249,9 +254,9 @@ def main() -> None:
                 "--config",
                 str(cfg),
                 "--data-root",
-                "data/ccr_book_mx",
+                data_root,
                 "--book-config",
-                "configs/mexican_book.yaml",
+                book_config,
                 "--horizonte",
                 "largo",
                 "--trayectorias",
@@ -273,8 +278,8 @@ def main() -> None:
                 if canonical:
                     sys.exit(
                         f"canonical run missing: {run_dir} — pipelines/01 --config configs/"
-                        f"{band}.yaml --data-root data/ccr_book_mx --book-config "
-                        "configs/mexican_book.yaml --trayectorias"
+                        f"{band}.yaml --data-root {data_root} --book-config "
+                        f"{book_config} --trayectorias"
                     )
                 logger.info("%s: seed %d not simulated yet (--ejecutar-bandas)", band, seed)
                 continue
@@ -284,7 +289,7 @@ def main() -> None:
                 sys.exit(f"{run_dir}: no per-path artifacts — rerun with --trayectorias")
             frames.append(
                 run_metrics(run_dir, horizons, quantile).assign(
-                    band=band_label(band), seed=int(seed), canonical=canonical
+                    band=band_label(band, band_prefix), seed=int(seed), canonical=canonical
                 )
             )
     metrics = pd.concat(frames, ignore_index=True)[

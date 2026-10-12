@@ -14,6 +14,7 @@ from .hazard_jump import (
     fit_peril_severity,
     fit_severity,
     load_climate_events,
+    simulate_annual_losses,
 )
 from .rate_response import (
     EventStudyResult,
@@ -44,4 +45,5 @@ __all__ = [
     "fit_severity",
     "load_climate_events",
     "rate_scale_from_beta",
+    "simulate_annual_losses",
 ]

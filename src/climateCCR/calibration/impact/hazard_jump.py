@@ -464,3 +464,23 @@ def fit_severity(events: pd.DataFrame, *, deflated: bool = False) -> LognormalSe
         trend_growth=trend_growth,
         trend_p_value=trend_p,
     )
+
+
+def simulate_annual_losses(
+    intensity_per_yr: float,
+    sev_median: float,
+    sev_sigma: float,
+    n_sims: int,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """Compound-Poisson annual aggregate loss: ``N ~ Poisson(lambda)``, lognormal severities.
+
+    The classic aggregate-loss object [Klugman2019] simulated straight from the
+    fitted jump parameters (same units as ``sev_median``); draws come from ``rng``
+    so a run is reproducible given its seed (GEN-07). Shared by the aggregate-loss
+    figures (pipelines/20) and the hazard backtests (INT-40).
+    """
+    counts = rng.poisson(intensity_per_yr, n_sims)
+    draws = rng.lognormal(mean=np.log(sev_median), sigma=sev_sigma, size=int(counts.sum()))
+    owner = np.repeat(np.arange(n_sims), counts)
+    return np.bincount(owner, weights=draws, minlength=n_sims)

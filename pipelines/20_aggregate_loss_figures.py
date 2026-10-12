@@ -35,16 +35,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = REPO_ROOT / "configs" / "aggregate_loss.yaml"
 
 
-def simulate_annual_losses(
-    intensity_per_yr: float, sev_median: float, sev_sigma: float, n_sims: int, rng
-) -> np.ndarray:
-    """Compound-Poisson annual aggregate: N ~ Poisson, severities lognormal."""
-    counts = rng.poisson(intensity_per_yr, n_sims)
-    draws = rng.lognormal(mean=np.log(sev_median), sigma=sev_sigma, size=int(counts.sum()))
-    owner = np.repeat(np.arange(n_sims), counts)
-    return np.bincount(owner, weights=draws, minlength=n_sims)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
@@ -54,6 +44,7 @@ def main() -> None:
     args = parser.parse_args()
 
     from climateCCR import viz
+    from climateCCR.calibration.impact.hazard_jump import simulate_annual_losses
     from climateCCR.infra import RunManifest, get_logger, get_rng, load_config
     from climateCCR.risk.ccr.evaluators.artifacts import (
         book_exposure,

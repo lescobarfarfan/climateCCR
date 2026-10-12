@@ -105,6 +105,7 @@ def compose_scales(
     population: Mapping[str, float],
     intensity: pd.DataFrame,
     weights: pd.Series,
+    denominator: float | None = None,
 ) -> pd.DataFrame:
     """Per-name scales: ``gamma_raw`` composed, ``gamma`` renormalized to the book.
 
@@ -115,7 +116,13 @@ def compose_scales(
     states named, rest aggregate" disclosures) — every other name uses
     population shares (the national-proxy tier). Result is indexed by rf name
     with columns ``sector, geo_tier, gamma_raw, gamma``;
-    ``(weights * gamma).sum() == 1`` up to float precision.
+    ``(weights * gamma).sum() == 1`` up to float precision, and the normalizer
+    used is recorded in ``result.attrs["denominator"]``.
+
+    ``denominator`` overrides the book's own normalizer with another book's
+    (its ``attrs["denominator"]``): this book then sits on that book's absolute
+    per-capita-damage scale and ``(weights * gamma).sum()`` is a model output
+    rather than 1 — the comparison-book reading (INT-39).
     """
     pop = pd.Series(population).astype(float)
     pop_shares = pop / pop.sum()
@@ -160,12 +167,15 @@ def compose_scales(
     w = weights.reindex(scales.index)
     if w.isna().any():
         raise ValueError(f"weights missing names: {scales.index[w.isna()].tolist()}")
-    denom = (w * scales["gamma_raw"]).sum()
+    denom = (w * scales["gamma_raw"]).sum() if denominator is None else float(denominator)
+    if not denom > 0:
+        raise ValueError(f"normalizer must be positive, got {denom!r}")
     scales["gamma"] = scales["gamma_raw"] / denom
     # Per-peril components share the flat denominator, so sum_p gamma_<p> == gamma
     # exactly and Phase B redistributes without re-estimating (INT-24 principle).
     for peril in intensity.columns:
         scales[f"gamma_{peril}"] = scales[f"gamma_raw_{peril}"] / denom
+    scales.attrs["denominator"] = float(denom)
     return scales
 
 

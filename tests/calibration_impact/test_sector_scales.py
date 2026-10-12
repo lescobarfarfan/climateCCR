@@ -87,6 +87,31 @@ def test_compose_scales_renormalizes_to_book_anchor():
     # name feels the population-weighted sequía intensity (0.8 * 1e-4).
     ratio = scales.loc["HOTELCO_SHARE", "gamma"] / scales.loc["AGROCO_SHARE", "gamma"]
     assert ratio == pytest.approx(3e-4 / (0.8 * 1e-4))
+    assert scales.attrs["denominator"] == pytest.approx(
+        (weights * scales["gamma_raw"]).sum(), rel=1e-12
+    )
+
+
+def test_compose_scales_denominator_puts_a_book_on_another_books_scale():
+    weights = pd.Series({"HOTELCO_SHARE": 0.5, "AGROCO_SHARE": 0.5})
+    kwargs = dict(
+        susceptibility=SUSCEPTIBILITY,
+        geo_exposure={"HOTELCO_SHARE": {"estados": {"Costa": 10}}},
+        population=POPULATION,
+        intensity=_intensity(),
+        weights=weights,
+    )
+    own = compose_scales(EQUITIES, **kwargs)
+    anchored = compose_scales(EQUITIES, **kwargs, denominator=2.0 * own.attrs["denominator"])
+    # gamma = gamma_raw / denominator for the flat and the per-peril components alike ...
+    pd.testing.assert_series_equal(anchored["gamma"], own["gamma"] / 2.0)
+    pd.testing.assert_series_equal(anchored["gamma_ciclon"], own["gamma_ciclon"] / 2.0)
+    pd.testing.assert_series_equal(anchored["gamma_raw"], own["gamma_raw"])
+    assert anchored.attrs["denominator"] == pytest.approx(2.0 * own.attrs["denominator"])
+    # ... so the anchored book's weighted mean is a model output, no longer 1.
+    assert (weights * anchored["gamma"]).sum() == pytest.approx(0.5)
+    with pytest.raises(ValueError, match="positive"):
+        compose_scales(EQUITIES, **kwargs, denominator=0.0)
 
 
 def test_compose_scales_resto_nacional_blends_population():
