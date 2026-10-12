@@ -43,32 +43,6 @@ DAYS_PER_YEAR = 365.0
 WEEK_YEARS = 7.0 / DAYS_PER_YEAR
 
 
-def horizon_end(t: pd.Timestamp, spec: dict) -> pd.Timestamp:
-    """Initialisation date plus the horizon (calendar days or months)."""
-    if "days" in spec:
-        return pd.Timestamp(t) + pd.Timedelta(days=int(spec["days"]))
-    return pd.Timestamp(t) + pd.DateOffset(months=int(spec["months"]))
-
-
-def init_dates(start: str, end: str, spec: dict) -> list[pd.Timestamp]:
-    """Non-overlapping initialisation dates spaced by the horizon (BCBS 2010 ¶13)."""
-    dates: list[pd.Timestamp] = []
-    t = pd.Timestamp(start)
-    stop = pd.Timestamp(end)
-    while horizon_end(t, spec) <= stop:
-        dates.append(t)
-        t = horizon_end(t, spec)
-    return dates
-
-
-def last_obs(series: pd.Series, t: pd.Timestamp, max_stale_days: int) -> tuple | None:
-    """The last observation on or before ``t`` if it is at most ``max_stale_days`` old."""
-    sub = series[series.index <= t]
-    if sub.empty or (t - sub.index[-1]).days > max_stale_days:
-        return None
-    return sub.index[-1], float(sub.iloc[-1])
-
-
 def gbm_forecast(
     closes: pd.Series,
     t: pd.Timestamp,
@@ -81,6 +55,7 @@ def gbm_forecast(
     """GBM log-return forecast over ``[t, t_end]`` from a refit on data strictly before ``t``."""
     from climateCCR.calibration.financial.gbm import fit_gbm
     from climateCCR.calibration.financial.hull_white import exclude_windows
+    from climateCCR.risk.market import last_obs
 
     history = closes[closes.index < t]
     if history.empty or (t - history.index[0]).days < DAYS_PER_YEAR * min_history_years:
@@ -121,6 +96,7 @@ def vasicek_forecast(
         fit_vasicek_mle,
         sample_weekly_last,
     )
+    from climateCCR.risk.market import last_obs
 
     history = rates[rates.index < t]
     if history.empty or (t - history.index[0]).days < DAYS_PER_YEAR * min_history_years:
@@ -224,6 +200,8 @@ def main() -> None:
         christoffersen_cc,
         christoffersen_independence,
         coverage_by_percentile,
+        horizon_end,
+        init_dates,
         ks_uniform,
         kupiec_pof,
         pit_normal,

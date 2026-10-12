@@ -18,6 +18,7 @@ from .backtest import (
     pit_normal,
     pit_values,
 )
+from .windows import horizon_end, init_dates, last_obs
 
 __all__ = [
     "TestResult",
@@ -29,8 +30,11 @@ __all__ = [
     "crps_from_samples",
     "crps_normal",
     "diebold_mariano",
+    "horizon_end",
+    "init_dates",
     "ks_uniform",
     "kupiec_pof",
+    "last_obs",
     "log_score_mixture",
     "log_score_normal",
     "pit_discrete",

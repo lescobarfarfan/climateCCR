@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from climateCCR.infra import get_rng
+from climateCCR.risk.market import horizon_end, init_dates
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -35,23 +36,23 @@ def gbm_closes() -> pd.Series:
     return pd.Series(100.0 * np.exp(np.concatenate([[0.0], np.cumsum(steps)])), index=index)
 
 
-def test_init_dates_are_non_overlapping_and_spaced_by_the_horizon(backtest):
-    weekly = backtest.init_dates("2020-01-01", "2020-03-01", {"days": 7})
+def test_init_dates_are_non_overlapping_and_spaced_by_the_horizon():
+    weekly = init_dates("2020-01-01", "2020-03-01", {"days": 7})
     assert weekly[0] == pd.Timestamp("2020-01-01") and len(weekly) == 8
     assert all((b - a).days == 7 for a, b in zip(weekly[:-1], weekly[1:], strict=True))
-    assert backtest.horizon_end(weekly[-1], {"days": 7}) <= pd.Timestamp("2020-03-01")
-    monthly = backtest.init_dates("2020-01-31", "2020-06-30", {"months": 1})
+    assert horizon_end(weekly[-1], {"days": 7}) <= pd.Timestamp("2020-03-01")
+    monthly = init_dates("2020-01-31", "2020-06-30", {"months": 1})
     assert [d.month for d in monthly] == [1, 2, 3, 4, 5]
 
 
 def test_gbm_forecast_pits_are_uniform_under_the_true_model(backtest, gbm_closes):
     crisis = [("2015-01-01", "2015-03-31")]
     pits = []
-    for t in backtest.init_dates("2014-01-02", "2021-12-31", {"days": 7}):
+    for t in init_dates("2014-01-02", "2021-12-31", {"days": 7}):
         fc = backtest.gbm_forecast(
             gbm_closes,
             t,
-            backtest.horizon_end(t, {"days": 7}),
+            horizon_end(t, {"days": 7}),
             crisis,
             min_history_years=3.0,
             max_stale_days=7,
