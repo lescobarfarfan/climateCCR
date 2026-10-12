@@ -44,23 +44,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = REPO_ROOT / "configs" / "model_vs_observed.yaml"
 
 
-def _simulate_gbm(
-    s0: float,
-    drift: float,
-    volatility: float,
-    grid: pd.DatetimeIndex,
-    n_paths: int,
-    rng: np.random.Generator,
-) -> np.ndarray:
-    """Exact lognormal GBM paths on ``grid`` (path-major), Act/365 like the engine."""
-    dt = (np.diff(grid.to_numpy()) / np.timedelta64(1, "D")) / 365.0
-    steps = (drift - 0.5 * volatility**2) * dt + volatility * np.sqrt(dt) * rng.standard_normal(
-        (int(n_paths), len(dt))
-    )
-    log_paths = np.concatenate([np.zeros((int(n_paths), 1)), np.cumsum(steps, axis=1)], axis=1)
-    return float(s0) * np.exp(log_paths)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
@@ -77,7 +60,7 @@ def main() -> None:
 
     import yaml
     from climateCCR import viz
-    from climateCCR.calibration.financial.gbm import fit_gbm
+    from climateCCR.calibration.financial.gbm import fit_gbm, simulate_gbm
     from climateCCR.calibration.financial.hull_white import (
         VasicekFit,
         exclude_windows,
@@ -144,7 +127,10 @@ def main() -> None:
         grid = pd.date_range(start, observed_rate.index.max(), freq="D")
         window_obs = observed_rate[observed_rate.index >= start]
         r0 = float(window_obs.iloc[0])
-        paths = fit.simulate(grid, n_paths, get_rng(config.seed)) * 100.0
+        # Cone anchored at the first observed rate of the window (the conditional
+        # view the config promises); before 2026-10-12 `r0` was logged but not
+        # passed, so both fans started at the long-run level.
+        paths = fit.simulate(grid, n_paths, get_rng(config.seed), r0=r0) * 100.0
         obs_pct = observed_rate * 100.0
         coverage = viz.band_coverage(grid, paths, obs_pct, coverage_band)
         logger.info(
@@ -222,9 +208,7 @@ def main() -> None:
 
     def insample_panel(name: str, closes: pd.Series, drift: float, vol: float) -> dict:
         grid = pd.date_range(closes.index[0], closes.index[-1], freq="D")
-        paths = _simulate_gbm(
-            float(closes.iloc[0]), drift, vol, grid, n_paths, get_rng(config.seed)
-        )
+        paths = simulate_gbm(float(closes.iloc[0]), drift, vol, grid, n_paths, get_rng(config.seed))
         return {
             "dates": grid,
             "paths": paths,
@@ -302,7 +286,7 @@ def main() -> None:
         refit = fit_gbm(pre)
         anchor_date = closes.index[closes.index <= eq_cutoff].max()
         grid = pd.date_range(anchor_date, closes.index[-1], freq="D")
-        paths = _simulate_gbm(
+        paths = simulate_gbm(
             float(closes.loc[anchor_date]),
             refit.drift,
             refit.volatility,
@@ -482,7 +466,7 @@ def main() -> None:
     scenario = process.generate(list(daily), n_paths, config.seed)
     step_marks = scenario.step_marks[target]
     gbm_row = params.loc[target]
-    baseline_paths = _simulate_gbm(
+    baseline_paths = simulate_gbm(
         float(gbm_row["initial_value"]),
         float(gbm_row["drift"]),
         float(gbm_row["volatility"]),
