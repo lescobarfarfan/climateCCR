@@ -153,18 +153,28 @@ def dated_jump_config(jump: dict, date: str, grid: list[str], s_ref: float, s_bt
 def realised_scenarios(
     names, union_dates, series_by_name: dict[str, pd.Series], max_stale_days: int
 ) -> dict:
-    """One observed path per factor on the union grid, in the ``slice_scenarios`` layout."""
+    """One observed path per factor on the union grid, in the ``slice_scenarios`` layout.
+
+    Simulation grids are event-driven and run to the longest trade's maturity, so
+    they can extend past the end of the observed series; those dates are held at
+    the last observation (they lie beyond every scored reporting date). A gap
+    inside the observed range larger than ``max_stale_days`` is an error.
+    """
     from climateCCR.risk.market import last_obs
 
     out = {}
     for name in names:
         series = series_by_name[name]
+        last_date, last_value = series.index.max(), float(series.iloc[-1])
         values = []
         for date in union_dates:
             obs = last_obs(series, pd.Timestamp(date), max_stale_days)
-            if obs is None:
+            if obs is not None:
+                values.append(obs[1])
+            elif pd.Timestamp(date) > last_date:
+                values.append(last_value)  # beyond the data end: held, never scored
+            else:
                 raise ValueError(f"{name}: no observation within {max_stale_days} days of {date}")
-            values.append(obs[1])
         out[name] = np.asarray(values, dtype=float)[None, :]
         out[name + "_dates"] = list(union_dates)
     return out
@@ -322,7 +332,7 @@ def main() -> None:
     rate = pd.Series(
         simple_to_continuous(quotes.to_numpy(), float(real_cfg["tenor_days"])), index=quotes.index
     )
-    closes_dir = root / str(real_cfg.get("closes_dir", extra["cache_subdir"]))
+    closes_dir = root / str(real_cfg["closes_dir"])  # full history: closes after the date
     config_dir = out_dir / "configs"
     rows: list[dict] = []
     pins: list[dict] = []

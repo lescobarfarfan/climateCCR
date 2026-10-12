@@ -117,5 +117,7 @@ def test_realised_scenarios_slice_like_a_joint_draw(pipeline):
     assert joint["A_SHARE"][0, 1] == series["A_SHARE"].loc["2016-07-22"]  # Sunday -> Friday close
     sliced = slice_scenarios(joint, ["A_SHARE"], union[::2])
     np.testing.assert_array_equal(sliced["A_SHARE"], joint["A_SHARE"][:, [0, 2]])
+    held = pipeline.realised_scenarios(["A_SHARE"], [pd.Timestamp("2017-01-01")], series, 10)
+    assert held["A_SHARE"][0, 0] == series["A_SHARE"].iloc[-1]  # past the data end: held
     with pytest.raises(ValueError, match="no observation"):
-        pipeline.realised_scenarios(["A_SHARE"], [pd.Timestamp("2017-01-01")], series, 10)
+        pipeline.realised_scenarios(["A_SHARE"], [pd.Timestamp("2016-06-01")], series, 10)
