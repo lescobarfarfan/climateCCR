@@ -1,0 +1,39 @@
+# Jump-on vs jump-off predictive-density comparison on realised returns — tier D
+# of the INT-40 validation layer (pipelines/30_jump_density_backtest.py).
+#
+# Per book equity and horizon, non-overlapping realised log returns are scored
+# under the plain GBM (jump-off) and under the Merton mixture the engine
+# simulates (jump-off diffusion + the ClimateJumpProcess's summed marks over the
+# horizon, drawn with the adopted peril-typed configuration); the log-score
+# differential is tested with Diebold–Mariano (= Amisano–Giacomini on densities).
+# `engine` scores the overlay exactly as INT-14 applies it (uncompensated — the
+# H1 null read in density form); `compensated` drift-matches the mixture so only
+# the shape is scored. The rate leg scores the F-TIIE under the adopted Vasicek
+# with and without the rate marks.
+
+seed: 233423
+out_dir: jump_density_backtest
+jump_configs:
+  headline: configs/climate_jump_real_mexican.yaml
+  ct_anchor: configs/climate_jump_real_mexican_ct_anchor.yaml
+  floor: configs/climate_jump_real_mexican_floor.yaml
+book_dir: data/market_mx/yahoo/book            # realised closes per book equity (<RF>.csv)
+price_column: Close
+params_csv: data/ccr_book_mx/calibration_data/RFE_models/RFE_GBM_Calibration.csv  # adopted (mu, sigma)
+target_scales_csv: results/equity_mark_scales/target_scales.csv                  # gamma per name
+market_calibration_config: configs/market_calibration.yaml   # the Vasicek headline cell
+rate:
+  csv: data/market_mx/sie/tiies.csv
+  column: FTIIE
+  tenor_days: 1.0
+  by_window_csv: results/market_calibration/hw1f_by_window.csv
+  target: MXN_ZERO_YIELD_CURVE
+  start: "2006-01-02"
+horizons:
+  1M: {months: 1}
+  1Y: {months: 12}
+start: "2002-01-02"
+end: "2026-07-17"
+max_stale_days: 7
+n_sims: 20000
+dm_lag: 0            # non-overlapping windows -> iid differentials under H0
