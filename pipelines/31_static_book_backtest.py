@@ -197,15 +197,29 @@ def ejecutar(config, logger, args) -> None:
     }
     s_ref = float(pd.read_csv(root / extra["reference_rate_scale_csv"]).iloc[0]["s_rate_eff_mdp"])
     grid = [str(g) for g in extra["b3_grid"]]
+    # Rate headline cells tried in order per date: the adopted cell first, then the
+    # MKT-CALIB-06 tie-breaker — a near-unit-root pre-date window leaves the adopted
+    # F-TIIE fit unidentified (GEN-33), and ¶24 forbids post-date data.
+    cells = [dict(c) for c in extra.get("rate_headline_cells") or [mc["hw1f"]["headline"]]]
+    cells_used: list[dict] = []
     for date in [str(d) for d in extra["init_dates"]]:
         t = tag(date)
         cal_cfg = config_dir / f"market_calibration_{t}.yaml"
-        cal_cfg.write_text(
-            yaml.safe_dump(
-                dated_calibration_config(mc, date, f"market_calibration_{t}"), sort_keys=False
-            )
-        )
-        _run("07_market_calibration.py", "--config", str(cal_cfg), forzar=args.forzar)
+        dated_mc = dated_calibration_config(mc, date, f"market_calibration_{t}")
+        cell_used = None
+        for cell in cells:
+            dated_mc["hw1f"]["headline"] = dict(cell)
+            cal_cfg.write_text(yaml.safe_dump(dated_mc, sort_keys=False))
+            try:
+                _run("07_market_calibration.py", "--config", str(cal_cfg), forzar=args.forzar)
+            except subprocess.CalledProcessError:
+                logger.warning("%s: headline cell %s is unidentified at this date", t, cell)
+                continue
+            cell_used = cell
+            break
+        if cell_used is None:
+            raise RuntimeError(f"{t}: no rate headline cell is identified (tried {cells})")
+        cells_used.append({"init_date": date} | dict(cell_used))
         cal_dir = config.paths.results / f"market_calibration_{t}"
         book_cfg = config_dir / f"mexican_book_{t}.yaml"
         book_cfg.write_text(
@@ -216,7 +230,7 @@ def ejecutar(config, logger, args) -> None:
                     str(extra["reference_valuation_date"]),
                     cal_dir / "zero_curve_pillars.csv",
                     book_root=f"data/ccr_book_mx_{t}",
-                    cache_subdir=str(extra["cache_subdir"]),
+                    cache_subdir=str(extra["cache_subdir_pattern"]).format(tag=t),
                     hw1f_direct_input=f"results/market_calibration_{t}/direct_input/"
                     "RFE_HW1F_Calibration_MX.csv",
                     rate_scale_output_dir=f"results/loss_to_rate_scale_{t}",
@@ -253,6 +267,7 @@ def ejecutar(config, logger, args) -> None:
                 forzar=args.forzar,
             )
         logger.info("%s: dated calibration, book and %d band runs done", t, len(jumps))
+    pd.DataFrame(cells_used).to_csv(out_dir / "calibration_cells.csv", index=False)
 
 
 def main() -> None:
@@ -307,7 +322,7 @@ def main() -> None:
     rate = pd.Series(
         simple_to_continuous(quotes.to_numpy(), float(real_cfg["tenor_days"])), index=quotes.index
     )
-    cache_dir = root / str(extra["cache_subdir"])
+    closes_dir = root / str(real_cfg.get("closes_dir", extra["cache_subdir"]))
     config_dir = out_dir / "configs"
     rows: list[dict] = []
     pins: list[dict] = []
@@ -336,7 +351,7 @@ def main() -> None:
                 series_by_name[name] = fix
             else:
                 series_by_name[name] = _read_series(
-                    cache_dir / f"{name}.csv", str(real_cfg["price_column"])
+                    closes_dir / f"{name}.csv", str(real_cfg["price_column"])
                 )
         realised = realised_scenarios(names, union, series_by_name, max_stale)
         realised_mtm: dict[str, tuple[np.ndarray, np.ndarray]] = {}

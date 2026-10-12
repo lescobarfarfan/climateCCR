@@ -30,9 +30,18 @@ jump_configs:
   ct_anchor: configs/climate_jump_real_mexican_ct_anchor.yaml
   floor: configs/climate_jump_real_mexican_floor.yaml
 reference_rate_scale_csv: results/loss_to_rate_scale_mx/scale.csv   # S_rate_eff at the reference date
+rate_headline_cells:   # tried in order per date; the cell used is recorded in calibration_cells.csv.
+  # The MKT-CALIB-06 tie-breaker (TIIE 28 from 2001, weekly MLE) is the only cell identified and
+  # stable at every initialisation date (a 0.48-0.56, level 5.7-6.5 %, sigma 1.6 %); the adopted
+  # F-TIIE 2006-start cell is unidentified at 2019 (near-unit-root window, GEN-33) and lands a
+  # 14 % long-run level at 2022, so it is the second choice here. BCBS 2010 ¶24: pre-date data only.
+  - {proxy: TIIE28, window: full_2001, method: mle, crisis_excluded: true, sampling: weekly_wed}
+  - {proxy: FTIIE, window: full_2006, method: mle, crisis_excluded: true, sampling: weekly_wed}
 b3_grid: ["0D", "1W", "1M", "3M", "1Y", "2Y", "3Y"]   # the backtest reporting grid (one horizon each)
-cache_subdir: data/market_mx/yahoo/book_bt            # one Yahoo cache for every dated build
+cache_subdir_pattern: "data/market_mx/yahoo/book_{tag}"   # one Yahoo cache per date: the builder fetches up
+                                                           # to the date (and drops names stale > 30 d)
 realised:
+  closes_dir: data/market_mx/yahoo/book               # realised closes AFTER each date (the full cache)
   fix_csv: data/market_mx/sie/fix.csv
   tiies_csv: data/market_mx/sie/tiies.csv
   rate_column: FTIIE
