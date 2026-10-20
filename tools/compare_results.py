@@ -8,8 +8,10 @@
 Byte identity is not expected across CPU architectures (ulp-level kernel differences, GEN-37),
 so CSV / npz numbers are compared with a relative tolerance and the maximum relative difference
 is reported; tied-row order is compared order-insensitively; text files verbatim; figures by
-existence. Classes: identical, within_tol, order_only, differs, text_differs, exists,
-missing_new, missing_ref.
+existence. "Relative" means relative to the column's (or array's) own scale, max |x|: a 1e-4
+move in a cell near zero of a column that reaches 1e5 is 1e-9, not 1 — the reproducibility
+question is whether the *artifact* moved, not whether a near-zero cell did. Classes: identical,
+within_tol, order_only, differs, text_differs, exists, missing_new, missing_ref.
 """
 
 from __future__ import annotations
@@ -37,7 +39,10 @@ def _suffix(path: Path) -> str:
 
 
 def _rel_diff(a: np.ndarray, b: np.ndarray) -> float:
-    """Max relative difference, NaN-aware; inf if the NaN patterns disagree."""
+    """Max |a - b| relative to the pair's scale max(|a|, |b|) over all cells, NaN-aware.
+
+    Returns inf if the shapes or the NaN patterns disagree; 0 when both are all-NaN.
+    """
     a = np.asarray(a, dtype=float)
     b = np.asarray(b, dtype=float)
     if a.shape != b.shape:
@@ -48,8 +53,8 @@ def _rel_diff(a: np.ndarray, b: np.ndarray) -> float:
     both = ~na
     if not both.any():
         return 0.0
-    denom = np.maximum(np.maximum(np.abs(a[both]), np.abs(b[both])), 1e-12)
-    return float(np.max(np.abs(a[both] - b[both]) / denom))
+    scale = max(float(np.max(np.abs(a[both]))), float(np.max(np.abs(b[both]))), 1e-12)
+    return float(np.max(np.abs(a[both] - b[both])) / scale)
 
 
 def _frame_diff(ref: pd.DataFrame, new: pd.DataFrame) -> float:
