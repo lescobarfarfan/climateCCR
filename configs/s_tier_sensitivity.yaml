@@ -1,0 +1,18 @@
+# S-tier sensitivity of the Mexican book (INT-25 d) — the pipelines/11 study config.
+#
+# The jitter draws one substream per sector NAME from `seed` (infra.get_stream_rng), so a
+# sector's draws are invariant to which other rows the S matrix holds, their order and the
+# book (OQ-GEN-04 a); the structured variants re-run the full 3-config band through
+# pipelines/01 on `data_root` with the book named by the scales config.
+#
+#   python pipelines/11_s_tier_sensitivity.py [--config configs/s_tier_sensitivity.yaml] [--forzar] [--ejecutar-bandas]
+
+seed: 233423                                     # the band configs' seed; jitter substreams derive from it
+scales_config: configs/equity_mark_scales.yaml   # S / H / G inputs; its book_config + eq_desk name the book
+data_root: data/ccr_book_mx                      # engine data root for the variant band runs (pipelines/01)
+band_prefix: climate_jump_real_mexican           # collector label: <prefix>_<suffix> -> suffix, bare prefix -> headline
+bands:
+  - climate_jump_real_mexican                    # headline (registry lambda 19.2857)
+  - climate_jump_real_mexican_ct_anchor          # CT anchor (10.0870)
+  - climate_jump_real_mexican_floor              # report-regime floor (7.2222)
+out_dir: s_tier_sensitivity

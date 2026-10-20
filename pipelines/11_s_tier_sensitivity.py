@@ -5,10 +5,14 @@ ordering is CNSF-pinned). This runner quantifies how much the gamma ordering and
 the band headline depend on them, two ways:
 
 1. **Tier-jitter Monte Carlo** (analytic, no simulation): every nonzero S cell
-   moves one step up/down/stay (1/3 each) on the observed tier ladder;
-   structural zeros stay zero (they encode "no channel", not a level). N draws
-   of the full gamma vector -> per-name ranges and the Kendall tau of each
-   draw's ordering vs the baseline. Emits CSVs + one viz-standard figure.
+   of the book's sectors moves one step up/down/stay (1/3 each) on the tier
+   ladder; structural zeros stay zero (they encode "no channel", not a level).
+   Each sector draws its steps from its own substream of the study seed
+   (``infra.get_stream_rng`` keyed by the sector NAME), so a sector's draws are
+   invariant to which other rows the S matrix holds, their order and the book
+   (OQ-GEN-04 a). N draws of the full gamma vector -> per-name ranges and the
+   Kendall tau of each draw's ordering vs the baseline. Emits CSVs + one
+   viz-standard figure.
 
 2. **Structured variants**, each re-deriving gamma / per-peril scales and (with
    ``--ejecutar-bandas``) re-running the full 3-config band via pipelines/01:
@@ -39,11 +43,20 @@ the band headline depend on them, two ways:
    is their deterministic reconstructor, GEN-04) and reuse pipelines/01
    unchanged, so every simulated variant writes its own manifest.
 
+The study config (``--config``, default ``configs/s_tier_sensitivity.yaml``)
+names the scales config (S / H / G inputs and, through it, the book), the engine
+data root, the three band configs, the collector's band prefix and the output
+folder; ``configs/s_tier_sensitivity_comparison.yaml`` runs the same study on the
+control book (OQ-INT-13 b). A scales config with ``shared:`` inherits the base
+file's keys and one with ``anchor:`` composes every jittered or transformed table
+with the anchor book's denominator recomposed under the SAME transform, so the
+control band stays on the Mexican absolute scale of each variant (INT-39).
+
 The collector (also idempotent) reads whichever variant bands exist and writes
 ``band_epe_deltas.csv``: book-EPE shift %% per variant x band member, plus the
 gamma Kendall tau vs baseline — the robustness table for the manuscript.
 
-    python pipelines/11_s_tier_sensitivity.py [--forzar] [--ejecutar-bandas]
+    python pipelines/11_s_tier_sensitivity.py [--config CFG] [--forzar] [--ejecutar-bandas]
 """
 
 from __future__ import annotations
@@ -51,6 +64,8 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+import zlib
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 import numpy as np
@@ -59,18 +74,77 @@ import yaml
 from scipy.stats import kendalltau
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCALES_CONFIG = REPO_ROOT / "configs" / "equity_mark_scales.yaml"
-BAND_CONFIGS = [
-    "climate_jump_real_mexican",
-    "climate_jump_real_mexican_ct_anchor",
-    "climate_jump_real_mexican_floor",
-]
+DEFAULT_CONFIG = REPO_ROOT / "configs" / "s_tier_sensitivity.yaml"
 N_JITTER = 500
 HIDRO = ["ciclon_tropical", "lluvia", "inundacion"]
 FLUVIAL = ["lluvia", "inundacion"]
 #: variant -> (labels merged, merged label); only these re-fit per-label severity.
 MERGES = {"hidro_merged": (HIDRO, "hidro"), "fluvial_merged": (FLUVIAL, "fluvial")}
 ALEX_NL = {"entidad": "Nuevo León", "peril": "ciclon_tropical", "anio": 2010, "danio_mdp": 21501.0}
+#: Namespace of the per-sector jitter substreams (keeps the keys clear of the small integer
+#: streams the jump channel and pipelines 27/30 use).
+JITTER_STREAM_NAMESPACE = "s_tier_jitter"
+
+
+def sector_stream(sector: str) -> int:
+    """Stable substream key of a sector NAME: CRC-32 of ``"s_tier_jitter:<sector>"``.
+
+    ``hash()`` is salted per process, so the key is a checksum of the namespaced name;
+    distinct over the S matrix's rows (asserted by the tests), stable across machines.
+    """
+    return zlib.crc32(f"{JITTER_STREAM_NAMESPACE}:{sector}".encode())
+
+
+def book_sectors(equities: Sequence[Mapping[str, str]]) -> list[str]:
+    """Sectors of the book's equities, first-occurrence order (the rows compose_scales reads)."""
+    return list(dict.fromkeys(eq["sector"] for eq in equities))
+
+
+def tier_ladder(
+    susceptibility: Mapping[str, Mapping[str, float]], sectors: Sequence[str]
+) -> np.ndarray:
+    """Sorted distinct nonzero tier levels over ``sectors``' rows — the observed ordinal ladder."""
+    return np.array(
+        sorted({float(v) for s in sectors for v in susceptibility[s].values() if v > 0})
+    )
+
+
+def jitter_tables(
+    susceptibility: Mapping[str, Mapping[str, float]],
+    sectors: Sequence[str],
+    *,
+    seed: int,
+    n_draws: int,
+    ladder: np.ndarray,
+) -> list[dict[str, dict[str, float]]]:
+    """``n_draws`` jittered S tables.
+
+    Every nonzero cell of each sector in ``sectors`` moves -1/0/+1 ladder steps (1/3
+    each), clipped at the ends; structural zeros stay ``0.0``; rows outside ``sectors``
+    are copied verbatim. Sector ``s`` draws its steps as
+    ``get_stream_rng(seed, sector_stream(s)).integers(-1, 2, size=(n_draws, n_cells))`` —
+    one substream per sector name, so a sector's draws do not depend on which other
+    sectors exist, their order or the book, and draw ``k`` uses row ``k`` (a longer run
+    extends a shorter one).
+    """
+    from climateCCR.infra import get_stream_rng
+
+    ladder = np.asarray(ladder, dtype=float)
+    tables = [{s: dict(row) for s, row in susceptibility.items()} for _ in range(n_draws)]
+    for sector in sectors:
+        row = susceptibility[sector]
+        cells = [p for p, v in row.items() if v > 0]
+        base_idx = [int(np.abs(ladder - float(row[p])).argmin()) for p in cells]
+        steps = get_stream_rng(seed, sector_stream(sector)).integers(
+            -1, 2, size=(n_draws, len(cells))
+        )
+        for k in range(n_draws):
+            jittered = {p: 0.0 for p in row}  # structural zeros: no channel, not a level
+            for j, p in enumerate(cells):
+                idx = int(np.clip(base_idx[j] + steps[k, j], 0, len(ladder) - 1))
+                jittered[p] = float(ladder[idx])
+            tables[k][sector] = jittered
+    return tables
 
 
 def _merged_inputs(susceptibility, intensity, mix, population, merge: list[str], name: str):
@@ -107,8 +181,20 @@ def _drop_alex_intensity(intensity, deflator, population):
     return h_v
 
 
+def band_label(band: str, prefix: str) -> str:
+    """``<prefix>_<suffix>`` -> ``suffix``; the bare prefix is the headline band."""
+    return band.removeprefix(prefix).strip("_") or "headline"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=DEFAULT_CONFIG,
+        help="study config (default configs/s_tier_sensitivity.yaml; the comparison book "
+        "runs configs/s_tier_sensitivity_comparison.yaml)",
+    )
     parser.add_argument(
         "--forzar", "--force", action="store_true", help="recompute even if the output exists"
     )
@@ -126,32 +212,40 @@ def main() -> None:
         load_climate_events,
     )
     from climateCCR.calibration.impact.sector_scales import (
+        anchor_denominator,
         book_equity_weights,
         compose_scales,
         load_damage_intensity,
         peril_mix_from_events,
+        resolve_shared,
     )
-    from climateCCR.infra import RunManifest, get_logger, get_rng, load_config
+    from climateCCR.infra import RunManifest, get_logger, load_config
     from climateCCR.processes.jumps import ClimateJumpProcess
     from climateCCR.viz.ccr import epe_summary
     from climateCCR.viz.style import apply_style, save_figure
 
-    config = load_config(SCALES_CONFIG)
+    config = load_config(args.config)
     config.paths.ensure()
-    logger = get_logger("climateCCR.s_tier_sensitivity", log_dir=config.paths.logs)
-    out_dir = config.paths.results / "s_tier_sensitivity"
+    logger = get_logger(f"climateCCR.{args.config.stem}", log_dir=config.paths.logs)
+    study = config.extra
+    bands = [str(b) for b in study["bands"]]
+    band_prefix = str(study["band_prefix"])
+    data_root = str(study["data_root"])
+    out_dir = config.paths.results / str(study.get("out_dir", "s_tier_sensitivity"))
     jitter_csv = out_dir / "s_tier_jitter_gamma.csv"
     if jitter_csv.exists() and not args.forzar and not args.ejecutar_bandas:
         logger.info("Output exists, nothing to do (rerun with --forzar): %s", jitter_csv)
         return
 
-    extra = config.extra
+    scales_config = load_config(config.paths.root / str(study["scales_config"]))
+    extra = resolve_shared(scales_config.extra, config.paths.root)
+    book_config = str(extra["book_config"])
     deflator_file = config.paths.root / extra["deflator"]
     deflator = {
         int(y): float(v)
         for y, v in yaml.safe_load(deflator_file.read_text(encoding="utf-8"))["inpc"].items()
     }
-    book = yaml.safe_load((config.paths.root / extra["book_config"]).read_text(encoding="utf-8"))
+    book = yaml.safe_load((config.paths.root / book_config).read_text(encoding="utf-8"))
     equities = book["equities"]
     susceptibility = {s: dict(row) for s, row in extra["susceptibility"].items()}
     population = extra["poblacion_2020"]
@@ -180,7 +274,7 @@ def main() -> None:
     window_of = {
         Path(c).stem: v for v, s in sev_spec["variants"].items() for c in s["jump_configs"]
     }
-    missing = [b for b in BAND_CONFIGS if b not in window_of]
+    missing = [b for b in bands if b not in window_of]
     if missing:
         sys.exit(f"peril_severity.variants names no regime window for {missing}")
     sev_fits = {}
@@ -194,7 +288,20 @@ def main() -> None:
         )
         sev_fits[variant] = (events, fit_severity(events, deflated=True))
 
+    anchor_spec = extra.get("anchor")
+
     def compose(s_dict, h_frame):
+        # An anchored book (INT-39) recomposes the anchor on the SAME transformed S / H,
+        # so every variant and jitter draw stays on the anchor's absolute scale.
+        denominator = None
+        if anchor_spec:
+            denominator, _ = anchor_denominator(
+                anchor_spec["scales_config"],
+                root=config.paths.root,
+                susceptibility=s_dict,
+                population=population,
+                intensity=h_frame,
+            )
         return compose_scales(
             equities,
             susceptibility=s_dict,
@@ -202,29 +309,29 @@ def main() -> None:
             population=population,
             intensity=h_frame,
             weights=weights,
+            denominator=denominator,
         )
 
     baseline = compose(susceptibility, intensity)
     gamma0 = baseline["gamma"]
+    if anchor_spec:
+        logger.info(
+            "anchored on %s: sum w*gamma = %.6f",
+            anchor_spec["scales_config"],
+            float((weights.reindex(gamma0.index) * gamma0).sum()),
+        )
 
     # ------------------------------------------------------------------ jitter
-    ladder = np.array(
-        sorted({float(v) for row in susceptibility.values() for v in row.values() if v > 0})
+    # The ladder is the tier scale of the whole S matrix (shared by every book);
+    # only the book's own sectors are jittered, each on its own substream.
+    sectors = book_sectors(equities)
+    ladder = tier_ladder(susceptibility, list(susceptibility))
+    tables = jitter_tables(
+        susceptibility, sectors, seed=config.seed, n_draws=N_JITTER, ladder=ladder
     )
-    rng = get_rng(config.seed)
     draws = np.empty((N_JITTER, len(gamma0)))
     taus = np.empty(N_JITTER)
-    for k in range(N_JITTER):
-        s_k = {}
-        for sector, row in susceptibility.items():
-            s_k[sector] = {}
-            for p, v in row.items():
-                if v <= 0:
-                    s_k[sector][p] = 0.0  # structural zero: no channel, not a level
-                    continue
-                idx = int(np.abs(ladder - float(v)).argmin())
-                idx = int(np.clip(idx + rng.integers(-1, 2), 0, len(ladder) - 1))
-                s_k[sector][p] = float(ladder[idx])
+    for k, s_k in enumerate(tables):
         gamma_k = compose(s_k, intensity)["gamma"].reindex(gamma0.index)
         draws[k] = gamma_k.to_numpy()
         taus[k] = kendalltau(gamma0.to_numpy(), draws[k]).statistic
@@ -243,9 +350,11 @@ def main() -> None:
     jitter.round(6).to_csv(jitter_csv)
     pd.Series(taus, name="kendall_tau").round(6).to_csv(out_dir / "s_tier_jitter_tau.csv")
     logger.info(
-        "tier jitter (N=%d): Kendall tau median %.3f [min %.3f]; gamma rank-1 name stable in "
-        "%.1f%% of draws",
+        "tier jitter (N=%d, %d sectors, %d-level ladder): Kendall tau median %.3f [min %.3f]; "
+        "gamma rank-1 name stable in %.1f%% of draws",
         N_JITTER,
+        len(sectors),
+        len(ladder),
         float(np.median(taus)),
         float(taus.min()),
         100.0 * float((draws.argmax(axis=1) == int(np.argmax(gamma0.to_numpy()))).mean()),
@@ -296,7 +405,10 @@ def main() -> None:
         c_v.round(6).to_csv(vdir / "target_peril_scales.csv")
         mix_v.rename("pi").round(8).to_csv(vdir / "peril_mix.csv")
         tau_v = kendalltau(gamma0.to_numpy(), gamma_v.reindex(gamma0.index).to_numpy()).statistic
-        variant_rows.append({"variant": vname, "gamma_kendall_tau_vs_base": tau_v})
+        row = {"variant": vname, "gamma_kendall_tau_vs_base": tau_v}
+        if anchor_spec:
+            row["sum_w_gamma"] = float((weights.reindex(gamma_v.index) * gamma_v).sum())
+        variant_rows.append(row)
         logger.info(
             "%s: gamma tau vs base %.3f; range %.3f-%.3f",
             vname,
@@ -305,7 +417,7 @@ def main() -> None:
             gamma_v.max(),
         )
 
-        for band in BAND_CONFIGS:
+        for band in bands:
             band_cfg = yaml.safe_load(
                 (REPO_ROOT / "configs" / f"{band}.yaml").read_text(encoding="utf-8")
             )
@@ -343,33 +455,33 @@ def main() -> None:
             (config_dir / f"{band}__{vname}.yaml").write_text(
                 yaml.safe_dump(band_cfg, sort_keys=False, allow_unicode=True), encoding="utf-8"
             )
+    if anchor_spec:
+        pd.DataFrame(variant_rows).round(6).to_csv(out_dir / "anchor.csv", index=False)
 
     if args.ejecutar_bandas:
         for cfg in sorted(config_dir.glob("*.yaml")):
             logger.info("running band %s", cfg.stem)
-            subprocess.run(
-                [
-                    sys.executable,
-                    str(REPO_ROOT / "pipelines" / "01_climate_jump_demo.py"),
-                    "--config",
-                    str(cfg),
-                    "--data-root",
-                    "data/ccr_book_mx",
-                    "--book-config",
-                    "configs/mexican_book.yaml",
-                    "--horizonte",
-                    "largo",
-                    "--forzar",
-                ],
-                check=True,
-                cwd=REPO_ROOT,
-            )
+            cmd = [
+                sys.executable,
+                str(REPO_ROOT / "pipelines" / "01_climate_jump_demo.py"),
+                "--config",
+                str(cfg),
+                "--data-root",
+                data_root,
+                "--book-config",
+                book_config,
+                "--horizonte",
+                "largo",
+            ]
+            if args.forzar:
+                cmd.append("--forzar")
+            subprocess.run(cmd, check=True, cwd=REPO_ROOT)
 
     # --------------------------------------------------------------- collector
     tau_by_variant = {r["variant"]: r["gamma_kendall_tau_vs_base"] for r in variant_rows}
     delta_rows = []
     for vname in ["base"] + list(variants):
-        for band in BAND_CONFIGS:
+        for band in bands:
             stem = band if vname == "base" else f"{band}__{vname}"
             shift_csv = config.paths.results / stem / "ee_pe_climate_shift.csv"
             if not shift_csv.exists():
@@ -378,7 +490,7 @@ def main() -> None:
             delta_rows.append(
                 {
                     "variant": vname,
-                    "band": band.replace("climate_jump_real_mexican", "").strip("_") or "headline",
+                    "band": band_label(band, band_prefix),
                     "book_epe_shift_pct": book["epe_shift_pct"],
                     "gamma_kendall_tau_vs_base": tau_by_variant.get(vname, 1.0),
                 }

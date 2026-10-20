@@ -1,0 +1,18 @@
+# S-tier sensitivity of the COMPARISON (control) book — OQ-INT-13 (b), the INT-25 study on
+# data/ccr_book_cmp. The scales config inherits the Mexican S matrix through `shared:` and
+# anchors on the Mexican composition (`anchor:`), so every jittered or transformed table is
+# composed with the Mexican denominator recomposed under the SAME transform: the control
+# band stays on the Mexican absolute scale of each variant (INT-39). Only the control
+# book's own sector rows are jittered (one substream per sector name).
+#
+#   python pipelines/11_s_tier_sensitivity.py --config configs/s_tier_sensitivity_comparison.yaml --ejecutar-bandas
+
+seed: 233423
+scales_config: configs/equity_mark_scales_comparison.yaml
+data_root: data/ccr_book_cmp
+band_prefix: climate_jump_real_comparison
+bands:
+  - climate_jump_real_comparison               # headline (registry lambda 19.2857)
+  - climate_jump_real_comparison_ct_anchor     # CT anchor (10.0870)
+  - climate_jump_real_comparison_floor         # report-regime floor (7.2222)
+out_dir: s_tier_sensitivity_comparison
