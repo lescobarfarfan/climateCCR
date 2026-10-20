@@ -21,7 +21,7 @@ ir_curves_tenors: ['0.08333333', '1', '5', '10', '30']
 # Data layout, relative to data_root (joined at build time). Mirrors PIMPA's
 # data_paths; the trailing slash is kept so joins reproduce the original strings.
 data_subdirs:
-  backtesting_data: backtesting_Data/
+  backtesting_data: backtesting_data/
   collateral_models: calibration_data/collateral_models/
   counterparties: portfolio_data/counterparties/
   market_data: market_data/

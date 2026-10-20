@@ -15,8 +15,7 @@
 # several percentiles, central coverage) for both legs, aggregated across
 # counterparties, dates and initialisation dates (¶17).
 #
-#   python pipelines/31_static_book_backtest.py --generar     # dated configs
-#   python pipelines/31_static_book_backtest.py --ejecutar    # 07 -> 09 -> 01 x bands per date
+#   python pipelines/31_static_book_backtest.py --ejecutar    # write the dated configs, run 07 -> 09 -> 01 x bands per date
 #   python pipelines/31_static_book_backtest.py               # score the realised reprice
 
 seed: 233423

@@ -5,6 +5,7 @@ Monkeypatch de las tres costuras de red: inventario_remoto, _head_meta, _descarg
 
 import hashlib
 import shutil
+import tempfile
 from pathlib import Path
 
 import scraper_cnsf as S
@@ -53,7 +54,7 @@ def aplicar_parches():
 
 def main():
     aplicar_parches()
-    out = Path("/home/claude/prueba_sync")
+    out = Path(tempfile.gettempdir()) / "prueba_sync"
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
