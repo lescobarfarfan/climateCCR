@@ -85,7 +85,7 @@ def main() -> None:
     extra = dict(config.extra)
     shared = extra.get("shared")
     if shared:
-        base = yaml.safe_load((config.paths.root / str(shared)).read_text())
+        base = yaml.safe_load((config.paths.root / str(shared)).read_text(encoding="utf-8"))
         extra = {k: v for k, v in base.items() if k not in _TYPED_KEYS} | extra
     out_dir = config.paths.results / str(extra.get("output_dir", "equity_mark_scales"))
     out_csv = out_dir / "target_scales.csv"
@@ -95,9 +95,10 @@ def main() -> None:
 
     deflator_file = config.paths.root / extra["deflator"]
     deflator = {
-        int(y): float(v) for y, v in yaml.safe_load(deflator_file.read_text())["inpc"].items()
+        int(y): float(v)
+        for y, v in yaml.safe_load(deflator_file.read_text(encoding="utf-8"))["inpc"].items()
     }
-    book = yaml.safe_load((config.paths.root / extra["book_config"]).read_text())
+    book = yaml.safe_load((config.paths.root / extra["book_config"]).read_text(encoding="utf-8"))
     equities = book["equities"]
 
     intensity = load_damage_intensity(
@@ -118,9 +119,11 @@ def main() -> None:
     anchor_spec = extra.get("anchor")
     if anchor_spec:
         anchor_cfg = yaml.safe_load(
-            (config.paths.root / str(anchor_spec["scales_config"])).read_text()
+            (config.paths.root / str(anchor_spec["scales_config"])).read_text(encoding="utf-8")
         )
-        anchor_book = yaml.safe_load((config.paths.root / anchor_cfg["book_config"]).read_text())
+        anchor_book = yaml.safe_load(
+            (config.paths.root / anchor_cfg["book_config"]).read_text(encoding="utf-8")
+        )
         anchor_equities = anchor_book["equities"]
         anchor_scales = compose_scales(
             anchor_equities,
@@ -225,9 +228,9 @@ def main() -> None:
         )
         sev_frames.append(table.assign(variant=variant, pooled_sigma=pooled.sigma))
         for jump_config in spec["jump_configs"]:
-            marks = yaml.safe_load((config.paths.root / jump_config).read_text())["climate_jumps"][
-                "equity_marks"
-            ]
+            marks = yaml.safe_load((config.paths.root / jump_config).read_text(encoding="utf-8"))[
+                "climate_jumps"
+            ]["equity_marks"]
             if abs(float(marks["sigma"]) - pooled.sigma) > 1e-3:
                 sys.exit(
                     f"{jump_config}: equity sigma {marks['sigma']} != {variant} pooled "

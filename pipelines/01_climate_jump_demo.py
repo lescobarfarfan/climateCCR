@@ -106,7 +106,7 @@ def load_scheduled_fragment(path: Path, today_date: str) -> dict:
     injecting them into a run valued elsewhere would silently shift the whole
     scenario calendar (OQ-INT-12 a).
     """
-    fragment = yaml.safe_load(path.read_text())
+    fragment = yaml.safe_load(path.read_text(encoding="utf-8"))
     frag_date = fragment.get("provenance", {}).get("valuation_date")
     if frag_date != today_date:
         raise ValueError(

@@ -58,7 +58,8 @@ def main() -> None:
 
     deflator_file = config.paths.root / extra["deflator"]
     deflator = {
-        int(y): float(v) for y, v in yaml.safe_load(deflator_file.read_text())["inpc"].items()
+        int(y): float(v)
+        for y, v in yaml.safe_load(deflator_file.read_text(encoding="utf-8"))["inpc"].items()
     }
 
     # Episode set: the pre-registered cyclone trigger spec.
@@ -85,9 +86,9 @@ def main() -> None:
 
     # Adopted scales from the committed headline jump config: c_ciclon is the
     # tested ordering; the flat gamma (= sum_p pi_p c_ip) is a diagnostic.
-    marks = yaml.safe_load((config.paths.root / extra["jump_config"]).read_text())["climate_jumps"][
-        "equity_marks"
-    ]
+    marks = yaml.safe_load((config.paths.root / extra["jump_config"]).read_text(encoding="utf-8"))[
+        "climate_jumps"
+    ]["equity_marks"]
     mix = pd.Series(marks["peril_mix"], dtype=float)
     c_rows = pd.DataFrame(marks["target_peril_scales"], dtype=float).T  # names x groups
     c_ciclon = c_rows["ciclon_tropical"].rename("c_ciclon")
@@ -201,7 +202,8 @@ def main() -> None:
         f"- tercile spread (top - bottom c_ciclon) = {spread:.5f} log-return\n"
         f"- drop-largest jackknife (episode {largest['fecha'].date()}, "
         f"{largest['danio_mdp']:.0f} MDP-2025): tau = {tau_jack:.4f}, "
-        f"exact p = {p_jack:.4f}\n"
+        f"exact p = {p_jack:.4f}\n",
+        encoding="utf-8",
     )
     manifest = RunManifest.create(seed=config.seed, config=config, project_root=config.paths.root)
     manifest_path = manifest.write(config.paths.manifests)

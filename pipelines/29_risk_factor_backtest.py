@@ -218,7 +218,7 @@ def main() -> None:
         logger.info("Output exists, nothing to do (rerun with --forzar): %s", out_csv)
         return
 
-    mc = yaml.safe_load((root / extra["market_calibration_config"]).read_text())
+    mc = yaml.safe_load((root / extra["market_calibration_config"]).read_text(encoding="utf-8"))
     crisis_windows = [tuple(w) for w in mc["crisis_windows"].values()]
     start, end = str(extra["start"]), str(extra["end"])
     min_history = float(extra["min_history_years"])

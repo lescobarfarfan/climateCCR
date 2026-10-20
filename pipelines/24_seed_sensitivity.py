@@ -65,14 +65,14 @@ def band_label(stem: str, prefix: str = BAND_PREFIX) -> str:
 
 def write_seed_config(adopted: Path, seed: int, out_dir: Path) -> Path:
     """``<stem>__seed<seed>.yaml``: the adopted config with only ``seed`` changed (asserted)."""
-    base = yaml.safe_load(adopted.read_text())
+    base = yaml.safe_load(adopted.read_text(encoding="utf-8"))
     want = base | {"seed": int(seed)}
     text = yaml.safe_dump(want, sort_keys=False, allow_unicode=True)
     if yaml.safe_load(text) != want:
         raise ValueError(f"{adopted.name}: generated config differs beyond `seed`")
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"{adopted.stem}__seed{int(seed)}.yaml"
-    path.write_text(text)
+    path.write_text(text, encoding="utf-8")
     return path
 
 
@@ -235,7 +235,7 @@ def main() -> None:
         sys.exit("extra_seeds must be unique and differ from the canonical seed")
     for band in bands:
         adopted = REPO_ROOT / "configs" / f"{band}.yaml"
-        if int(yaml.safe_load(adopted.read_text())["seed"]) != config.seed:
+        if int(yaml.safe_load(adopted.read_text(encoding="utf-8"))["seed"]) != config.seed:
             sys.exit(f"{adopted.name}: seed != {config.seed}; the stored run is not canonical")
     config_dir = out_dir / "configs"
     generated = [

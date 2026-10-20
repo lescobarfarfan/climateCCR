@@ -176,7 +176,8 @@ def main() -> None:
 
     deflator_file = root / extra["deflator"]
     deflator = {
-        int(y): float(v) for y, v in yaml.safe_load(deflator_file.read_text())["inpc"].items()
+        int(y): float(v)
+        for y, v in yaml.safe_load(deflator_file.read_text(encoding="utf-8"))["inpc"].items()
     }
     events_csv = root / extra["events_csv"]
     fit_w = (int(extra["fit_window"]["start_year"]), int(extra["fit_window"]["end_year"]))

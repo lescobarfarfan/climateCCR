@@ -120,7 +120,10 @@ def main() -> None:
     )
 
     # 2. Row-level MDP/MDD ratio triage vs the year-median FIX proxy.
-    inpc = {int(y): float(v) for y, v in yaml.safe_load(INPC_CONFIG.read_text())["inpc"].items()}
+    inpc = {
+        int(y): float(v)
+        for y, v in yaml.safe_load(INPC_CONFIG.read_text(encoding="utf-8"))["inpc"].items()
+    }
     inpc_base = inpc[max(inpc)]
     base["danio_mdp_real2025"] = base["danio_mdp"] * base["anio"].map(
         lambda y: inpc_base / inpc[int(y)]
@@ -229,7 +232,8 @@ def main() -> None:
         "- `mdp_aceptado_submaterial` — resto en alcance, sub-umbral y de magnitud "
         "pequeña consistente con su contexto estado-año (z robusta en el anexo); se "
         "conservan para diagnósticos, la bandera queda registrada.\n\n"
-        f"Comando: `{shlex.join(sys.argv)}`\n"
+        f"Comando: `{shlex.join(sys.argv)}`\n",
+        encoding="utf-8",
     )
     print(f"\nAnnex:  {annex_csv}\nRegla:   {nota}\nBattery: {out_dir / 'resumen.md'}")
 

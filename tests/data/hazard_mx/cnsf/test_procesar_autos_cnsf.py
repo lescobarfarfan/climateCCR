@@ -226,7 +226,9 @@ def main():
         assert f2008["Marca_desc"] == "NISSAN" and f2008["Tipo_desc"] == "SEDAN"
 
         # reporte de deriva
-        rep = json.loads((out / "automoviles_individual" / "_reporte.json").read_text())
+        rep = json.loads(
+            (out / "automoviles_individual" / "_reporte.json").read_text(encoding="utf-8")
+        )
         der = rep["tablas"][0]["deriva_por_anio"]
         assert "2008" in der and "Forma de Venta" in der["2008"]["faltantes_rellenadas_vacio"]
 

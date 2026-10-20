@@ -206,13 +206,13 @@ def main() -> None:
     logger = get_logger("climateCCR.ngfs_scheduled_shocks", log_dir=config.paths.logs)
 
     extra = config.extra
-    shock = yaml.safe_load((config.paths.root / extra["shock_config"]).read_text())
+    shock = yaml.safe_load((config.paths.root / extra["shock_config"]).read_text(encoding="utf-8"))
     valuation_date = extra["valuation_date"]
     ngfs_dir = config.paths.root / extra["ngfs_dir"]
     out_root = config.paths.root / extra["out_root"]
 
     frame = load_short_term(ngfs_dir)
-    procedencia = json.loads((ngfs_dir / "_procedencia.json").read_text())
+    procedencia = json.loads((ngfs_dir / "_procedencia.json").read_text(encoding="utf-8"))
     archivos_sha256 = {
         name: meta["sha256"] for name, meta in sorted(procedencia.get("archivos", {}).items())
     }
@@ -241,7 +241,7 @@ def main() -> None:
             "scheduled_shocks": block,
         }
         out_root.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(yaml.safe_dump(fragment, sort_keys=False, width=100))
+        out_path.write_text(yaml.safe_dump(fragment, sort_keys=False, width=100), encoding="utf-8")
         built += 1
         for channel, value_key in CHANNEL_VALUE_KEYS:
             ch = block.get(channel)

@@ -40,12 +40,13 @@ def test_write_seed_config_changes_only_seed(tmp_path, seed_study):
     adopted.write_text(
         'seed: 1\nn_paths: 10\nvaluation_date: "2026-07-17"\n'
         "climate_jumps:\n  intensity: 19.2857\n  rate_marks:\n    median: 5.1658e-6\n"
-        "    targets: [MXN_ZERO_YIELD_CURVE]\n"
+        "    targets: [MXN_ZERO_YIELD_CURVE]\n",
+        encoding="utf-8",
     )
     out = seed_study.write_seed_config(adopted, 7, tmp_path / "configs")
     assert out.name == "band__seed7.yaml"
-    generated = yaml.safe_load(out.read_text())
-    assert generated == yaml.safe_load(adopted.read_text()) | {"seed": 7}
+    generated = yaml.safe_load(out.read_text(encoding="utf-8"))
+    assert generated == yaml.safe_load(adopted.read_text(encoding="utf-8")) | {"seed": 7}
     assert generated["valuation_date"] == "2026-07-17"  # still a string, not a date
 
 

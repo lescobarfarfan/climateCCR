@@ -85,7 +85,7 @@ def _blas_backend() -> str | None:
     if name in (None, "blas", "lapack"):
         for meta_file in Path(sys.prefix).glob("conda-meta/libblas-*.json"):
             try:
-                build = json.loads(meta_file.read_text()).get("build", "")
+                build = json.loads(meta_file.read_text(encoding="utf-8")).get("build", "")
             except (OSError, ValueError):
                 continue
             if build:
@@ -140,5 +140,5 @@ class RunManifest:
         manifests_dir = Path(manifests_dir)
         manifests_dir.mkdir(parents=True, exist_ok=True)
         out_path = manifests_dir / f"{self.run_id}.json"
-        out_path.write_text(json.dumps(asdict(self), indent=2, sort_keys=True))
+        out_path.write_text(json.dumps(asdict(self), indent=2, sort_keys=True), encoding="utf-8")
         return out_path

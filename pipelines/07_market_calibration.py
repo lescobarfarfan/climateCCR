@@ -111,7 +111,8 @@ def main() -> None:
                 },
                 indent=2,
                 sort_keys=True,
-            )
+            ),
+            encoding="utf-8",
         )
         logger.info(
             "%s: %d rows, %s..%s",

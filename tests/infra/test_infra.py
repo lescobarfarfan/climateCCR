@@ -70,5 +70,5 @@ def test_manifest_records_the_numerics_layer(tmp_path):
     assert manifest.env_prefix == sys.prefix
     assert manifest.blas is None or isinstance(manifest.blas, str)
     assert manifest.git_dirty in (True, False, None)
-    written = json.loads(manifest.write(tmp_path).read_text())
+    written = json.loads(manifest.write(tmp_path).read_text(encoding="utf-8"))
     assert {"blas", "env_prefix", "git_dirty", "platform", "python_version"} <= written.keys()

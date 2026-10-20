@@ -150,7 +150,9 @@ def main() -> None:
             "archivos": files,
             "nota": "valores como los publica la base (Policy rate en %, ajustes en pp vs BAU)",
         }
-        (out_dir / "_procedencia.json").write_text(json.dumps(provenance, indent=2, sort_keys=True))
+        (out_dir / "_procedencia.json").write_text(
+            json.dumps(provenance, indent=2, sort_keys=True), encoding="utf-8"
+        )
         logger.info("Provenance written for %d file(s)", len(pulled_runs))
     print(f"NGFS short-term data -> {out_dir}")
 

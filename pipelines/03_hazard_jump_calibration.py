@@ -73,7 +73,8 @@ def main() -> None:
     if config.extra.get("deflator"):
         deflator_file = config.paths.root / config.extra["deflator"]
         deflator = {
-            int(y): float(v) for y, v in yaml.safe_load(deflator_file.read_text())["inpc"].items()
+            int(y): float(v)
+            for y, v in yaml.safe_load(deflator_file.read_text(encoding="utf-8"))["inpc"].items()
         }
         base_year = max(deflator)
         logger.info("Deflating losses to %d pesos via %s (GEN-13)", base_year, deflator_file)

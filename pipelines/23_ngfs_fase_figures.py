@@ -76,8 +76,10 @@ def main() -> None:
         path = root / str(extra["fragments_dir"]) / f"{scenario}.yaml"
         if not path.exists():
             sys.exit(f"Missing fragment {path} — run pipelines/22 first")
-        fragments[str(scenario)] = yaml.safe_load(path.read_text())["scheduled_shocks"]
-    shock = yaml.safe_load((root / str(extra["shock_config"])).read_text())
+        fragments[str(scenario)] = yaml.safe_load(path.read_text(encoding="utf-8"))[
+            "scheduled_shocks"
+        ]
+    shock = yaml.safe_load((root / str(extra["shock_config"])).read_text(encoding="utf-8"))
     groups: dict[str, str] = {}
     for leg in ("equity_leg", "bond_leg"):
         groups.update((shock.get(leg) or {}).get("sectors", {}))

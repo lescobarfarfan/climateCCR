@@ -45,7 +45,9 @@ def _write_provenance(directory: Path, meta: dict) -> None:
         "archivos": files,
         **meta,
     }
-    (directory / "_procedencia.json").write_text(json.dumps(payload, indent=2, sort_keys=True))
+    (directory / "_procedencia.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8"
+    )
 
 
 def main() -> None:
@@ -107,7 +109,7 @@ def main() -> None:
         response = session.get(FRED_URL.format(sid=sid), timeout=60)
         if response.status_code != 200:
             raise RuntimeError(f"FRED request failed ({response.status_code}): {sid}")
-        out.write_text(response.text)
+        out.write_text(response.text, encoding="utf-8")
         logger.info("%s.csv: %d bytes", sid, len(response.text))
         downloaded += 1
 

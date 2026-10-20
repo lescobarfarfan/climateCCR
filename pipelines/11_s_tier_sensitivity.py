@@ -148,9 +148,10 @@ def main() -> None:
     extra = config.extra
     deflator_file = config.paths.root / extra["deflator"]
     deflator = {
-        int(y): float(v) for y, v in yaml.safe_load(deflator_file.read_text())["inpc"].items()
+        int(y): float(v)
+        for y, v in yaml.safe_load(deflator_file.read_text(encoding="utf-8"))["inpc"].items()
     }
-    book = yaml.safe_load((config.paths.root / extra["book_config"]).read_text())
+    book = yaml.safe_load((config.paths.root / extra["book_config"]).read_text(encoding="utf-8"))
     equities = book["equities"]
     susceptibility = {s: dict(row) for s, row in extra["susceptibility"].items()}
     population = extra["poblacion_2020"]
@@ -305,7 +306,9 @@ def main() -> None:
         )
 
         for band in BAND_CONFIGS:
-            band_cfg = yaml.safe_load((REPO_ROOT / "configs" / f"{band}.yaml").read_text())
+            band_cfg = yaml.safe_load(
+                (REPO_ROOT / "configs" / f"{band}.yaml").read_text(encoding="utf-8")
+            )
             eq = band_cfg["climate_jumps"]["equity_marks"]
             eq["peril_mix"] = {p: round(float(mix_v[p]), 8) for p in peril_cols}
             eq["target_peril_scales"] = {
@@ -338,7 +341,7 @@ def main() -> None:
                 }
             ClimateJumpProcess.from_config(band_cfg["climate_jumps"])  # loud label/shape check
             (config_dir / f"{band}__{vname}.yaml").write_text(
-                yaml.safe_dump(band_cfg, sort_keys=False, allow_unicode=True)
+                yaml.safe_dump(band_cfg, sort_keys=False, allow_unicode=True), encoding="utf-8"
             )
 
     if args.ejecutar_bandas:

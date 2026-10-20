@@ -86,7 +86,7 @@ def test_validacion_detecta_y_no_falsea():
     import json
 
     C.consolidar(ROOT, out, categorias=["incendio"])
-    rep = json.loads((out / "incendio" / "_reporte.json").read_text())
+    rep = json.loads((out / "incendio" / "_reporte.json").read_text(encoding="utf-8"))
     sin = [h for h in rep["hojas"] if h["hoja"] == "Siniestros"][0]
     assert [h for h in rep["hojas"] if h["hoja"] in ("Emisión", "Emision")], rep["hojas"]
     # Siniestros: detecta el par GIRO como posible alias (variante histórica vs canónica)

@@ -117,7 +117,7 @@ def main() -> None:
     logger = get_logger("climateCCR.loss_ratio_backtest", log_dir=config.paths.logs)
     root = config.paths.root
     extra = dict(config.extra)
-    shared = yaml.safe_load((root / str(extra["shared"])).read_text())
+    shared = yaml.safe_load((root / str(extra["shared"])).read_text(encoding="utf-8"))
     extra = {k: v for k, v in shared.items() if k not in _TYPED_KEYS} | extra
     out_dir = config.paths.results / str(extra.get("out_dir", "loss_ratio_backtest"))
     out_csv = out_dir / "loss_ratio_backtest.csv"
@@ -127,7 +127,8 @@ def main() -> None:
 
     deflator_file = root / extra["deflator"]
     deflator = {
-        int(y): float(v) for y, v in yaml.safe_load(deflator_file.read_text())["inpc"].items()
+        int(y): float(v)
+        for y, v in yaml.safe_load(deflator_file.read_text(encoding="utf-8"))["inpc"].items()
     }
 
     def panel(entries: list[dict]) -> pd.Series:

@@ -90,7 +90,7 @@ def main() -> None:
     viz.apply_style()
     written: list[Path] = []
 
-    mc = yaml.safe_load((root / extra["market_calibration_config"]).read_text())
+    mc = yaml.safe_load((root / extra["market_calibration_config"]).read_text(encoding="utf-8"))
     crisis_windows = [tuple(w) for w in mc["crisis_windows"].values()]
     headline_cell = mc["hw1f"]["headline"]
 
@@ -350,7 +350,9 @@ def main() -> None:
     jump_cfg = extra["jumps"]
     deflator = {
         int(y): float(v)
-        for y, v in yaml.safe_load((root / jump_cfg["deflator"]).read_text())["inpc"].items()
+        for y, v in yaml.safe_load((root / jump_cfg["deflator"]).read_text(encoding="utf-8"))[
+            "inpc"
+        ].items()
     }
     regimes_cfg = list(jump_cfg["regimes"])
     window_start = min(pd.Timestamp(str(r["start"])).year for r in regimes_cfg)
@@ -458,7 +460,7 @@ def main() -> None:
 
     # --- daily-grain jump-on/off price trajectories (engine jump channel) --
     illus = jump_cfg["path_illustration"]
-    jump_yaml = yaml.safe_load((root / illus["jump_config"]).read_text())
+    jump_yaml = yaml.safe_load((root / illus["jump_config"]).read_text(encoding="utf-8"))
     target = str(illus["target"])
     process = ClimateJumpProcess.from_config(jump_yaml["climate_jumps"])
     anchor = pd.Timestamp(str(jump_yaml["valuation_date"]))

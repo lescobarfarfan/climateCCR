@@ -197,7 +197,7 @@ def modo_verificar(args, raiz: Path):
         url = next(
             (
                 ln.split(":", 1)[1].strip()
-                for ln in rc.read_text().splitlines()
+                for ln in rc.read_text(encoding="utf-8").splitlines()
                 if ln.strip().startswith("url")
             ),
             "(sin url)",

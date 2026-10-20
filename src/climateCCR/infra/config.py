@@ -59,7 +59,7 @@ def load_config(path: str | Path | None = None) -> Config:
 
     data: dict[str, Any] = {}
     if path.exists():
-        data = yaml.safe_load(path.read_text()) or {}
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
     known = {k: data.pop(k) for k in _KNOWN_FIELDS if k in data}
     return Config(paths=paths, extra=data, **known)

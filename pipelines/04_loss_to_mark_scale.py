@@ -53,7 +53,8 @@ def main() -> None:
 
     deflator_file = config.paths.root / config.extra["deflator"]
     deflator = {
-        int(y): float(v) for y, v in yaml.safe_load(deflator_file.read_text())["inpc"].items()
+        int(y): float(v)
+        for y, v in yaml.safe_load(deflator_file.read_text(encoding="utf-8"))["inpc"].items()
     }
 
     def panel(entries: list[dict]) -> pd.Series:

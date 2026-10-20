@@ -199,10 +199,10 @@ def ejecutar(config, logger, args) -> None:
     out_dir = config.paths.results / str(extra.get("out_dir", "static_book_backtest"))
     config_dir = out_dir / "configs"
     config_dir.mkdir(parents=True, exist_ok=True)
-    mc = yaml.safe_load((root / extra["market_calibration_config"]).read_text())
-    book = yaml.safe_load((root / extra["book_config"]).read_text())
+    mc = yaml.safe_load((root / extra["market_calibration_config"]).read_text(encoding="utf-8"))
+    book = yaml.safe_load((root / extra["book_config"]).read_text(encoding="utf-8"))
     jumps = {
-        band: yaml.safe_load((root / path).read_text())
+        band: yaml.safe_load((root / path).read_text(encoding="utf-8"))
         for band, path in extra["jump_configs"].items()
     }
     s_ref = float(pd.read_csv(root / extra["reference_rate_scale_csv"]).iloc[0]["s_rate_eff_mdp"])
@@ -219,7 +219,7 @@ def ejecutar(config, logger, args) -> None:
         cell_used = None
         for cell in cells:
             dated_mc["hw1f"]["headline"] = dict(cell)
-            cal_cfg.write_text(yaml.safe_dump(dated_mc, sort_keys=False))
+            cal_cfg.write_text(yaml.safe_dump(dated_mc, sort_keys=False), encoding="utf-8")
             try:
                 _run("07_market_calibration.py", "--config", str(cal_cfg), forzar=args.forzar)
             except subprocess.CalledProcessError:
@@ -247,7 +247,8 @@ def ejecutar(config, logger, args) -> None:
                 ),
                 sort_keys=False,
                 allow_unicode=True,
-            )
+            ),
+            encoding="utf-8",
         )
         _run("09_build_mexican_book.py", "--config", str(book_cfg), forzar=args.forzar)
         s_bt = float(
@@ -261,7 +262,8 @@ def ejecutar(config, logger, args) -> None:
         for band, jump in jumps.items():
             jump_cfg = config_dir / f"climate_jump_real_mexican_{t}{BAND_SUFFIX[band]}.yaml"
             jump_cfg.write_text(
-                yaml.safe_dump(dated_jump_config(jump, date, grid, s_ref, s_bt), sort_keys=False)
+                yaml.safe_dump(dated_jump_config(jump, date, grid, s_ref, s_bt), sort_keys=False),
+                encoding="utf-8",
             )
             _run(
                 "01_climate_jump_demo.py",

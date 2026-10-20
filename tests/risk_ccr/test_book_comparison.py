@@ -28,11 +28,14 @@ def test_equity_targets_and_book_equities(tmp_path, readout):
     cfg = tmp_path / "jump.yaml"
     cfg.write_text(
         "climate_jumps:\n  intensity: 1.0\n  rate_marks:\n    targets: [MXN_ZERO_YIELD_CURVE]\n"
-        "  equity_marks:\n    targets: [A_SHARE, B_SHARE]\n"
+        "  equity_marks:\n    targets: [A_SHARE, B_SHARE]\n",
+        encoding="utf-8",
     )
     assert readout.equity_targets(cfg) == {"A_SHARE", "B_SHARE"}
     rate_only = tmp_path / "rate.yaml"
-    rate_only.write_text("climate_jumps:\n  intensity: 1.0\n  rate_marks:\n    targets: [X]\n")
+    rate_only.write_text(
+        "climate_jumps:\n  intensity: 1.0\n  rate_marks:\n    targets: [X]\n", encoding="utf-8"
+    )
     assert readout.equity_targets(rate_only) == set()
     rfe = tmp_path / "calibration_data" / "RFE_models"
     rfe.mkdir(parents=True)

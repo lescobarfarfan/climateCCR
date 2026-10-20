@@ -134,9 +134,10 @@ def main() -> None:
     extra = config.extra
     deflator_file = config.paths.root / extra["deflator"]
     deflator = {
-        int(y): float(v) for y, v in yaml.safe_load(deflator_file.read_text())["inpc"].items()
+        int(y): float(v)
+        for y, v in yaml.safe_load(deflator_file.read_text(encoding="utf-8"))["inpc"].items()
     }
-    book = yaml.safe_load((config.paths.root / extra["book_config"]).read_text())
+    book = yaml.safe_load((config.paths.root / extra["book_config"]).read_text(encoding="utf-8"))
     equities = book["equities"]
     peril_groups = extra["peril_groups"]
     mix_spec = extra["peril_mix_events"]
@@ -210,7 +211,9 @@ def main() -> None:
         # Wiring guard: the adopted config this set feeds must carry the *base*
         # fit (else the window/threshold spec above drifted from the canon).
         for band, (lam_key, marks_key) in BANDS.items():
-            cfg = yaml.safe_load((REPO_ROOT / "configs" / f"{band}.yaml").read_text())
+            cfg = yaml.safe_load(
+                (REPO_ROOT / "configs" / f"{band}.yaml").read_text(encoding="utf-8")
+            )
             if lam_key == key and not np.isclose(
                 float(cfg["climate_jumps"]["intensity"]), lam_b.intensity, rtol=1e-4
             ):
@@ -310,7 +313,9 @@ def main() -> None:
     config_dir = out_dir / "configs"
     config_dir.mkdir(parents=True, exist_ok=True)
     for band, (lam_key, marks_key) in BANDS.items():
-        band_cfg = yaml.safe_load((REPO_ROOT / "configs" / f"{band}.yaml").read_text())
+        band_cfg = yaml.safe_load(
+            (REPO_ROOT / "configs" / f"{band}.yaml").read_text(encoding="utf-8")
+        )
         cj = band_cfg["climate_jumps"]
         sev_c = fits[marks_key]["sev_c"]
         cj["intensity"] = round(float(fits[lam_key]["lam_c"].intensity), 4)
@@ -332,7 +337,7 @@ def main() -> None:
             for p in peril_cols
         }
         (config_dir / f"{band}__{VARIANT}.yaml").write_text(
-            yaml.safe_dump(band_cfg, sort_keys=False, allow_unicode=True)
+            yaml.safe_dump(band_cfg, sort_keys=False, allow_unicode=True), encoding="utf-8"
         )
         logger.info(
             "config %s__%s: lambda %.4f, marks from %s", band, VARIANT, cj["intensity"], marks_key
@@ -424,7 +429,8 @@ def main() -> None:
             "la banda EPE es ~estable y la cola (PFE99 supervisorio, suma por libro del "
             f"shift medio por contraparte, MXN) se atenua al agrupar en {eases}/{len(tail)} "
             "bandas:\n\n"
-            f"```\n{tail.round(0).to_string()}\n```\n"
+            f"```\n{tail.round(0).to_string()}\n```\n",
+            encoding="utf-8",
         )
         logger.info("nota written: %s", nota)
 

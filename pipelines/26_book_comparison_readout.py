@@ -62,7 +62,10 @@ ROW_COLUMNS = [
 
 def equity_targets(jump_config: Path) -> set[str]:
     """Equity-channel targets of a jump config (empty for a rate-only config)."""
-    marks = yaml.safe_load(jump_config.read_text())["climate_jumps"].get("equity_marks") or {}
+    marks = (
+        yaml.safe_load(jump_config.read_text(encoding="utf-8"))["climate_jumps"].get("equity_marks")
+        or {}
+    )
     return {str(name) for name in marks.get("targets", [])}
 
 

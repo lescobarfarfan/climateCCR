@@ -168,12 +168,12 @@ def main() -> None:
     gammas = pd.read_csv(root / extra["target_scales_csv"]).set_index("rf")["gamma"]
     book_dir = root / extra["book_dir"]
     jump_cfgs = {
-        band: yaml.safe_load((root / path).read_text())
+        band: yaml.safe_load((root / path).read_text(encoding="utf-8"))
         for band, path in extra["jump_configs"].items()
     }
 
     # Rate leg inputs: the adopted Vasicek headline cell (pipelines/18 convention).
-    mc = yaml.safe_load((root / extra["market_calibration_config"]).read_text())
+    mc = yaml.safe_load((root / extra["market_calibration_config"]).read_text(encoding="utf-8"))
     cell_spec = mc["hw1f"]["headline"]
     by_window = pd.read_csv(root / extra["rate"]["by_window_csv"])
     cell = by_window[

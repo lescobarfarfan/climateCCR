@@ -187,7 +187,9 @@ def test_build_fragment_units_and_overlay_round_trip(producer):
 
 
 def test_book_spread_schedule_guard(demo, tmp_path):
-    (tmp_path / "BONDS.csv").write_text("trade_id,issuer_name,spread\n1,FEMSA,0.01\n")
+    (tmp_path / "BONDS.csv").write_text(
+        "trade_id,issuer_name,spread\n1,FEMSA,0.01\n", encoding="utf-8"
+    )
     gp = {
         "prototype_data_paths": {"trades": {"DEBT": str(tmp_path) + "/"}},
         "prototype_data_files": {
@@ -206,9 +208,14 @@ def test_book_spread_schedule_guard(demo, tmp_path):
 
 def test_fragment_guard_valuation_mismatch(demo, tmp_path):
     bad = tmp_path / "frag.yaml"
-    bad.write_text("provenance:\n  valuation_date: '2020-01-01'\nscheduled_shocks: {}\n")
+    bad.write_text(
+        "provenance:\n  valuation_date: '2020-01-01'\nscheduled_shocks: {}\n", encoding="utf-8"
+    )
     with pytest.raises(ValueError, match="valuation_date"):
         demo.load_scheduled_fragment(bad, VALUATION)
     ok = tmp_path / "ok.yaml"
-    ok.write_text(f"provenance:\n  valuation_date: '{VALUATION}'\nscheduled_shocks: {{a: 1}}\n")
+    ok.write_text(
+        f"provenance:\n  valuation_date: '{VALUATION}'\nscheduled_shocks: {{a: 1}}\n",
+        encoding="utf-8",
+    )
     assert demo.load_scheduled_fragment(ok, VALUATION)["scheduled_shocks"] == {"a": 1}
