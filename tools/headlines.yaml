@@ -359,3 +359,30 @@
   where: {horizon: 1W, factor: MXN_USD_FX_RATE}
   column: coverage_80
   expected: 0.72
+
+# --- INT-25 / INT-41 (2026-10-20): the S-tier structured variants on both books -------------
+- label: Mexican book EPE shift, S-tier flatten (S^1/2), headline (%)
+  file: s_tier_sensitivity/band_epe_deltas.csv
+  where: {variant: flatten, band: headline}
+  column: book_epe_shift_pct
+  expected: -9.88
+- label: Mexican book EPE shift, S-tier sharpen (S^2), headline (%)
+  file: s_tier_sensitivity/band_epe_deltas.csv
+  where: {variant: sharpen, band: headline}
+  column: book_epe_shift_pct
+  expected: -7.68
+- label: control book EPE shift, S-tier flatten (S^1/2), headline (%)
+  file: s_tier_sensitivity_comparison/band_epe_deltas.csv
+  where: {variant: flatten, band: headline}
+  column: book_epe_shift_pct
+  expected: -5.91
+- label: control book EPE shift, S-tier sharpen (S^2), headline (%)
+  file: s_tier_sensitivity_comparison/band_epe_deltas.csv
+  where: {variant: sharpen, band: headline}
+  column: book_epe_shift_pct
+  expected: -1.22
+- label: control book EPE shift, S-tier hidro_merged, headline (%)
+  file: s_tier_sensitivity_comparison/band_epe_deltas.csv
+  where: {variant: hidro_merged, band: headline}
+  column: book_epe_shift_pct
+  expected: -3.82

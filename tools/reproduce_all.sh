@@ -181,13 +181,16 @@ fi
 
 # ---------------------------------------------------------------- studies: the sub-run spawners, concurrently
 if enabled studies; then
-  echo "== studies (11 S-tier, 14 storm-cluster, 24 seeds x2, 31 tier-E chain; concurrent)"
+  echo "== studies (11 S-tier x2, 14 storm-cluster, 24 seeds x2, 31 tier-E chains; concurrent)"
   pids=()
   step studies.11_s_tier_sensitivity "$PY" pipelines/11_s_tier_sensitivity.py --ejecutar-bandas & pids+=($!)
+  step studies.11_s_tier_sensitivity_comparison "$PY" pipelines/11_s_tier_sensitivity.py --config configs/s_tier_sensitivity_comparison.yaml --ejecutar-bandas & pids+=($!)
   step studies.14_storm_cluster_sensitivity "$PY" pipelines/14_storm_cluster_sensitivity.py --ejecutar-bandas & pids+=($!)
   step studies.24_seed_sensitivity "$PY" pipelines/24_seed_sensitivity.py --ejecutar-bandas & pids+=($!)
   step studies.24_seed_sensitivity_comparison "$PY" pipelines/24_seed_sensitivity.py --config configs/seed_sensitivity_comparison.yaml --ejecutar-bandas & pids+=($!)
-  step studies.31_static_book_backtest_ejecutar "$PY" pipelines/31_static_book_backtest.py --ejecutar & pids+=($!)
+  # the two tier-E chains share the date-keyed artifacts of 2016/2019/2022: sequential, never concurrent
+  ( step studies.31_static_book_backtest_ejecutar "$PY" pipelines/31_static_book_backtest.py --ejecutar \
+    && step studies.31_static_book_backtest_annual_ejecutar "$PY" pipelines/31_static_book_backtest.py --config configs/static_book_backtest_annual.yaml --ejecutar ) & pids+=($!)
   wait_all "${pids[@]}"
 fi
 
@@ -231,6 +234,8 @@ if enabled readouts; then
   step readouts.20_aggregate_loss "$PY" pipelines/20_aggregate_loss_figures.py
   step readouts.23_ngfs_fase_figures "$PY" pipelines/23_ngfs_fase_figures.py
   step readouts.31_static_book_backtest "$PY" pipelines/31_static_book_backtest.py
+  step readouts.31_static_book_backtest_annual "$PY" pipelines/31_static_book_backtest.py --config configs/static_book_backtest_annual.yaml
+  step readouts.31_static_book_backtest_annual_sie "$PY" pipelines/31_static_book_backtest.py --config configs/static_book_backtest_annual_sie.yaml
   step readouts.26_book_comparison "$PY" pipelines/26_book_comparison_readout.py
   ((DRY)) || carry_over
   step readouts.21_cva_readout "$PY" pipelines/21_cva_readout.py
