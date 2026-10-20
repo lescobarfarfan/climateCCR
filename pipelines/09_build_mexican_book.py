@@ -19,7 +19,10 @@ Stages:
   5. The Mexican-alpha ``S_rate_eff`` recompute (INT-18 inversion with the
      MKT-CALIB-05 alpha) -> ``results/loss_to_rate_scale_mx/scale.csv``.
 
-Idempotent: skips if the book exists; rerun with --forzar/--force.
+Idempotent: skips if the book exists; rerun with --forzar/--force. A rebuild prunes
+the per-counterparty tree first (a dropped NAID or a flipped ``vm`` flag leaves no
+file behind) and re-stamps the Yahoo cache's ``_procedencia.json`` only when a
+series was actually fetched (OQ-GEN-04 b).
 
     python pipelines/09_build_mexican_book.py [--forzar]
 """
@@ -29,6 +32,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import shutil
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -170,14 +174,16 @@ def main() -> None:
     closes_by_rf: dict[str, pd.Series] = {}
     report_rows: list[dict] = []
     procedencia_files: dict[str, dict] = {}
+    fetched_any = False
     for eq in extra["equities"]:
         ticker, rf = eq["ticker"], eq["rf"]
         cache_path = cache_dir / f"{rf}.csv"
         try:
             if not cache_path.exists():
                 logger.info("Downloading %s from Yahoo Finance ...", ticker)
-                fetched = fetch_daily_closes(ticker, start, end)
-                fetched.to_csv(cache_path)
+                pulled = fetch_daily_closes(ticker, start, end)
+                pulled.to_csv(cache_path)
+                fetched_any = True
             frame = pd.read_csv(cache_path, index_col=0, parse_dates=True)
             procedencia_files[cache_path.name] = {
                 "sha256": _sha256(cache_path),
@@ -191,19 +197,26 @@ def main() -> None:
                 {"ticker": ticker, "rf": rf, "status": "fallo_descarga", "motivo": str(error)}
             )
 
-    (cache_dir / "_procedencia.json").write_text(
-        json.dumps(
-            {
-                "descargado_utc": datetime.now(UTC).isoformat(timespec="seconds"),
-                "fuente": "Yahoo Finance, v8 chart API",
-                "url_base": CHART_URL,
-                "rango": [start, end],
-                "archivos": procedencia_files,
-            },
-            indent=2,
-            sort_keys=True,
+    procedencia = cache_dir / "_procedencia.json"
+    if fetched_any or not procedencia.exists():
+        procedencia.write_text(
+            json.dumps(
+                {
+                    "descargado_utc": datetime.now(UTC).isoformat(timespec="seconds"),
+                    "fuente": "Yahoo Finance, v8 chart API",
+                    "url_base": CHART_URL,
+                    "rango": [start, end],
+                    "archivos": procedencia_files,
+                },
+                indent=2,
+                sort_keys=True,
+            ),
+            encoding="utf-8",
         )
-    )
+    else:  # every series came from the cache: the original download stamp stands (GEN-02)
+        logger.info(
+            "%d series served from the cache; %s untouched", len(procedencia_files), procedencia
+        )
 
     # --- minimum-data rule (thin tickers; user decision 2026-07-25) ---------
     min_years = float(extra["min_data"]["min_years"])
@@ -318,6 +331,9 @@ def main() -> None:
     )
 
     # --- Stage 4: write the book data-root ----------------------------------
+    counterparties_dir = book_root / "portfolio_data" / "counterparties"
+    if counterparties_dir.exists():  # the only tree written file-by-file: rebuild it from scratch
+        shutil.rmtree(counterparties_dir)
     for subdir in (
         "portfolio_data/desks/IR",
         "portfolio_data/desks/EQ",
