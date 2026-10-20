@@ -811,7 +811,7 @@ def main():
     ap.add_argument("--xlsx-si-cabe", action="store_true")
     ap.add_argument(
         "--aliases",
-        default="src/aliases_cnsf.json",
+        default=str(Path(__file__).parent / "aliases_cnsf.json"),
         help="JSON {clave_normalizada: clave_canonica} para consolidar",
     )
     ap.add_argument(
@@ -822,7 +822,7 @@ def main():
     )
     ap.add_argument(
         "--autos-config",
-        default="src/catalogos_autos_cnsf.json",
+        default=str(Path(__file__).parent / "config" / "catalogos_autos_cnsf.json"),
         help="config de catálogos/uniones para el procesador de autos",
     )
     ap.add_argument("-v", "--verbose", action="store_true")

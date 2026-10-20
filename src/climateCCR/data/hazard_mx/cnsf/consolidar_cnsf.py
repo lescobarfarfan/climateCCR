@@ -615,7 +615,9 @@ def main():
         help="comprime los CSV de salida (recomendado: gzip -> .csv.gz)",
     )
     ap.add_argument(
-        "--aliases", default="src/aliases_cnsf.json", help="JSON de alias (plano o por ámbito)"
+        "--aliases",
+        default=str(Path(__file__).parent / "aliases_cnsf.json"),
+        help="JSON de alias (plano o por ámbito)",
     )
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
