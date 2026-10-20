@@ -70,6 +70,7 @@ the intensity `λ` and the per-event **impact/jump-mark** that drive the climate
 - Reading: [[2026-08-27_fase_producer_riders]] — the λ(t)-rider readings: the inhomogeneous-Poisson step-start discretization and the actuarial frequency-trend framing of the registry/CT-bridge pair under the `HAZ-STOCH-06` regime caveat (`INT-34`; `notes/reading/`, `GEN-21`).
 - Explanation: [[2026-08-27_fase_producer_results_explained]] — the rider results read against the HAZ record: why the re-anchored trends (not the refuted level extrapolation), the ×1.43-held-at-2031 ceiling moving the physical channel only −3.98→−4.11%, and what that insensitivity does to the `HAZ-STOCH-06` ambiguity (`INT-34`; `notes/summary_explanations/`, `GEN-26`).
 - Review: [[PONYTAIL_AUDIT_2026-07-11]] — over-engineering sweep; the CNSF normalizer dedup + the two deliberately rejected HAZ cuts (`HAZ-SCRAPER-CNSF-10`).
+- Pipeline: [[linux_landing_reproduction]] — landing the project on a second machine (Linux x86-64 from macOS/arm64): what to copy, the lockfile env, the sort-tie determinism fix, `tools/reproduce_all.sh` (the full regeneration DAG) and `tools/compare_results.py`, and how closely every artifact reproduces (`GEN-37`; `notes/pipelines/`).
 
 ## Wires to the other arms
 - Sends **`λ` + impact** to [[CCR_MOC]]/`processes.jumps` (`DC-CCR-SIM-2`, `DC-XWALK-4`) — the climate shock.
