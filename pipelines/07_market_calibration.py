@@ -32,8 +32,6 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CALIBRATION_CONFIG = REPO_ROOT / "configs" / "market_calibration.yaml"
 
-SHORT_TENOR_DAYS = {"FTIIE": 1.0, "TIIE28": 28.0, "TIIE91": 91.0, "TIIE182": 182.0}
-
 
 def _sha256(path: Path) -> str:
     h = hashlib.sha256()
@@ -65,7 +63,11 @@ def main() -> None:
         sample_weekly_last,
         simple_to_continuous,
     )
-    from climateCCR.calibration.financial.yield_curve import fit_nelson_siegel, strip_zero_curve
+    from climateCCR.calibration.financial.yield_curve import (
+        curve_on,
+        load_curve_inputs,
+        short_quotes_on,
+    )
     from climateCCR.infra import RunManifest, get_logger, load_config
     from climateCCR.utils.calendar_utils import translate_tenor_to_years
 
@@ -124,8 +126,6 @@ def main() -> None:
 
     # --- daily inputs ----------------------------------------------------
     tiies = pd.read_csv(sie_dir / "tiies.csv", index_col="Fecha", parse_dates=True)
-    cetes = pd.read_csv(sie_dir / "cetes364.csv", index_col="Fecha", parse_dates=True)
-    bonos = pd.read_csv(sie_dir / "bonos_m.csv", parse_dates=["Fecha"])
     ipc = pd.read_csv(ipc_path, index_col="Fecha", parse_dates=True)
 
     crisis = [tuple(w) for w in config.extra["crisis_windows"].values()]
@@ -224,40 +224,25 @@ def main() -> None:
 
     # --- the MXN zero curve at the valuation date ------------------------
     curve_cfg = config.extra["curve"]
-    short_block = (tiies[list(SHORT_TENOR_DAYS)] / 100.0).join(
-        cetes[["TasaRendimiento", "Plazo"]].rename(
-            columns={"TasaRendimiento": "CETES364", "Plazo": "cetes_plazo"}
+    short_block, bonos = load_curve_inputs(sie_dir)
+    try:
+        valuation_date, pillars, ns = curve_on(
+            short_block,
+            bonos,
+            curve_cfg["valuation_date"],
+            min_bonos_buckets=int(curve_cfg["min_bonos_buckets"]),
+            max_lag_days=int(curve_cfg["lookback_bd"]) * 2,
         )
-    )
-    short_block["CETES364"] /= 100.0
-    bonos_by_date = bonos.dropna(subset=["Plazo", "Cupon", "Valor"]).groupby("Fecha")
-    bonos_counts = bonos_by_date.size()
-
-    requested = curve_cfg["valuation_date"]
-    latest = pd.Timestamp(requested) if requested else bonos_counts.index.max()
-    complete = short_block.dropna().index.intersection(
-        bonos_counts[bonos_counts >= int(curve_cfg["min_bonos_buckets"])].index
-    )
-    candidates = complete[complete <= latest]
-    if candidates.empty:
-        sys.exit(f"No date <= {latest.date()} has a full short block + bonos quotes.")
-    valuation_date = candidates.max()
-    if (latest - valuation_date).days > int(curve_cfg["lookback_bd"]) * 2:
-        sys.exit(f"Nearest complete date {valuation_date.date()} is too far from {latest.date()}.")
-
-    row = short_block.loc[valuation_date]
-    short_quotes = {days: float(row[name]) for name, days in SHORT_TENOR_DAYS.items()}
-    short_quotes[float(row["cetes_plazo"])] = float(row["CETES364"])
-    bonos_today = bonos_by_date.get_group(valuation_date)
-    pillars = strip_zero_curve(short_quotes, bonos_today)
-    ns = fit_nelson_siegel(pillars)
+    except ValueError as error:
+        sys.exit(str(error))
+    short_quotes = short_quotes_on(short_block, valuation_date)
     pillars["ns_zero"] = ns.zero(pillars["t_years"].to_numpy())
     pillars["ns_diff_bp"] = (pillars["ns_zero"] - pillars["zero"]) * 1e4
     logger.info(
         "Curve %s: %d pillars stripped (%s), NS rmse %.1f bp (tau %.2f)",
         valuation_date.date(),
         len(pillars),
-        ", ".join(pillars["source"].tail(len(bonos_today))),
+        ", ".join(pillars["source"]),
         ns.rmse * 1e4,
         ns.tau,
     )

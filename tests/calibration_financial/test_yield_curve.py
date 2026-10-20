@@ -117,3 +117,62 @@ def test_worked_check_2008_01_23():
     stripped = pillars.iloc[-1]
     assert stripped["t_years"] == pytest.approx(1.92, abs=0.02)
     assert stripped["zero"] == pytest.approx(0.074187, abs=10e-4)
+
+
+def _write_sie_dir(root: Path) -> None:
+    """Two quoted dates: 2020-01-10 complete, 2020-01-17 without the weekly TIIE182."""
+    short_quotes, bonos = _synthetic_market()
+    tenor_days = {"FTIIE": 1.0, "TIIE28": 28.0, "TIIE91": 91.0, "TIIE182": 182.0}
+    dates = pd.Index([pd.Timestamp("2020-01-10"), pd.Timestamp("2020-01-17")], name="Fecha")
+    tiies = pd.DataFrame(
+        {c: [short_quotes[d] * 100.0] * 2 for c, d in tenor_days.items()}, index=dates
+    )
+    tiies.loc[dates[1], "TIIE182"] = np.nan
+    tiies.to_csv(root / "tiies.csv")
+    pd.DataFrame(
+        {"TasaRendimiento": [short_quotes[364.0] * 100.0] * 2, "Plazo": [364.0, 364.0]}, index=dates
+    ).to_csv(root / "cetes364.csv")
+    rows = [
+        {
+            "Fecha": date,
+            "Serie": b["Serie"],
+            "Plazo": b["Plazo"],
+            "Cupon": b["Cupon"],
+            "Valor": b["Valor"],
+        }
+        for date in dates
+        for _, b in bonos.iterrows()
+    ]
+    pd.DataFrame(rows).to_csv(root / "bonos_m.csv", index=False)
+
+
+def test_load_curve_inputs_and_curve_on_pick_the_nearest_complete_date(tmp_path):
+    from climateCCR.calibration.financial.yield_curve import (
+        curve_on,
+        load_curve_inputs,
+        short_quotes_on,
+    )
+
+    _write_sie_dir(tmp_path)
+    short_block, bonos = load_curve_inputs(tmp_path)
+    assert list(short_block.columns) == [
+        "FTIIE",
+        "TIIE28",
+        "TIIE91",
+        "TIIE182",
+        "CETES364",
+        "cetes_plazo",
+    ]
+    assert len(bonos) == 6
+    date, pillars, fit = curve_on(
+        short_block, bonos, "2020-01-20", min_bonos_buckets=3, max_lag_days=20
+    )
+    assert date == pd.Timestamp("2020-01-10")  # the 17th lacks TIIE182
+    assert len(pillars) == 8
+    assert abs(float(fit.zero(2.0)) - float(_true_zero(2.0))) < 2e-3
+    assert set(short_quotes_on(short_block, date)) == {1.0, 28.0, 91.0, 182.0, 364.0}
+    assert curve_on(short_block, bonos, None, min_bonos_buckets=3, max_lag_days=20)[0] == date
+    with pytest.raises(ValueError, match="too far"):
+        curve_on(short_block, bonos, "2020-03-01", min_bonos_buckets=3, max_lag_days=20)
+    with pytest.raises(ValueError, match="No date"):
+        curve_on(short_block, bonos, "2019-12-31", min_bonos_buckets=3, max_lag_days=20)

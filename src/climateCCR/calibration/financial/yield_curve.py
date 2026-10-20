@@ -24,6 +24,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -31,6 +32,9 @@ from scipy import optimize
 
 from climateCCR.calibration.financial.bond_yield import bono_cashflows
 from climateCCR.calibration.financial.hull_white import DAYS_PER_YEAR, simple_to_continuous
+
+#: SIE short-block columns -> tenor in days (simple Act/360 quotes, DC-MKT-SIE-1).
+SHORT_TENOR_DAYS = {"FTIIE": 1.0, "TIIE28": 28.0, "TIIE91": 91.0, "TIIE182": 182.0}
 
 
 def strip_zero_curve(
@@ -154,3 +158,70 @@ def fit_nelson_siegel(
         rmse=float(np.sqrt(sse / len(t))),
         n_pillars=len(t),
     )
+
+
+def load_curve_inputs(sie_dir: str | Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """The daily inputs of the curve strip from the SIE download root (DC-MKT-SIE-5).
+
+    Returns the short block — one row per date with the decimal TIIE quotes
+    (``SHORT_TENOR_DAYS`` columns), ``CETES364`` and its residual ``cetes_plazo``
+    — and the Bonos M rows (``Fecha, Serie, Plazo, Cupon, Valor``) with
+    incomplete quotes dropped. The same frames serve every date, so a backtest
+    can strip the curve at each of its reporting dates without re-reading.
+    """
+    sie_dir = Path(sie_dir)
+    tiies = pd.read_csv(sie_dir / "tiies.csv", index_col="Fecha", parse_dates=True)
+    cetes = pd.read_csv(sie_dir / "cetes364.csv", index_col="Fecha", parse_dates=True)
+    bonos = pd.read_csv(sie_dir / "bonos_m.csv", parse_dates=["Fecha"])
+    short_block = (tiies[list(SHORT_TENOR_DAYS)] / 100.0).join(
+        cetes[["TasaRendimiento", "Plazo"]].rename(
+            columns={"TasaRendimiento": "CETES364", "Plazo": "cetes_plazo"}
+        )
+    )
+    short_block["CETES364"] /= 100.0
+    return short_block, bonos.dropna(subset=["Plazo", "Cupon", "Valor"])
+
+
+def curve_on(
+    short_block: pd.DataFrame,
+    bonos: pd.DataFrame,
+    date,
+    *,
+    min_bonos_buckets: int,
+    max_lag_days: int,
+) -> tuple[pd.Timestamp, pd.DataFrame, NelsonSiegelFit]:
+    """The stripped + Nelson-Siegel-fitted MXN curve on the last complete date at or
+    before ``date`` (``None`` = the latest quoted date).
+
+    A date is complete when the whole short block is quoted and at least
+    ``min_bonos_buckets`` Bonos M buckets are; the nearest such date must lie
+    within ``max_lag_days`` (TIIE 182 is quoted weekly before 2023). Returns
+    ``(valuation_date, pillars, fit)`` — pipelines/07's curve stage and the
+    realised-curve reprice of pipelines/31 share it.
+    """
+    bonos_by_date = bonos.groupby("Fecha")
+    bonos_counts = bonos_by_date.size()
+    latest = pd.Timestamp(date) if date is not None else bonos_counts.index.max()
+    complete = short_block.dropna().index.intersection(
+        bonos_counts[bonos_counts >= int(min_bonos_buckets)].index
+    )
+    candidates = complete[complete <= latest]
+    if candidates.empty:
+        raise ValueError(f"No date <= {latest.date()} has a full short block + bonos quotes.")
+    valuation_date = candidates.max()
+    if (latest - valuation_date).days > int(max_lag_days):
+        raise ValueError(
+            f"Nearest complete date {valuation_date.date()} is too far from {latest.date()}."
+        )
+    short_quotes = short_quotes_on(short_block, valuation_date)
+    pillars = strip_zero_curve(short_quotes, bonos_by_date.get_group(valuation_date))
+    return valuation_date, pillars, fit_nelson_siegel(pillars)
+
+
+def short_quotes_on(short_block: pd.DataFrame, date) -> dict[float, float]:
+    """The short block's quotes at ``date`` as ``strip_zero_curve`` wants them: tenor days ->
+    decimal simple Act/360 quote, the Cetes at its actual residual ``Plazo``."""
+    row = short_block.loc[pd.Timestamp(date)]
+    short_quotes = {days: float(row[name]) for name, days in SHORT_TENOR_DAYS.items()}
+    short_quotes[float(row["cetes_plazo"])] = float(row["CETES364"])
+    return short_quotes
