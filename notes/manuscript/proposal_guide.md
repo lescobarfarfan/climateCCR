@@ -218,7 +218,7 @@ The current state is the 2026-10-08 joint-draw re-base (`CCR-SIM-03`: the book i
 | Tier C (equities pooled, 1W / 1Y) | coverage 0.66 / 0.87 / 0.95 and 0.54 / 0.79 / 0.92; F-TIIE 1Y 0.29 / 0.35 / 0.65; VaR99 Kupiec rejected 28 / 28 | `results/risk_factor_backtest/` |
 | Tier D (1Y, headline band) | engine DM −3.45 ($p = 0.001$, 8 / 26 names); compensated DM −0.95 ($p = 0.34$); 1M indistinguishable | `results/jump_density_backtest/` |
 | Tier E (static books 2016 / 2019 / 2022, 540 obs per leg) | baseline coverage 0.47 / 0.76 / 0.92, realised exposure / forecast EE 0.97; climate legs 1.00–1.03; 0D pin ≤ 248 MXN | `results/static_book_backtest/` |
-| Monte-Carlo spread across 11 master seeds (sd; canonical 233423 plus ten extra) | book EPE shift ± 0.01–0.03 pp (climate book), ± 0.006–0.008 pp (control book); Effective EPE shift ± 0.02 pp; book PFE99 shift ± 0.20–0.25 pp; 1y book-exposure q99 level ± 0.4 % (range 1 %); its paired climate delta ± 0.3 pp | `results/seed_sensitivity{,_comparison}/seed_intervals.csv` (pipelines/24) |
+| Monte-Carlo spread across 11 master seeds (sd; canonical 233423 plus ten extra) | book EPE shift ± 0.01–0.03 pp (climate book), ± 0.006–0.008 pp (control book); Effective EPE shift ± 0.015 pp; book PFE99 shift ± 0.20–0.25 pp; 1y book-exposure q99 level ± 0.4 % (range 1 %); its paired climate delta ± 0.3 pp | `results/seed_sensitivity{,_comparison}/seed_intervals.csv` (pipelines/24) |
 
 ## 6. Checklist before you submit
 

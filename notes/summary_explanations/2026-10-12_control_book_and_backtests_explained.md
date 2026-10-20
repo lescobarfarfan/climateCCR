@@ -86,7 +86,7 @@ For the 26 book equities, the IPC, the FIX and the F-TIIE short rate: non-overla
 |---|---|---|---|
 | Equities pooled (26 names) | 0.66 / 0.87 / 0.95 (n 19,612) | 0.54 / 0.79 / 0.92 (n 357) | both $p$ 0.000 at every horizon |
 | IPC | 0.61 / 0.87 / 0.96 | 0.39 / 0.83 / 0.94 | 0.000 / 0.003 at 1W |
-| FIX (MXN/USD) | 0.46 / 0.72 / 0.88 | 0.22 / 0.50 / 0.94 | 0.006 / 0.000 at 1W |
+| FIX (MXN/USD) | 0.46 / 0.72 / 0.87 | 0.22 / 0.50 / 0.94 | 0.006 / 0.000 at 1W |
 | F-TIIE (Vasicek, weekly MLE with restart) | 0.72 / 0.85 / 0.91 | 0.29 / 0.35 / 0.65 | 0.000 / 0.000 |
 | Daily VaR exceptions | 95 %: median hit rate 6.2 % · 99 %: median 2.6 %, Kupiec $p < 0.05$ for 28 of 28 names | | |
 
