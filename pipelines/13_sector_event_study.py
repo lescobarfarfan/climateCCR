@@ -165,10 +165,10 @@ def main() -> None:
     # Diagnostics on the gate window: tercile spread + drop-largest jackknife.
     gate_panel = panels[gate_w][eligible]
     mean_cars = gate_panel.mean()
-    order = c_ciclon.reindex(eligible).sort_values()
+    order = c_ciclon.reindex(eligible).sort_index().sort_values(kind="stable")
     k = max(1, len(order) // 3)
     spread = float(mean_cars[order.index[-k:]].mean() - mean_cars[order.index[:k]].mean())
-    largest = episodes.sort_values("danio_mdp").iloc[-1]
+    largest = episodes.sort_values("danio_mdp", kind="stable").iloc[-1]
     jack_panel = gate_panel.drop(index=largest["fecha"], errors="ignore")
     tau_jack, p_jack = ordering_stat(jack_panel.mean(), c_ciclon)
 

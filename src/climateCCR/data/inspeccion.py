@@ -196,6 +196,9 @@ def _check_missing(df: pd.DataFrame, time_col: str | None, findings: list[dict])
 def _check_categorical(df: pd.DataFrame, cat_cols: list[str], findings: list[dict]) -> None:
     for col in cat_cols:
         counts = df[col].value_counts(dropna=True)
+        counts = counts.sort_index(key=lambda i: i.astype(str)).sort_values(
+            ascending=False, kind="stable"
+        )
         if counts.empty:
             continue
         variants: dict[str, list] = defaultdict(list)
@@ -845,6 +848,7 @@ def inspect_dataset(
         "z_robusta",
         key=lambda s: pd.to_numeric(s, errors="coerce").abs(),
         ascending=False,
+        kind="stable",
         na_position="last",
     ).reset_index(drop=True)
     tabla.to_csv(out_dir / "hallazgos.csv", index=False)

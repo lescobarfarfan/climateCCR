@@ -90,7 +90,7 @@ def _storm_audit(base: pd.DataFrame, set_key: str) -> pd.DataFrame:
     )
     multi = grouped[grouped["n_filas"] > 1].reset_index()
     multi.insert(0, "conjunto", set_key)
-    return multi.sort_values("n_filas", ascending=False)
+    return multi.sort_values("n_filas", ascending=False, kind="stable")
 
 
 def main() -> None:

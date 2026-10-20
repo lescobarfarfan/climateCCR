@@ -237,7 +237,7 @@ def main() -> None:
             "gamma_max": draws.max(axis=0),
         },
         index=gamma0.index,
-    ).sort_values("gamma_base", ascending=False)
+    ).sort_values("gamma_base", ascending=False, kind="stable")
     out_dir.mkdir(parents=True, exist_ok=True)
     jitter.round(6).to_csv(jitter_csv)
     pd.Series(taus, name="kendall_tau").round(6).to_csv(out_dir / "s_tier_jitter_tau.csv")

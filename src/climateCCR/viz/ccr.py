@@ -180,7 +180,7 @@ def _counterparty_panels(
     if counterparties is not None:
         ids = list(counterparties)
     else:
-        ranked = _mean_shift(comparison, metric).abs().sort_values(ascending=False)
+        ranked = _mean_shift(comparison, metric).abs().sort_values(ascending=False, kind="stable")
         ids = sorted(ranked.index[:MAX_PANELS])
     ncols = min(2, len(ids))
     nrows = math.ceil(len(ids) / ncols)

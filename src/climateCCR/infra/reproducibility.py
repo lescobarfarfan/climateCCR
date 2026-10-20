@@ -11,7 +11,6 @@ jump overlay, DC-CCR-SIM-2).
 
 from __future__ import annotations
 
-import os
 import random
 
 import numpy as np
@@ -20,13 +19,12 @@ DEFAULT_SEED = 233423  # inherited from PIMPA's global_parameters['random_state'
 
 
 def set_seed(seed: int = DEFAULT_SEED) -> np.random.Generator:
-    """Seed Python, NumPy (legacy global), and ``PYTHONHASHSEED``.
+    """Seed Python's ``random`` and the NumPy legacy global; return a fresh Generator.
 
     Returns a fresh :class:`numpy.random.Generator` seeded with the same value.
     Prefer the returned generator in new code; the legacy global seeding exists
     only for third-party libraries that still read it.
     """
-    os.environ["PYTHONHASHSEED"] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
     return np.random.default_rng(seed)

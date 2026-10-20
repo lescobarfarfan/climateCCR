@@ -172,7 +172,7 @@ def main() -> None:
         "triaje",
         "resolucion",
     ]
-    flag = flag[cols].sort_values("danio_mdp_real2025", ascending=False)
+    flag = flag[cols].sort_values("danio_mdp_real2025", ascending=False, kind="stable")
     flag.round(6).to_csv(annex_csv, index=False)
 
     in_trigger = flag[flag["en_conjunto_disparador"]]
@@ -189,7 +189,9 @@ def main() -> None:
             ["evento_id", "anio", "peril_canonico", "estados", "danio_mdp", "danio_mdd", "razon"]
         ].to_string(index=False)
     )
-    conteos = flag["resolucion"].value_counts()
+    conteos = (
+        flag["resolucion"].value_counts().sort_index().sort_values(ascending=False, kind="stable")
+    )
     nota = out_dir / "resolucion_triaje.md"
     nota.write_text(
         "# Resolución del triaje MDP/MDD — regla documentada (OQ-INT-11 g)\n\n"

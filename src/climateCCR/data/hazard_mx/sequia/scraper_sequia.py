@@ -27,7 +27,7 @@ import json
 import logging
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import agregacion_sequia as ag
@@ -77,7 +77,7 @@ def registrar_procedencia(
         "request": request,
         "sha256": _sha256(archivo),
         "bytes": archivo.stat().st_size,
-        "fecha_descarga_utc": datetime.now(timezone.utc).isoformat(),
+        "fecha_descarga_utc": datetime.now(UTC).isoformat(),
     }
     existentes = []
     if ruta_proc.exists():
@@ -538,7 +538,7 @@ def modo_calcular(args, raiz: Path):
     dir_crudos = raiz / cfg.DIR_CRUDOS
     dir_cons = raiz / cfg.DIR_CONSOLIDADOS
     dir_cons.mkdir(parents=True, exist_ok=True)
-    ruta_nc = next(dir_crudos.glob("era5_p_pet_mexico_*.nc"), None)
+    ruta_nc = next(iter(sorted(dir_crudos.glob("era5_p_pet_mexico_*.nc"))), None)
     if ruta_nc is None:
         log.error("No hay crudo ERA5 en %s. Corre primero --modo descargar.", dir_crudos)
         sys.exit(1)

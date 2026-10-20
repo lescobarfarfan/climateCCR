@@ -238,7 +238,9 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     scales.round(6).to_csv(out_csv)
     by_sector = (
-        scales.groupby("sector")["gamma"].agg(["mean", "min", "max", "count"]).sort_values("mean")
+        scales.groupby("sector")["gamma"]
+        .agg(["mean", "min", "max", "count"])
+        .sort_values("mean", kind="stable")
     )
     by_sector.round(6).to_csv(out_dir / "sector_scales.csv")
     intensity.round(9).to_csv(out_dir / "damage_intensity_state_peril.csv")

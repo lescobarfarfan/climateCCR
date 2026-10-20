@@ -96,6 +96,9 @@ def save_figure(
     written = []
     for fmt in formats:
         target = base.with_suffix(f".{fmt}")
-        fig.savefig(target, **({"dpi": dpi} if dpi is not None else {}))
+        kwargs: dict = {"dpi": dpi} if dpi is not None else {}
+        if fmt == "pdf":  # no wall-clock stamp: identical figure -> identical bytes
+            kwargs["metadata"] = {"CreationDate": None}
+        fig.savefig(target, **kwargs)
         written.append(target)
     return written

@@ -49,7 +49,7 @@ def validar(args, raiz: Path) -> dict:
 
     reporte = {}
     # Benchmarks oficiales: era5drought_{spi|spei}_oficial.nc
-    oficiales = list(dir_crudos.glob("era5drought_*oficial.nc"))
+    oficiales = sorted(dir_crudos.glob("era5drought_*oficial.nc"))
 
     for tipo in args.indices:
         for n in args.escalas:

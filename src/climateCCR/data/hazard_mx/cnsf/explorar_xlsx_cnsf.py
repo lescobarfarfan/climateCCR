@@ -133,7 +133,7 @@ def explorar(root: Path, categorias: list | None = None, muestra: int = MUESTRA_
                 if k in canon_keys:
                     continue
                 mejor = None
-                for ck in canon_keys:
+                for ck in sorted(canon_keys):
                     r = difflib.SequenceMatcher(None, k, ck).ratio()
                     if r >= UMBRAL_ALIAS and (mejor is None or r > mejor[1]):
                         mejor = (ck, r)
