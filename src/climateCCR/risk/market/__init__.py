@@ -18,7 +18,7 @@ from .backtest import (
     pit_normal,
     pit_values,
 )
-from .windows import horizon_end, init_dates, last_obs
+from .windows import horizon_end, horizon_spec, init_dates, last_obs, non_overlapping
 
 __all__ = [
     "TestResult",
@@ -31,12 +31,14 @@ __all__ = [
     "crps_normal",
     "diebold_mariano",
     "horizon_end",
+    "horizon_spec",
     "init_dates",
     "ks_uniform",
     "kupiec_pof",
     "last_obs",
     "log_score_mixture",
     "log_score_normal",
+    "non_overlapping",
     "pit_discrete",
     "pit_normal",
     "pit_values",

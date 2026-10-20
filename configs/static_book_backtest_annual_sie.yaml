@@ -1,0 +1,51 @@
+# The annual tier-E grid repriced on the REALISED CURVE (OQ-INT-14 a): the rate legs discount
+# on the MXN zero curve stripped and Nelson-Siegel-fitted from the SIE quotes at each
+# reporting date (the pricers' discount_factors hook) instead of the HW1F mapping of the
+# realised short rate. Scoring stage only — the dated chains and their generated configs
+# are the annual study's (`dated_configs_dir`), so nothing is simulated twice; the equity
+# option legs keep the realised short rate and the flat fitted-sigma surfaces (OQ-INT-14 b).
+#
+#   python pipelines/31_static_book_backtest.py --config configs/static_book_backtest_annual.yaml --ejecutar
+#   python pipelines/31_static_book_backtest.py --config configs/static_book_backtest_annual_sie.yaml
+
+seed: 233423
+out_dir: static_book_backtest_annual_sie
+dated_configs_dir: static_book_backtest_annual/configs   # the annual study's dated configs
+init_dates:
+  - "2016-07-15"
+  - "2017-07-15"
+  - "2018-07-15"
+  - "2019-07-15"
+  - "2020-07-15"
+  - "2021-07-15"
+  - "2022-07-15"
+  - "2023-07-15"
+  - "2024-07-15"
+  - "2025-07-15"
+reference_valuation_date: "2026-07-17"
+book_config: configs/mexican_book.yaml
+market_calibration_config: configs/market_calibration.yaml
+jump_configs:
+  headline: configs/climate_jump_real_mexican.yaml
+  ct_anchor: configs/climate_jump_real_mexican_ct_anchor.yaml
+  floor: configs/climate_jump_real_mexican_floor.yaml
+reference_rate_scale_csv: results/loss_to_rate_scale_mx/scale.csv
+rate_headline_cells:
+  - {proxy: TIIE28, window: full_2001, method: mle, crisis_excluded: true, sampling: weekly_wed}
+  - {proxy: FTIIE, window: full_2006, method: mle, crisis_excluded: true, sampling: weekly_wed}
+b3_grid: ["0D", "1W", "1M", "3M", "1Y", "2Y", "3Y"]
+cache_subdir_pattern: "data/market_mx/yahoo/book_{tag}"
+realised:
+  closes_dir: data/market_mx/yahoo/book
+  fix_csv: data/market_mx/sie/fix.csv
+  tiies_csv: data/market_mx/sie/tiies.csv
+  rate_column: FTIIE
+  tenor_days: 1.0
+  price_column: Close
+  max_stale_days: 10
+  curve: sie                   # the realised-curve reprice of the rate legs
+  sie_dir: data/market_mx/sie
+  min_bonos_buckets: 4
+  curve_max_lag_days: 20       # TIIE182 is quoted weekly before 2023
+percentiles: [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
+levels: [0.5, 0.8, 0.95]

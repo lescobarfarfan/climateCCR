@@ -15,18 +15,27 @@ forecast distribution: PIT, reliability at several percentiles (¶25 / ¶31),
 central coverage, and the realised exposure against the forecast EE, aggregated
 across counterparties, horizons and initialisation dates (¶17).
 
-Caveats carried in the outputs: the rate side is **model-mapped** (the pricers
-rebuild the curve from the realised short rate through the HW1F ``B(t, T)``
-loading, not from the realised curve); options price on the flat fitted-sigma
-surface; names failing the min-data rule at a past date drop out of that date's
-book (the build report says which); the bond legs are representative re-strikes.
-Significance is not expected at 2–3-year horizons (¶38) — reasonableness is.
+Caveats carried in the outputs: by default the rate side is **model-mapped**
+(the pricers rebuild the curve from the realised short rate through the HW1F
+``B(t, T)`` loading); ``realised.curve: sie`` instead discounts the rate legs on
+the MXN zero curve stripped and Nelson-Siegel-fitted from the SIE quotes at each
+reporting date (the pricers' ``discount_factors`` hook, OQ-INT-14 a); options
+price on the flat fitted-sigma surface; names failing the min-data rule at a
+past date drop out of that date's book (the build report says which); the bond
+legs are representative re-strikes. Significance is not expected at 2–3-year
+horizons (¶38) — reasonableness is. Reporting dates past the end of the realised
+series are never scored, and every horizon is also read on the greedy
+non-overlapping subset of initialisation dates (¶13; the ``sample`` column of
+``reliability.csv`` / ``summary.csv``, the ``non_overlapping`` flag of ``pit_long.csv``).
 
 Stages (all idempotent; the generated configs under ``results/<out_dir>/configs``
-are reconstructor outputs, GEN-04):
+are reconstructor outputs, GEN-04). ``configs/static_book_backtest.yaml`` is the
+three-date record, ``*_annual.yaml`` the annual grid and ``*_annual_sie.yaml`` the
+same grid repriced on the realised curve (its ``dated_configs_dir`` points at the
+annual study's generated configs, so the dated chains run once):
 
-    python pipelines/31_static_book_backtest.py --ejecutar   # per date: 07 -> 09 -> 01 x bands
-    python pipelines/31_static_book_backtest.py              # realised reprice + scoring
+    python pipelines/31_static_book_backtest.py [--config CFG] --ejecutar   # per date: 07/09/01
+    python pipelines/31_static_book_backtest.py [--config CFG]              # reprice + scoring
 """
 
 from __future__ import annotations
@@ -157,7 +166,7 @@ def realised_scenarios(
 
     Simulation grids are event-driven and run to the longest trade's maturity, so
     they can extend past the end of the observed series; those dates are held at
-    the last observation (they lie beyond every scored reporting date). A gap
+    the last observation and the scoring stage skips them. A gap
     inside the observed range larger than ``max_stale_days`` is an error.
     """
     from climateCCR.risk.market import last_obs
@@ -177,6 +186,22 @@ def realised_scenarios(
                 raise ValueError(f"{name}: no observation within {max_stale_days} days of {date}")
         out[name] = np.asarray(values, dtype=float)[None, :]
         out[name + "_dates"] = list(union_dates)
+    return out
+
+
+def label_non_overlapping(table: pd.DataFrame, init_dates: list[str]) -> pd.DataFrame:
+    """Flag the rows whose initialisation date belongs to their horizon's greedy
+    non-overlapping subset (BCBS 2010 ¶13): the ``non_overlapping`` column."""
+    from climateCCR.risk.market import horizon_spec, non_overlapping
+
+    out = table.copy()
+    flags = pd.Series(False, index=out.index)
+    for horizon, idx in out.groupby("horizon", sort=False).groups.items():
+        keep = {
+            t.strftime("%Y-%m-%d") for t in non_overlapping(init_dates, horizon_spec(str(horizon)))
+        }
+        flags.loc[idx] = out.loc[idx, "init_date"].isin(keep)
+    out["non_overlapping"] = flags
     return out
 
 
@@ -329,15 +354,27 @@ def main() -> None:
     grid = [str(g) for g in extra["b3_grid"]]
     real_cfg = extra["realised"]
     max_stale = int(real_cfg["max_stale_days"])
+    curve_mode = str(real_cfg.get("curve", "model"))
+    if curve_mode not in ("model", "sie"):
+        sys.exit(f"realised.curve must be 'model' or 'sie', got {curve_mode!r}")
+    if curve_mode == "sie":  # OQ-INT-14 a: the rate legs on the observed curve per reporting date
+        from climateCCR.calibration.financial.yield_curve import curve_on, load_curve_inputs
+
+        short_block, bonos = load_curve_inputs(
+            root / str(real_cfg.get("sie_dir", "data/market_mx/sie"))
+        )
     fix = _read_series(root / real_cfg["fix_csv"], "FIX")
     quotes = _read_series(root / real_cfg["tiies_csv"], str(real_cfg["rate_column"])) / 100.0
     rate = pd.Series(
         simple_to_continuous(quotes.to_numpy(), float(real_cfg["tenor_days"])), index=quotes.index
     )
     closes_dir = root / str(real_cfg["closes_dir"])  # full history: closes after the date
-    config_dir = out_dir / "configs"
+    config_dir = config.paths.results / str(
+        extra.get("dated_configs_dir", f"{extra.get('out_dir', 'static_book_backtest')}/configs")
+    )
     rows: list[dict] = []
     pins: list[dict] = []
+    curve_rows: list[dict] = []
     for date in [str(d) for d in extra["init_dates"]]:
         t = tag(date)
         book_cfg_path = config_dir / f"mexican_book_{t}.yaml"
@@ -365,7 +402,39 @@ def main() -> None:
                 series_by_name[name] = _read_series(
                     closes_dir / f"{name}.csv", str(real_cfg["price_column"])
                 )
+        data_end = min(s.index.max() for s in series_by_name.values())
         realised = realised_scenarios(names, union, series_by_name, max_stale)
+        if curve_mode == "sie":
+            fits = {}
+            for d in union:
+                if pd.Timestamp(d) > data_end:
+                    continue  # held in the path, never scored: the HW1F mapping stands there
+                strip_date, _, fit = curve_on(
+                    short_block,
+                    bonos,
+                    d,
+                    min_bonos_buckets=int(real_cfg.get("min_bonos_buckets", 4)),
+                    max_lag_days=int(real_cfg.get("curve_max_lag_days", 20)),
+                )
+                fits[d] = fit
+                curve_rows.append(
+                    {
+                        "init_date": date,
+                        "date": pd.Timestamp(d).strftime("%Y-%m-%d"),
+                        "strip_date": strip_date.strftime("%Y-%m-%d"),
+                        "lag_days": (pd.Timestamp(d) - strip_date).days,
+                        "n_pillars": fit.n_pillars,
+                        "ns_rmse_bp": fit.rmse * 1e4,
+                    }
+                )
+            gp["realised_curves"] = fits
+            logger.info(
+                "%s: realised curves on %d of %d simulation dates (data end %s)",
+                t,
+                len(fits),
+                len(union),
+                data_end.date(),
+            )
         realised_mtm: dict[str, tuple[np.ndarray, np.ndarray]] = {}
         while sessions:
             s = sessions.pop(0)
@@ -381,6 +450,7 @@ def main() -> None:
         logger.info(
             "%s: realised reprice of %d netting sets on %d dates", t, len(realised_mtm), len(grid)
         )
+        skipped = 0
         for band, suffix in BAND_SUFFIX.items():
             run_dir = config.paths.results / f"climate_jump_real_mexican_{t}{suffix}_backtest"
             for leg in ("baseline", "climate"):
@@ -400,6 +470,9 @@ def main() -> None:
                         }
                     )
                     for j in range(1, len(dates)):
+                        if pd.Timestamp(str(dates[j])) > data_end:  # npz dates are numpy str
+                            skipped += 1  # past the realised data: held in the path, never scored
+                            continue
                         forecast = values[:, j]
                         realised_v = float(real_values[j])
                         rows.append(
@@ -420,7 +493,9 @@ def main() -> None:
                                 "pit": float(pit_values(forecast[:, None], [realised_v])[0]),
                             }
                         )
-    table = pd.DataFrame(rows)
+        if skipped:
+            logger.info("%s: %d reporting cells past the data end not scored", t, skipped)
+    table = label_non_overlapping(pd.DataFrame(rows), [str(d) for d in extra["init_dates"]])
     pin_table = pd.DataFrame(pins)
     worst_pin = float(pin_table["pin_gap"].max()) if not pin_table.empty else float("nan")
     logger.info("0D pin: worst |forecast 0D - realised 0D| = %.6g", worst_pin)
@@ -429,31 +504,39 @@ def main() -> None:
     levels = [float(v) for v in extra["levels"]]
     rel_rows, sum_rows = [], []
     group_keys = [["leg", "band", "horizon"], ["leg", "band"], ["leg", "band", "init_date"]]
-    for keys in group_keys:
-        for key_values, block in table.groupby(keys, sort=False):
-            pit = block["pit"].to_numpy()
-            if pit.size < 4:
-                continue
-            base = dict(zip(keys, key_values, strict=True))
-            for r in coverage_by_percentile(pit, percentiles).to_dict(orient="records"):
-                rel_rows.append(base | {"grouping": "+".join(keys)} | r)
-            central = central_coverage(pit, levels)
-            summary = base | {
-                "grouping": "+".join(keys),
-                "n": int(pit.size),
-                "mean_pit": float(pit.mean()),
-                "ks_p": ks_uniform(pit).p_value,
-                "ae_exposure": float(block["realised_exposure"].sum() / block["forecast_ee"].sum()),
-            }
-            for level, cov in zip(central["nominal"], central["empirical"], strict=True):
-                summary[f"coverage_{int(round(100 * level))}"] = float(cov)
-            sum_rows.append(summary)
+    # Every grouping is read twice: on all initialisation dates and on each horizon's greedy
+    # non-overlapping subset (¶13); the two coincide when the dates are at least 3Y apart.
+    samples = {"all": table, "non_overlapping": table[table["non_overlapping"]]}
+    for sample, frame in samples.items():
+        for keys in group_keys:
+            for key_values, block in frame.groupby(keys, sort=False):
+                pit = block["pit"].to_numpy()
+                if pit.size < 4:
+                    continue
+                base = dict(zip(keys, key_values, strict=True)) | {"sample": sample}
+                for r in coverage_by_percentile(pit, percentiles).to_dict(orient="records"):
+                    rel_rows.append(base | {"grouping": "+".join(keys)} | r)
+                central = central_coverage(pit, levels)
+                summary = base | {
+                    "grouping": "+".join(keys),
+                    "n": int(pit.size),
+                    "mean_pit": float(pit.mean()),
+                    "ks_p": ks_uniform(pit).p_value,
+                    "ae_exposure": float(
+                        block["realised_exposure"].sum() / block["forecast_ee"].sum()
+                    ),
+                }
+                for level, cov in zip(central["nominal"], central["empirical"], strict=True):
+                    summary[f"coverage_{int(round(100 * level))}"] = float(cov)
+                sum_rows.append(summary)
     reliability = pd.DataFrame(rel_rows)
     summaries = pd.DataFrame(sum_rows)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     table.round(6).to_csv(out_csv, index=False)
     pin_table.round(6).to_csv(out_dir / "pin_0d.csv", index=False)
+    if curve_rows:
+        pd.DataFrame(curve_rows).round(3).to_csv(out_dir / "realised_curve_dates.csv", index=False)
     reliability.round(6).to_csv(out_dir / "reliability.csv", index=False)
     summaries.round(6).to_csv(out_dir / "summary.csv", index=False)
     viz.apply_style()
@@ -461,6 +544,7 @@ def main() -> None:
     for leg in ("baseline", "climate"):
         sub = reliability[
             (reliability["grouping"] == "leg+band+horizon")
+            & (reliability["sample"] == "non_overlapping")
             & (reliability["leg"] == leg)
             & (reliability["band"] == "headline")
         ]
@@ -476,14 +560,15 @@ def main() -> None:
             percentiles,
             series_map,
             se=se,
-            title=f"Realised netted MtM vs forecast paths ({leg} leg, headline band), by horizon",
+            title=f"Realised netted MtM vs forecast paths ({leg} leg, headline band, "
+            "non-overlapping dates), by horizon",
         )
         written.extend(viz.save_figure(fig, out_dir / f"reliability_{leg}"))
         pits = {
             str(h): grp["pit"].to_numpy()
-            for h, grp in table[(table["leg"] == leg) & (table["band"] == "headline")].groupby(
-                "horizon", sort=False
-            )
+            for h, grp in table[
+                (table["leg"] == leg) & (table["band"] == "headline") & table["non_overlapping"]
+            ].groupby("horizon", sort=False)
         }
         fig = viz.plot_pit_histograms(pits, bins=5, ncols=3, title=f"PIT by horizon ({leg} leg)")
         written.extend(viz.save_figure(fig, out_dir / f"pit_hist_{leg}"))

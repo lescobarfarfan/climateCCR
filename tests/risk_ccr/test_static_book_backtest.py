@@ -121,3 +121,20 @@ def test_realised_scenarios_slice_like_a_joint_draw(pipeline):
     assert held["A_SHARE"][0, 0] == series["A_SHARE"].iloc[-1]  # past the data end: held
     with pytest.raises(ValueError, match="no observation"):
         pipeline.realised_scenarios(["A_SHARE"], [pd.Timestamp("2016-06-01")], series, 10)
+
+
+def test_label_non_overlapping_flags_each_horizons_greedy_subset(pipeline):
+    dates = [f"{year}-07-15" for year in range(2016, 2026)]
+    table = pd.DataFrame(
+        [{"init_date": d, "horizon": h, "pit": 0.5} for d in dates for h in ("1W", "2Y", "3Y")]
+    )
+    out = pipeline.label_non_overlapping(table, dates)
+    assert out[out["horizon"] == "1W"]["non_overlapping"].all()
+    kept = (
+        out[out["non_overlapping"]]
+        .groupby("horizon")["init_date"]
+        .apply(lambda s: sorted(int(d[:4]) for d in s))
+    )
+    assert kept["2Y"] == [2016, 2018, 2020, 2022, 2024]
+    assert kept["3Y"] == [2016, 2019, 2022, 2025]
+    assert "non_overlapping" not in table.columns  # the input is untouched

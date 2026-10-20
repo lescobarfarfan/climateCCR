@@ -1,7 +1,6 @@
 import numpy as np
 
 from climateCCR.calibration.financial.bond_yield import bono_cashflows
-from climateCCR.simulation.simulated_hw1f_curve import SimulatedHW1FCurve
 from climateCCR.utils.calendar_utils import transform_dates_to_time_differences
 
 from .pricing_model import PricingModel
@@ -61,12 +60,13 @@ class FixedCouponBondPricer(PricingModel):
             tau = times_days / 365.0  # years from the valuation date (Act/365)
             t = transform_dates_to_time_differences(valuation_dates[0], valuation_date)
             s = schedule.shocked_spread(spread, t, issuer) if schedule is not None else spread
-            discount_factors = SimulatedHW1FCurve(scenarios[discount_curve][:, i]).get_value(
-                calibration=self.calibration[discount_curve],
-                t_date=t,
-                T_date=t + tau,
-                initial_date=None,
-                return_log=False,
+            discount_factors = self.discount_factors(
+                discount_curve,
+                scenarios[discount_curve][:, i],
+                t,
+                t + tau,
+                valuation_date,
+                global_parameters,
             )
             trade_mtms[:, i] = (
                 ls_factor * notional / 100.0 * (discount_factors @ (amounts * np.exp(-s * tau)))

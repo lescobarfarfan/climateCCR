@@ -1,0 +1,51 @@
+# Static representative-portfolio back-pricing on an ANNUAL initialisation grid — tier E
+# of INT-40 (pipelines/31_static_book_backtest.py) with more initialisation dates
+# (OQ-INT-14 c, BCBS 2010 ¶13 / ¶21). Same chain as configs/static_book_backtest.yaml
+# (the three-date record): every July from 2016 to 2025; the dated chains are keyed by
+# date, so the three existing dates are reused and `--ejecutar` adds the seven new ones.
+# Reporting dates past the end of the realised series (2026-07-17) are never scored, so
+# 2024 and 2025 contribute the short horizons only; every horizon is read on all dates
+# and on its greedy non-overlapping subset (the `sample` column: 3Y = 2016/2019/2022,
+# 2Y = 2016/2018/2020/2022/2024, <= 1Y = all ten). Dates before 2016 are infeasible
+# (the dated calibration's 2016-start window and the 3-year min-data rule).
+#
+#   python pipelines/31_static_book_backtest.py --config configs/static_book_backtest_annual.yaml --ejecutar
+#   python pipelines/31_static_book_backtest.py --config configs/static_book_backtest_annual.yaml
+
+seed: 233423
+out_dir: static_book_backtest_annual
+init_dates:
+  - "2016-07-15"
+  - "2017-07-15"
+  - "2018-07-15"
+  - "2019-07-15"
+  - "2020-07-15"
+  - "2021-07-15"
+  - "2022-07-15"
+  - "2023-07-15"
+  - "2024-07-15"
+  - "2025-07-15"
+reference_valuation_date: "2026-07-17"
+book_config: configs/mexican_book.yaml
+market_calibration_config: configs/market_calibration.yaml
+jump_configs:
+  headline: configs/climate_jump_real_mexican.yaml
+  ct_anchor: configs/climate_jump_real_mexican_ct_anchor.yaml
+  floor: configs/climate_jump_real_mexican_floor.yaml
+reference_rate_scale_csv: results/loss_to_rate_scale_mx/scale.csv
+rate_headline_cells:   # as in the three-date record: the MKT-CALIB-06 tie-breaker first
+  - {proxy: TIIE28, window: full_2001, method: mle, crisis_excluded: true, sampling: weekly_wed}
+  - {proxy: FTIIE, window: full_2006, method: mle, crisis_excluded: true, sampling: weekly_wed}
+b3_grid: ["0D", "1W", "1M", "3M", "1Y", "2Y", "3Y"]
+cache_subdir_pattern: "data/market_mx/yahoo/book_{tag}"
+realised:
+  closes_dir: data/market_mx/yahoo/book
+  fix_csv: data/market_mx/sie/fix.csv
+  tiies_csv: data/market_mx/sie/tiies.csv
+  rate_column: FTIIE
+  tenor_days: 1.0
+  price_column: Close
+  max_stale_days: 10
+  curve: model                 # the model-mapped rate side (see *_annual_sie.yaml for the realised curve)
+percentiles: [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
+levels: [0.5, 0.8, 0.95]

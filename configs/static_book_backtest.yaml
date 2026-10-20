@@ -8,15 +8,21 @@
 # on pre-date data (¶24 / ¶41 back-pricing: pipelines/07 and 09 on dated configs
 # generated here), the exposure engine simulates jump-off / jump-on to 1W … 3Y,
 # and the SAME book is repriced on the realised market path (closes, FIX, F-TIIE
-# as the short-rate state — the HW1F curve is rebuilt from it, so the rate side
-# is model-mapped: a documented caveat) through the engine's joint-scenario
-# seam with a single path. The realised netted MtM per counterparty and
+# as the short-rate state — by default the HW1F curve is rebuilt from it, so the
+# rate side is model-mapped; `realised.curve: sie` discounts the rate legs on the
+# curve stripped from the SIE quotes at each reporting date, OQ-INT-14 a) through
+# the engine's joint-scenario seam with a single path. The realised netted MtM per counterparty and
 # reporting date is scored against the forecast paths (PIT, reliability at
 # several percentiles, central coverage) for both legs, aggregated across
 # counterparties, dates and initialisation dates (¶17).
 #
 #   python pipelines/31_static_book_backtest.py --ejecutar    # write the dated configs, run 07 -> 09 -> 01 x bands per date
 #   python pipelines/31_static_book_backtest.py               # score the realised reprice
+#
+# This file is the three-date record of INT-40; configs/static_book_backtest_annual.yaml
+# runs the annual initialisation grid (every horizon also read on its greedy non-overlapping
+# subset of dates, BCBS 2010 ¶13) and configs/static_book_backtest_annual_sie.yaml scores
+# that grid on the realised curve.
 
 seed: 233423
 out_dir: static_book_backtest
@@ -47,5 +53,12 @@ realised:
   tenor_days: 1.0
   price_column: Close
   max_stale_days: 10
+  curve: model                 # model = HW1F mapping of the realised short rate (the INT-40 record);
+                               # sie = the rate legs discount on the MXN zero curve stripped from the
+                               # SIE quotes at each reporting date (pricers' discount_factors hook)
+  sie_dir: data/market_mx/sie  # the strip inputs when curve == sie
+  min_bonos_buckets: 4         # a complete strip date (the market_calibration.yaml rule)
+  curve_max_lag_days: 20       # nearest complete strip date at or before each reporting date
+                               # (TIIE182 is quoted weekly before 2023)
 percentiles: [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
 levels: [0.5, 0.8, 0.95]

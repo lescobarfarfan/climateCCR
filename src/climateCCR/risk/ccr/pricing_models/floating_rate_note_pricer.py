@@ -1,7 +1,6 @@
 import numpy as np
 
 from climateCCR.calibration.financial.bond_yield import FRN_PERIOD_DAYS, frn_cashflow_times
-from climateCCR.simulation.simulated_hw1f_curve import SimulatedHW1FCurve
 from climateCCR.utils.calendar_utils import transform_dates_to_time_differences
 
 from .pricing_model import PricingModel
@@ -77,20 +76,12 @@ class FloatingRateNotePricer(PricingModel):
             tau_fix = np.maximum(times_days - FRN_PERIOD_DAYS, 0.0) / 365.0
             t = transform_dates_to_time_differences(valuation_dates[0], valuation_date)
             s = schedule.shocked_spread(spread, t, issuer) if schedule is not None else spread
-            curve = SimulatedHW1FCurve(scenarios[discount_curve][:, i])
-            p_pay = curve.get_value(
-                calibration=self.calibration[discount_curve],
-                t_date=t,
-                T_date=t + tau,
-                initial_date=None,
-                return_log=False,
+            short_rate = scenarios[discount_curve][:, i]
+            p_pay = self.discount_factors(
+                discount_curve, short_rate, t, t + tau, valuation_date, global_parameters
             )
-            p_fix = curve.get_value(
-                calibration=self.calibration[discount_curve],
-                t_date=t,
-                T_date=t + tau_fix,
-                initial_date=None,
-                return_log=False,
+            p_fix = self.discount_factors(
+                discount_curve, short_rate, t, t + tau_fix, valuation_date, global_parameters
             )
             forward_simple = (p_fix / p_pay - 1.0) / accrual
             amounts = (forward_simple + margin) * accrual * 100.0

@@ -2,7 +2,6 @@ from datetime import datetime
 
 import numpy as np
 
-from climateCCR.simulation.simulated_hw1f_curve import SimulatedHW1FCurve
 from climateCCR.utils.calendar_utils import (
     time_step_from_frequency,
     transform_dates_to_time_differences,
@@ -91,7 +90,6 @@ class InterestRateSwapPricer(PricingModel):
         t0 = valuation_dates[0]
         strike = trade.get_attribute("K")
         notional = trade.get_attribute("notional")
-        calibration = self.calibration[simulated_underlying]
 
         for i, valuation_date in enumerate(valuation_dates):
             if valuation_date > trade.get_attribute("maturity"):
@@ -112,7 +110,7 @@ class InterestRateSwapPricer(PricingModel):
                 ):
                     raise ValueError("Something is wrong with the residual fixing schedule.")
 
-                simulated_curve = SimulatedHW1FCurve(scenarios[simulated_underlying][:, i])
+                short_rate = scenarios[simulated_underlying][:, i]
                 t_val = transform_dates_to_time_differences(t0, valuation_date)
                 pay_times = transform_dates_to_time_differences(
                     t0, list(residual_payments_schedule)
@@ -135,12 +133,13 @@ class InterestRateSwapPricer(PricingModel):
                 accruals_360 = accruals * (365.0 / 360.0)
 
                 # discounting off the valuation-date state, as before
-                discount_factors = simulated_curve.get_value(
-                    calibration=calibration,
-                    t_date=t_val,
-                    T_date=pay_times,
-                    initial_date=None,
-                    return_log=False,
+                discount_factors = self.discount_factors(
+                    simulated_underlying,
+                    short_rate,
+                    t_val,
+                    pay_times,
+                    valuation_date,
+                    global_parameters,
                 )
 
                 # Each period's floating rate is the t_val-conditional simple Act/360
@@ -151,19 +150,21 @@ class InterestRateSwapPricer(PricingModel):
                 # no per-path fixing history) is proxied by the valuation-date forward
                 # over the same accrual span.
                 effective_fixing_times = np.maximum(np.asarray(fixing_times), t_val)
-                p_start = simulated_curve.get_value(
-                    calibration=calibration,
-                    t_date=t_val,
-                    T_date=effective_fixing_times,
-                    initial_date=None,
-                    return_log=False,
+                p_start = self.discount_factors(
+                    simulated_underlying,
+                    short_rate,
+                    t_val,
+                    effective_fixing_times,
+                    valuation_date,
+                    global_parameters,
                 )
-                p_end = simulated_curve.get_value(
-                    calibration=calibration,
-                    t_date=t_val,
-                    T_date=effective_fixing_times + accruals.ravel(),
-                    initial_date=None,
-                    return_log=False,
+                p_end = self.discount_factors(
+                    simulated_underlying,
+                    short_rate,
+                    t_val,
+                    effective_fixing_times + accruals.ravel(),
+                    valuation_date,
+                    global_parameters,
                 )
                 floating_rates = (p_start / p_end - 1.0) / accruals_360
                 if nonsimulated_underlying is not None:
