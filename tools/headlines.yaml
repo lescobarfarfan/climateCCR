@@ -1,0 +1,361 @@
+# Headline cells of the canon (context/DECISIONS.md, state of 2026-10-12) → the regenerated
+# artifact that carries each one. Checked by
+#   python tools/compare_results.py --headlines tools/headlines.yaml results
+# at the canon's reported precision (`decimals`). `where` filters rows by exact string match;
+# a cell repeated on every filtered row (stream-level columns) counts as one value.
+
+# --- INT-23 / CCR-SIM-03: the EPE band on the Mexican book -------------------------------
+- label: BOOK EPE baseline (MXN)
+  file: figures/climate_jump_real_mexican/epe_summary.csv
+  where: {scenario: "headline (λ = 19.2857/yr)", netting_agreement_id: BOOK}
+  column: epe_baseline
+  expected: 255735.47
+  decimals: 2
+- label: BOOK EPE shift, headline λ=19.2857 (%)
+  file: figures/climate_jump_real_mexican/epe_summary.csv
+  where: {scenario: "headline (λ = 19.2857/yr)", netting_agreement_id: BOOK}
+  column: epe_shift_pct
+  expected: -9.00
+- label: BOOK EPE shift, CT anchor λ=10.087 (%)
+  file: figures/climate_jump_real_mexican/epe_summary.csv
+  where: {scenario: "ct anchor (λ = 10.087/yr)", netting_agreement_id: BOOK}
+  column: epe_shift_pct
+  expected: -5.51
+- label: BOOK EPE shift, floor λ=7.2222 (%)
+  file: figures/climate_jump_real_mexican/epe_summary.csv
+  where: {scenario: "floor (λ = 7.2222/yr)", netting_agreement_id: BOOK}
+  column: epe_shift_pct
+  expected: -4.99
+
+# --- CCR-RISK-08: Effective EPE ----------------------------------------------------------
+- label: BOOK EEPE baseline (MXN)
+  file: figures/climate_jump_real_mexican/eepe_summary.csv
+  where: {scenario: "headline (λ = 19.2857/yr)", netting_agreement_id: BOOK}
+  column: eepe_baseline
+  expected: 2574472
+  decimals: 0
+- label: BOOK EEPE shift, headline (%)
+  file: figures/climate_jump_real_mexican/eepe_summary.csv
+  where: {scenario: "headline (λ = 19.2857/yr)", netting_agreement_id: BOOK}
+  column: eepe_shift_pct
+  expected: -2.18
+- label: BOOK EEPE shift, CT anchor (%)
+  file: figures/climate_jump_real_mexican/eepe_summary.csv
+  where: {scenario: "ct anchor (λ = 10.087/yr)", netting_agreement_id: BOOK}
+  column: eepe_shift_pct
+  expected: -1.56
+- label: BOOK EEPE shift, floor (%)
+  file: figures/climate_jump_real_mexican/eepe_summary.csv
+  where: {scenario: "floor (λ = 7.2222/yr)", netting_agreement_id: BOOK}
+  column: eepe_shift_pct
+  expected: -1.43
+
+# --- GEN-34 / GEN-38: 1y book-exposure q99 and the seed spread -----------------------------
+- label: 1y book-exposure q99, baseline (MXN)
+  file: seed_sensitivity/seed_intervals.csv
+  where: {band: headline, metric: book_q99_1y_baseline, netting_agreement_id: BOOK}
+  column: canonical_value
+  expected: 3041356
+  decimals: 0
+- label: 1y book-exposure q99, climate headline (MXN)
+  file: seed_sensitivity/seed_intervals.csv
+  where: {band: headline, metric: book_q99_1y_climate, netting_agreement_id: BOOK}
+  column: canonical_value
+  expected: 2727327
+  decimals: 0
+- label: 1y book-exposure q99, climate CT anchor (MXN)
+  file: seed_sensitivity/seed_intervals.csv
+  where: {band: ct_anchor, metric: book_q99_1y_climate, netting_agreement_id: BOOK}
+  column: canonical_value
+  expected: 2855976
+  decimals: 0
+- label: 1y book-exposure q99, climate floor (MXN)
+  file: seed_sensitivity/seed_intervals.csv
+  where: {band: floor, metric: book_q99_1y_climate, netting_agreement_id: BOOK}
+  column: canonical_value
+  expected: 2872875
+  decimals: 0
+- label: seed sd of the BOOK EPE shift, headline (pp)
+  file: seed_sensitivity/seed_intervals.csv
+  where: {band: headline, metric: epe_shift_pct, netting_agreement_id: BOOK}
+  column: sd
+  expected: 0.03
+
+# --- INT-31 / INT-35 / MKT-NGFS-09: the transition channel, three flavours -----------------
+- label: NGFS nivel HWTP transition (%)
+  file: ngfs_epe_readout/book_epe_deltas.csv
+  where: {scenario: HWTP, band: headline}
+  column: transition_pct
+  expected: -5.72
+- label: NGFS nivel HWTP combined (%)
+  file: ngfs_epe_readout/book_epe_deltas.csv
+  where: {scenario: HWTP, band: headline}
+  column: combined_pct
+  expected: -14.45
+- label: NGFS nivel HWTP jump-within (%)
+  file: ngfs_epe_readout/book_epe_deltas.csv
+  where: {scenario: HWTP, band: headline}
+  column: jump_within_pct
+  expected: -9.26
+- label: NGFS nivel SWUC transition (%)
+  file: ngfs_epe_readout/book_epe_deltas.csv
+  where: {scenario: SWUC, band: headline}
+  column: transition_pct
+  expected: -8.16
+- label: NGFS nivel SWUC combined (%)
+  file: ngfs_epe_readout/book_epe_deltas.csv
+  where: {scenario: SWUC, band: headline}
+  column: combined_pct
+  expected: -16.88
+- label: NGFS nivel SWUC jump-within (%)
+  file: ngfs_epe_readout/book_epe_deltas.csv
+  where: {scenario: SWUC, band: headline}
+  column: jump_within_pct
+  expected: -9.50
+- label: NGFS nivel DAPS_NAM transition (%)
+  file: ngfs_epe_readout/book_epe_deltas.csv
+  where: {scenario: DAPS_NAM, band: headline}
+  column: transition_pct
+  expected: -20.02
+- label: NGFS trayectoria HWTP transition (%)
+  file: ngfs_epe_readout_trayectoria/book_epe_deltas.csv
+  where: {scenario: HWTP, band: headline}
+  column: transition_pct
+  expected: -1.49
+- label: NGFS trayectoria SWUC transition (%)
+  file: ngfs_epe_readout_trayectoria/book_epe_deltas.csv
+  where: {scenario: SWUC, band: headline}
+  column: transition_pct
+  expected: -1.23
+- label: NGFS trayectoria DAPS_NAM transition (%)
+  file: ngfs_epe_readout_trayectoria/book_epe_deltas.csv
+  where: {scenario: DAPS_NAM, band: headline}
+  column: transition_pct
+  expected: 0.16
+- label: NGFS fase HWTP transition (%)
+  file: ngfs_epe_readout_fase/book_epe_deltas.csv
+  where: {scenario: HWTP, band: headline}
+  column: transition_pct
+  expected: -4.57
+- label: NGFS fase SWUC transition (%)
+  file: ngfs_epe_readout_fase/book_epe_deltas.csv
+  where: {scenario: SWUC, band: headline}
+  column: transition_pct
+  expected: -6.62
+- label: NGFS fase DAPS_NAM transition (%)
+  file: ngfs_epe_readout_fase/book_epe_deltas.csv
+  where: {scenario: DAPS_NAM, band: headline}
+  column: transition_pct
+  expected: -7.37
+- label: NGFS fase HWTP combined (%)
+  file: ngfs_epe_readout_fase/book_epe_deltas.csv
+  where: {scenario: HWTP, band: headline}
+  column: combined_pct
+  expected: -13.28
+- label: NGFS fase SWUC combined (%)
+  file: ngfs_epe_readout_fase/book_epe_deltas.csv
+  where: {scenario: SWUC, band: headline}
+  column: combined_pct
+  expected: -15.25
+
+# --- INT-39: the control book -------------------------------------------------------------
+- label: control-book EPE shift, headline (%)
+  file: book_comparison/book_epe_shift_comparison.csv
+  where: {book: comparison, band: headline}
+  column: epe_shift_pct
+  expected: -3.50
+- label: control-book EPE shift, CT anchor (%)
+  file: book_comparison/book_epe_shift_comparison.csv
+  where: {book: comparison, band: ct_anchor}
+  column: epe_shift_pct
+  expected: -1.92
+- label: control-book EPE shift, floor (%)
+  file: book_comparison/book_epe_shift_comparison.csv
+  where: {book: comparison, band: floor}
+  column: epe_shift_pct
+  expected: -1.68
+- label: control-book Σ wγ (anchored on the Mexican scale)
+  file: equity_mark_scales_comparison/anchor.csv
+  column: sum_w_gamma
+  expected: 0.241
+  decimals: 3
+
+# --- CCR-RISK-06: CVA ---------------------------------------------------------------------
+- label: base BOOK CVA, LGD 0.60 (MXN)
+  file: cva/cva_summary.csv
+  where: {leg: base, netting_agreement_id: BOOK}
+  column: cva_lgd_headline
+  expected: 515270
+  decimals: 0
+
+# --- MKT-CALIB-08 / MKT-CURVE-05 / INT-17 / INT-22: calibration anchors --------------------
+- label: HW1F a (weekly MLE, F-TIIE)
+  file: market_calibration/nelson_siegel.csv
+  column: hw1f_alpha
+  expected: 0.0758
+  decimals: 4
+- label: HW1F σ (weekly MLE, F-TIIE)
+  file: market_calibration/nelson_siegel.csv
+  column: hw1f_sigma
+  expected: 0.0081
+  decimals: 4
+- label: Nelson–Siegel rmse (bp)
+  file: market_calibration/nelson_siegel.csv
+  column: rmse_bp
+  expected: 12.0
+  decimals: 1
+- label: pass-through β
+  file: loss_to_mark_scale/scale.csv
+  column: beta
+  expected: 0.174
+  decimals: 3
+- label: book scale K (MDP-2025)
+  file: loss_to_mark_scale/scale.csv
+  column: k_mdp
+  expected: 22964
+  decimals: 0
+- label: K_eff = K/β (MDP-2025)
+  file: loss_to_mark_scale/scale.csv
+  column: k_eff_mdp
+  expected: 131932
+  decimals: 0
+- label: S_rate_eff_MX (MDP-2025)
+  file: loss_to_rate_scale_mx/scale.csv
+  column: s_rate_eff_mdp
+  expected: 175293784
+  decimals: 0
+
+# --- INT-20 / HAZ-STOCH-07: arrival intensities and the floor severity ---------------------
+- label: λ registry (mayores_200mdp 2002–2015, /yr)
+  file: hazard_jump_calibration_2000_2024/parameters.csv
+  where: {variant: mayores_200mdp_2002_2015}
+  column: intensity_per_yr
+  expected: 19.2857
+  decimals: 4
+- label: λ floor (mayores_200mdp 2016–2024, /yr)
+  file: hazard_jump_calibration_2000_2024/parameters.csv
+  where: {variant: mayores_200mdp_2016_2024}
+  column: intensity_per_yr
+  expected: 7.2222
+  decimals: 4
+- label: floor severity median (MDP-2025)
+  file: hazard_jump_calibration_2000_2024/parameters.csv
+  where: {variant: mayores_200mdp_2016_2024}
+  column: sev_median_mdp
+  expected: 1287.13
+- label: floor severity σ
+  file: hazard_jump_calibration_2000_2024/parameters.csv
+  where: {variant: mayores_200mdp_2016_2024}
+  column: sev_sigma
+  expected: 1.0555
+  decimals: 4
+- label: λ CT bridge (ciclón 2002–2024, /yr)
+  file: hazard_jump_calibration_2000_2024/parameters.csv
+  where: {variant: ciclon_tropical_2002_2024}
+  column: intensity_per_yr
+  expected: 10.0870
+  decimals: 4
+- label: CT bridge arrivals growth (log/yr)
+  file: hazard_jump_calibration_2000_2024/parameters.csv
+  where: {variant: ciclon_tropical_2002_2024}
+  column: arrivals_growth_log_yr
+  expected: 0.016793
+  decimals: 6
+
+# --- INT-40: backtest tiers A–C ---------------------------------------------------------
+- label: tier A, all cyclones 2016–2024 realised count
+  file: hazard_backtest/counts.csv
+  where: {stream: ciclon_all}
+  column: n_test_events
+  expected: 88
+  decimals: 0
+- label: tier A, all cyclones predicted mean
+  file: hazard_backtest/counts.csv
+  where: {stream: ciclon_all}
+  column: predicted_mean
+  expected: 92.6
+  decimals: 1
+- label: tier A, all cyclones predicted sd
+  file: hazard_backtest/counts.csv
+  where: {stream: ciclon_all}
+  column: predicted_sd
+  expected: 9.6
+  decimals: 1
+- label: tier A, all cyclones two-sided p
+  file: hazard_backtest/counts.csv
+  where: {stream: ciclon_all}
+  column: p_two_sided
+  expected: 0.68
+- label: tier A, ≥200 MDP cyclones realised count
+  file: hazard_backtest/counts.csv
+  where: {stream: ciclon_200}
+  column: n_test_events
+  expected: 51
+  decimals: 0
+- label: tier A, ≥200 MDP cyclones predicted mean
+  file: hazard_backtest/counts.csv
+  where: {stream: ciclon_200}
+  column: predicted_mean
+  expected: 59.1
+  decimals: 1
+- label: tier A, ≥200 MDP cyclones two-sided p
+  file: hazard_backtest/counts.csv
+  where: {stream: ciclon_200}
+  column: p_two_sided
+  expected: 0.32
+- label: tier A, ≥200 MDP annual loss A/E mean
+  file: hazard_backtest/annual_loss_summary.csv
+  where: {stream: ciclon_200}
+  column: ae_mean
+  expected: 0.74
+- label: tier A, ≥200 MDP annual loss A/E median
+  file: hazard_backtest/annual_loss_summary.csv
+  where: {stream: ciclon_200}
+  column: ae_median
+  expected: 0.49
+- label: tier A, all cyclones annual loss A/E mean
+  file: hazard_backtest/annual_loss_summary.csv
+  where: {stream: ciclon_all}
+  column: ae_mean
+  expected: 0.08
+- label: tier B, raw out-of-time A/E mean
+  file: loss_ratio_backtest/loss_ratio_summary.csv
+  where: {variant: raw, window: out_of_time}
+  column: ae_mean
+  expected: 1.50
+- label: tier B, raw out-of-time A/E median
+  file: loss_ratio_backtest/loss_ratio_summary.csv
+  where: {variant: raw, window: out_of_time}
+  column: ae_median
+  expected: 1.24
+- label: tier B, bridged out-of-time A/E mean
+  file: loss_ratio_backtest/loss_ratio_summary.csv
+  where: {variant: bridged, window: out_of_time}
+  column: ae_mean
+  expected: 1.44
+- label: tier B, cat-excess out-of-time A/E mean
+  file: loss_ratio_backtest/loss_ratio_summary.csv
+  where: {variant: cat_excess, window: out_of_time}
+  column: ae_mean
+  expected: 0.47
+- label: tier B, raw out-of-time central-80 coverage
+  file: loss_ratio_backtest/loss_ratio_summary.csv
+  where: {variant: raw, window: out_of_time}
+  column: coverage_80
+  expected: 0.78
+- label: tier B, raw out-of-time KS p
+  file: loss_ratio_backtest/loss_ratio_summary.csv
+  where: {variant: raw, window: out_of_time}
+  column: ks_p_pit
+  expected: 0.057
+  decimals: 3
+- label: tier C, FIX 1W central-50 coverage
+  file: risk_factor_backtest/tests.csv
+  where: {horizon: 1W, factor: MXN_USD_FX_RATE}
+  column: coverage_50
+  expected: 0.46
+- label: tier C, FIX 1W central-80 coverage
+  file: risk_factor_backtest/tests.csv
+  where: {horizon: 1W, factor: MXN_USD_FX_RATE}
+  column: coverage_80
+  expected: 0.72
