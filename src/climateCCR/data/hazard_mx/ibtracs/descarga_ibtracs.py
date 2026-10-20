@@ -25,7 +25,7 @@ import hashlib
 import json
 import sys
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from climateCCR.infra import project_paths
@@ -71,7 +71,7 @@ def descargar(dir_crudos: Path = DIR_CRUDOS, force: bool = False, timeout: int =
         "doi": "10.25921/82ty-9e16",
         "cita": "Knapp, K. R., et al. (2010), BAMS 91, 363-376.",
         "doc_columnas": DOC_COLUMNAS,
-        "fecha_descarga_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "fecha_descarga_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "archivos": {},
     }
     for cuenca, nombre in ARCHIVOS.items():

@@ -9,7 +9,7 @@ key needed. Values land as published; provenance is the caller's job
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pandas as pd
 import requests
@@ -35,11 +35,11 @@ def fetch_daily_closes(
     Raises ``RuntimeError`` on HTTP or payload errors — no silent empties.
     """
     session = session or build_session()
-    period1 = int(datetime.fromisoformat(start).replace(tzinfo=timezone.utc).timestamp())
+    period1 = int(datetime.fromisoformat(start).replace(tzinfo=UTC).timestamp())
     end_dt = (
-        datetime.now(timezone.utc)
+        datetime.now(UTC)
         if end is None
-        else (datetime.fromisoformat(end).replace(tzinfo=timezone.utc) + pd.Timedelta(days=1))
+        else (datetime.fromisoformat(end).replace(tzinfo=UTC) + pd.Timedelta(days=1))
     )
     response = session.get(
         CHART_URL.format(symbol=symbol),

@@ -17,7 +17,7 @@ import argparse
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -142,7 +142,7 @@ def main() -> None:
             for p in sorted(out_dir.glob("*.csv"))
         }
         provenance = {
-            "descargado_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "descargado_utc": datetime.now(UTC).isoformat(timespec="seconds"),
             "fuente": "NGFS Short-term Climate Scenarios (May 2025, V1.0), IIASA Scenario Explorer",
             "aplicacion": application,
             "url_base": base_url,

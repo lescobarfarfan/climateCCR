@@ -17,7 +17,7 @@ import argparse
 import hashlib
 import json
 import sys
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -41,7 +41,7 @@ def _write_provenance(directory: Path, meta: dict) -> None:
         for p in sorted(directory.glob("*.csv"))
     }
     payload = {
-        "descargado_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "descargado_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "archivos": files,
         **meta,
     }
