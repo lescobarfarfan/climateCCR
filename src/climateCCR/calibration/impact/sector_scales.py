@@ -25,8 +25,10 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
+import yaml
 
 _CLIMATE_SCOPE = "si"
 
@@ -177,6 +179,59 @@ def compose_scales(
         scales[f"gamma_{peril}"] = scales[f"gamma_raw_{peril}"] / denom
     scales.attrs["denominator"] = float(denom)
     return scales
+
+
+def resolve_shared(extra: Mapping[str, Any], root: str | Path) -> dict[str, Any]:
+    """Effective keys of a scales config whose ``shared:`` names a base scales config.
+
+    The base file's keys (S tiers, population, peril groups, damage panel, windows,
+    peril-mix spec) are inherited and the keys written in ``extra`` win — the
+    comparison-book reading of INT-39. The typed ``infra.Config`` fields of the base
+    (seed, n_paths, ...) are never inherited: ``load_config`` keeps them out of
+    ``extra``. Without ``shared`` the mapping comes back as a plain copy.
+    """
+    shared = extra.get("shared")
+    if not shared:
+        return dict(extra)
+    path = Path(root) / str(shared)
+    if not path.exists():  # load_config returns an empty config for a missing file
+        raise FileNotFoundError(f"shared scales config not found: {path}")
+    from climateCCR.infra import load_config
+
+    return dict(load_config(path).extra) | dict(extra)
+
+
+def anchor_denominator(
+    anchor_scales_config: str | Path,
+    *,
+    root: str | Path,
+    susceptibility: Mapping[str, Mapping[str, float]],
+    population: Mapping[str, float],
+    intensity: pd.DataFrame,
+) -> tuple[float, dict[str, Any]]:
+    """The anchor book's normalizer, composed on the SAME S / population / H (INT-39).
+
+    Reads the anchor scales config (its ``book_config``, ``eq_desk`` and
+    ``exposicion_geografica``) and composes the anchor book's scales with the
+    inputs given — so a transformed S matrix or damage panel transforms the anchor
+    with it — returning ``(denominator, anchor_cfg)``; the config travels for
+    provenance (the ``anchor.csv`` record).
+    """
+    root = Path(root)
+    anchor_cfg = yaml.safe_load((root / str(anchor_scales_config)).read_text(encoding="utf-8"))
+    anchor_book = yaml.safe_load((root / anchor_cfg["book_config"]).read_text(encoding="utf-8"))
+    anchor_equities = anchor_book["equities"]
+    scales = compose_scales(
+        anchor_equities,
+        susceptibility=susceptibility,
+        geo_exposure=anchor_cfg["exposicion_geografica"],
+        population=population,
+        intensity=intensity,
+        weights=book_equity_weights(
+            root / anchor_cfg["eq_desk"], [eq["rf"] for eq in anchor_equities]
+        ),
+    )
+    return float(scales.attrs["denominator"]), anchor_cfg
 
 
 def peril_mix_from_events(

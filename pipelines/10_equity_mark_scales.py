@@ -45,8 +45,6 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCALES_CONFIG = REPO_ROOT / "configs" / "equity_mark_scales.yaml"
-#: ``infra.Config`` typed fields — never inherited from a ``shared`` scales config.
-_TYPED_KEYS = {"seed", "n_paths", "settlement_currency", "date_format"}
 
 
 def main() -> None:
@@ -70,11 +68,13 @@ def main() -> None:
         load_climate_events,
     )
     from climateCCR.calibration.impact.sector_scales import (
+        anchor_denominator,
         book_equity_weights,
         cnsf_uso_peril_evidence,
         compose_scales,
         load_damage_intensity,
         peril_mix_from_events,
+        resolve_shared,
     )
     from climateCCR.infra import RunManifest, get_logger, load_config
 
@@ -82,11 +82,7 @@ def main() -> None:
     config.paths.ensure()
     logger = get_logger("climateCCR.equity_mark_scales", log_dir=config.paths.logs)
 
-    extra = dict(config.extra)
-    shared = extra.get("shared")
-    if shared:
-        base = yaml.safe_load((config.paths.root / str(shared)).read_text(encoding="utf-8"))
-        extra = {k: v for k, v in base.items() if k not in _TYPED_KEYS} | extra
+    extra = resolve_shared(config.extra, config.paths.root)
     out_dir = config.paths.results / str(extra.get("output_dir", "equity_mark_scales"))
     out_csv = out_dir / "target_scales.csv"
     if out_csv.exists() and not args.forzar:
@@ -115,33 +111,17 @@ def main() -> None:
 
     # Anchored book (INT-39): recompose the anchor book on the SAME S / population /
     # H inputs and reuse its normalizer, so both books share one absolute scale.
-    denominator = None
+    denominator, anchor_cfg = None, None
     anchor_spec = extra.get("anchor")
     if anchor_spec:
-        anchor_cfg = yaml.safe_load(
-            (config.paths.root / str(anchor_spec["scales_config"])).read_text(encoding="utf-8")
-        )
-        anchor_book = yaml.safe_load(
-            (config.paths.root / anchor_cfg["book_config"]).read_text(encoding="utf-8")
-        )
-        anchor_equities = anchor_book["equities"]
-        anchor_scales = compose_scales(
-            anchor_equities,
+        denominator, anchor_cfg = anchor_denominator(
+            anchor_spec["scales_config"],
+            root=config.paths.root,
             susceptibility=extra["susceptibility"],
-            geo_exposure=anchor_cfg["exposicion_geografica"],
             population=extra["poblacion_2020"],
             intensity=intensity,
-            weights=book_equity_weights(
-                config.paths.root / anchor_cfg["eq_desk"], [eq["rf"] for eq in anchor_equities]
-            ),
         )
-        denominator = float(anchor_scales.attrs["denominator"])
-        logger.info(
-            "anchored on %s (%d names): denominator = %.6e",
-            anchor_cfg["book_config"],
-            len(anchor_scales),
-            denominator,
-        )
+        logger.info("anchored on %s: denominator = %.6e", anchor_cfg["book_config"], denominator)
 
     scales = compose_scales(
         equities,

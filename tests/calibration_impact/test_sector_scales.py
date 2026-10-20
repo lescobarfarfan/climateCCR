@@ -262,3 +262,54 @@ def test_peril_mix_from_events_cluster_storms(tmp_path):
     mix = peril_mix_from_events(path, cluster_storms=True, **kwargs)
     assert mix["ciclon"] == pytest.approx(1 / 2)
     assert mix["sequia"] == pytest.approx(1 / 2)
+
+
+def test_resolve_shared_inherits_base_keys_and_own_keys_win(tmp_path):
+    from climateCCR.calibration.impact.sector_scales import resolve_shared
+
+    (tmp_path / "base.yaml").write_text("seed: 1\na: 1\nb: 2\n", encoding="utf-8")
+    merged = resolve_shared({"shared": "base.yaml", "b": 3}, tmp_path)
+    assert merged == {"shared": "base.yaml", "a": 1, "b": 3}  # typed fields never inherited
+    assert resolve_shared({"b": 3}, tmp_path) == {"b": 3}
+    with pytest.raises(FileNotFoundError):
+        resolve_shared({"shared": "missing.yaml"}, tmp_path)
+
+
+def test_anchor_denominator_matches_compose_scales(tmp_path):
+    import yaml
+    from climateCCR.calibration.impact.sector_scales import anchor_denominator
+
+    desk = pd.DataFrame(
+        {
+            "underlying": ["HOTELCO_SHARE", "AGROCO_SHARE"],
+            "put/call": ["call", "call"],
+            "notional": [100.0, 100.0],
+            "K": [10.0, 10.0],
+        }
+    )
+    desk.to_csv(tmp_path / "eq.csv", index=False)
+    (tmp_path / "book.yaml").write_text(yaml.safe_dump({"equities": EQUITIES}), encoding="utf-8")
+    geo = {"HOTELCO_SHARE": {"estados": {"Costa": 10}}}
+    (tmp_path / "anchor_scales.yaml").write_text(
+        yaml.safe_dump(
+            {"book_config": "book.yaml", "eq_desk": "eq.csv", "exposicion_geografica": geo}
+        ),
+        encoding="utf-8",
+    )
+    denominator, cfg = anchor_denominator(
+        "anchor_scales.yaml",
+        root=tmp_path,
+        susceptibility=SUSCEPTIBILITY,
+        population=POPULATION,
+        intensity=_intensity(),
+    )
+    expected = compose_scales(
+        EQUITIES,
+        susceptibility=SUSCEPTIBILITY,
+        geo_exposure=geo,
+        population=POPULATION,
+        intensity=_intensity(),
+        weights=pd.Series({"HOTELCO_SHARE": 0.5, "AGROCO_SHARE": 0.5}),
+    )
+    assert denominator == pytest.approx(expected.attrs["denominator"], rel=1e-12)
+    assert cfg["book_config"] == "book.yaml"
