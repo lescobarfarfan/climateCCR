@@ -41,6 +41,7 @@ haz = [
     "beautifulsoup4>=4.12", # HTML parsing (scrapers; requests itself is a core dependency)
     "lxml>=5.0",            # bs4 backend / XML
     "openpyxl>=3.1",        # CNSF .xlsx consolidation
+    "xlrd>=2.0",            # CNSF .xls years (agro 2008-2014)
     "geopandas>=0.13",      # INEGI shapefiles, state attribution
     "shapely>=2.0",
     "pyproj>=3.5",          # EPSG:6372 reprojection (correct km buffers)

@@ -33,6 +33,7 @@ dependencies:
   # the CNSF script layer + its tests (the light half of the pyproject `haz` extra;
   # the geo/climate stack -- geopandas, xarray, cdsapi, climada -- stays opt-in)
   - openpyxl
+  - xlrd # the 2008-2014 CNSF agro years are .xls (consolidar_cnsf)
   - beautifulsoup4
   - lxml
   - pip
