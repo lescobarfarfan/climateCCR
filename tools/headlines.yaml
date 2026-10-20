@@ -386,3 +386,20 @@
   where: {variant: hidro_merged, band: headline}
   column: book_epe_shift_pct
   expected: -3.82
+
+# --- INT-42 (2026-10-20): tier E on the annual grid, non-overlapping sample ---------------
+- label: tier E annual, baseline headline, non-overlapping sample, central-95 coverage
+  file: static_book_backtest_annual/summary.csv
+  where: {sample: non_overlapping, leg: baseline, band: headline, grouping: leg+band}
+  column: coverage_95
+  expected: 0.94
+- label: tier E annual, baseline headline, non-overlapping sample, realised exposure over forecast EE
+  file: static_book_backtest_annual/summary.csv
+  where: {sample: non_overlapping, leg: baseline, band: headline, grouping: leg+band}
+  column: ae_exposure
+  expected: 0.97
+- label: tier E annual on the realised curve, baseline 3Y, non-overlapping sample, central-95 coverage
+  file: static_book_backtest_annual_sie/summary.csv
+  where: {sample: non_overlapping, leg: baseline, band: headline, grouping: leg+band+horizon, horizon: 3Y}
+  column: coverage_95
+  expected: 0.59

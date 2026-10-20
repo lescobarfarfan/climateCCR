@@ -57,6 +57,8 @@ Full-tree comparison of `results/` (1,593 files, manifests and logs aside): **93
 
 `pipelines/11` jitter draws should not depend on sectors outside the book (substream per sector name, or draw over the book's sectors only); `pipelines/09` should remove stale per-NAID files on rebuild (or fail loudly) and should not re-stamp `_procedencia.json`'s `descargado_utc` when every series came from the cache; the stale `--aliases src/aliases_cnsf.json` default in `consolidar_cnsf.py` / `scraper_cnsf.py`; the `--generar` flag documented in `configs/static_book_backtest.yaml` that `pipelines/31` does not accept; `tests/data/hazard_mx/cnsf/test_orquestacion_cnsf.py` hard-codes `/home/claude`; `configs/pimpa_fixture.yaml` spells `backtesting_Data` (dormant key; case-sensitive filesystems); 47 `read_text()` / 29 `write_text()` calls without `encoding` (guarded by `PYTHONUTF8=1` in the driver); the two canon cells whose rounding did not match their own artifact (EEPE seed sd "0.02" is 0.01; FIX 1W coverage ".88" is 0.87).
 
+**Closed 2026-10-20** — every item of §7 landed in `GEN-42` (the two rounding cells had been corrected by the morning digest); the stale artifacts of §6.2 are a macOS-tree action (`GEN-41`); the CNSF 2025 vintage of §6.1 was deferred by ruling (`GEN-41`).
+
 ## Related
 Reads with: [[WORKFLOW]] (§4 reproducibility) · [[DECISIONS]] (`GEN-30`, `GEN-37`, `GEN-38`, `CCR-SIM-02/03`) · [[ngfs_application_flavors]] (the run matrix the driver encodes) · [[CCR_MOC]] · [[MKT_MOC]] · [[HAZ_MOC]]. Home: [[_INDEX]]
 #arm/int #type/pipeline
