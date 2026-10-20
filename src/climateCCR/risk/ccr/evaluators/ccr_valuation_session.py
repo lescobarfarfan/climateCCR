@@ -273,12 +273,13 @@ class CCR_Valuation_Session:
         count_array = 0
         count_grid_default = 0
         count_grid_closeout = 0
+        collateral_at_default = []  # the balance frozen at each default-grid date, grid order
         for date in self.simulation_dates:
             if date in self.b3_default_grid:
                 self.uncollateralised_ee[0, count_grid_default] = np.mean(
                     np.maximum(self.scenarios_portfolio_values[:, count_array], 0), axis=0
                 )
-                last_collateral_balance = self.scenarios_collateral_requirements[:, count_array]
+                collateral_at_default.append(self.scenarios_collateral_requirements[:, count_array])
                 for quantile in self.pe_quantiles:
                     self.uncollateralised_pe[quantile][0, count_grid_default] = np.quantile(
                         self.scenarios_portfolio_values[:, count_array], q=quantile, axis=0
@@ -286,15 +287,16 @@ class CCR_Valuation_Session:
                 count_grid_default += 1
 
             if date in self.b3_closeout_grid:
+                # Close-out j = default j + MPOR (generate_time_grids): net the balance frozen at
+                # default j, not the one at the latest default date walked past (OQ-CCR-11).
+                balance = collateral_at_default[count_grid_closeout]
                 self.collateralised_ee[0, count_grid_closeout] = np.mean(
-                    np.maximum(
-                        self.scenarios_portfolio_values[:, count_array] - last_collateral_balance, 0
-                    ),
+                    np.maximum(self.scenarios_portfolio_values[:, count_array] - balance, 0),
                     axis=0,
                 )
                 for quantile in self.pe_quantiles:
                     self.collateralised_pe[quantile][0, count_grid_closeout] = np.quantile(
-                        self.scenarios_portfolio_values[:, count_array] - last_collateral_balance,
+                        self.scenarios_portfolio_values[:, count_array] - balance,
                         q=quantile,
                         axis=0,
                     )
