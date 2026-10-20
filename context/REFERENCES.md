@@ -192,6 +192,10 @@ Verified 2026-09-14 (web pass for the scope & manuscript gate).
 
 ---
 
+- **`[Goldberg1991]`** — Goldberg, D. (1991). *What Every Computer Scientist Should Know About Floating-Point Arithmetic.* ACM Computing Surveys, 23(1), 5–48. DOI 10.1145/103162.103163 — confirm DOI/pages before citing. Backs `GEN-39` (cross-architecture ulp-level differences: kernel order, FMA, libm).
+- **`[NumPySort]`** — NumPy documentation, *numpy.sort* (`kind` semantics — quicksort is introsort and not stable; `stable`), https://numpy.org/doc/stable/reference/generated/numpy.sort.html, and the NumPy 2.x release notes on the x86-simd-sort dispatch. Web resource — pin the version read. Backs `GEN-40`.
+- **`[CondaLock]`** — conda-lock documentation, https://conda.github.io/conda-lock/ (unified lockfile, `conda-lock install`, `--update`, multi-platform solves). Web resource. Backs `GEN-37/39`.
+
 ## Related
 Reads with: [[DECISIONS]] (what each key backs) · [[OPEN_QUESTIONS]] (the §99 to-confirm items) · `literature/refs.bib` (the reconciled BibTeX, 123 entries). Home: [[_INDEX]]
 #arm/int #type/reference
