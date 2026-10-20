@@ -44,7 +44,14 @@ class EquityEuropeanOptionPricer(PricingModel):
         underlyings = trade.trade_underlyings
         S = trade.get_attribute("underlying")
         S_implied_vol = S[:-6] + "_IMPLIED_VOLATILITY_SURFACE"
-        discount_curve = underlyings[underlyings != S and underlyings != S_implied_vol]
+        # The discount curve is found by name (the get_market_dependencies rule), never by
+        # list position: `underlyings[list != str]` evaluated to `underlyings[True]` (OQ-CCR-12).
+        curves = [rf for rf in underlyings if rf[-5:] == "CURVE"]
+        if len(curves) != 1:
+            raise ValueError(
+                f"Trade {trade.trade_id}: expected one discount curve among {underlyings}."
+            )
+        discount_curve = curves[0]
         T = transform_dates_to_time_differences(valuation_dates[0], trade.get_attribute("maturity"))
         K = trade.get_attribute("K")
         r_scenarios = scenarios[discount_curve]
