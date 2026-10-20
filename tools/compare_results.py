@@ -213,7 +213,8 @@ def check_headlines(spec: Path, new: Path) -> int:
         dec = int(e.get("decimals", 2))
         ok = round(actual, dec) == round(float(e["expected"]), dec)
         n_bad += not ok
-        print(f"{label:58s}{e['expected']:>16}{actual:>16.{dec}f}  {'ok' if ok else 'DIFFERS'}")
+        prec = max(dec, 0)  # a negative `decimals` rounds to tens/hundreds: print as an integer
+        print(f"{label:58s}{e['expected']:>16}{actual:>16.{prec}f}  {'ok' if ok else 'DIFFERS'}")
     print(f"\n{len(entries) - n_bad}/{len(entries)} headline cells reproduce at reported precision")
     return 1 if n_bad else 0
 

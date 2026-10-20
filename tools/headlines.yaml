@@ -222,8 +222,8 @@
 - label: S_rate_eff_MX (MDP-2025)
   file: loss_to_rate_scale_mx/scale.csv
   column: s_rate_eff_mdp
-  expected: 175293784
-  decimals: 0
+  expected: 175293800  # seven significant figures: 175,293,784 (macOS) / 175,293,835 (Linux), GEN-39
+  decimals: -2
 
 # --- INT-20 / HAZ-STOCH-07: arrival intensities and the floor severity ---------------------
 - label: λ registry (mayores_200mdp 2002–2015, /yr)
