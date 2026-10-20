@@ -2,7 +2,7 @@
 
 **Project:** `climateCCR` — a computational module that carries a financial institution through **data retrieval → calibration → simulation → risk metrics**, with **climate-related risk** wired into every stage, applied to **Mexico**.
 
-**Last compaction:** 2026-06-15
+**Last compaction:** 2026-10-20 (deep: `HISTORY.md` created, the trails moved; the inventory gate `tools/canon_inventory.py` reported no loss)
 **Scope of this synthesis:** consolidated from three previously-separate claude.ai projects (`Tesis QF` / `climateCCR`, `financial_instruments`, `Climate-Nature-Risks_Calibration`). It merges their six canon documents and their working notes/code inventories into one canon. Chat histories in the three original projects are **not** reachable from the new project; this canon is the durable carry-over. See §6 for provenance.
 
 ---
@@ -36,6 +36,7 @@ The arms share **Mexico as the unit of analysis** and the **shared `infra` + rep
 | `REFERENCES.md` | Verified bibliography with DOIs/URLs; each entry points to the decision IDs it backs. |
 | `OPEN_QUESTIONS.md` | Open items and unresolved decisions, each with a stable ID; integration questions first. |
 | `WORKFLOW.md` | The reproducibility + version-control workflow and the **end-of-chat ritual** that keeps this canon alive. |
+| `HISTORY.md` | The dated trails behind the canon's current state: earlier re-base updates by decision (§1), the contract-milestone index (§2), the resolved-open-question trace (§3). |
 
 Two companion docs sit one level up (outside `context/`) and describe the **repository** rather than the project's intellectual content:
 - `../README.md` — the integrated **project map** (vision, arm map, end-to-end pipeline, status).
@@ -68,7 +69,7 @@ Example cross-reference: "`HAZ-IBTRACS-04` is backed by `[Holland1980]`; its out
 
 ## 4. Maintenance rules
 
-**(a) Promote, don't duplicate.** When a new decision supersedes an old one, **edit** the canonical entry in place (or mark it `→ SUPERSEDED by [date]` only if the history is load-bearing); do not append a second live version. One source of truth per fact — otherwise the stale version resurfaces in retrieval and contaminates context.
+**(a) Promote, don't duplicate.** When a new decision supersedes an old one, **edit** the canonical entry in place (or mark it `→ SUPERSEDED by [date]` only if the history is load-bearing); do not append a second live version. One source of truth per fact — otherwise the stale version resurfaces in retrieval and contaminates context. **Dated states that a later update supersedes move to `HISTORY.md`** (keyed by the decision ID): the decision line keeps its latest update inline and points there when earlier ones exist, a resolved open question leaves `OPEN_QUESTIONS.md` for `HISTORY.md` §3 — so the live files describe the present and the trail stays retrievable.
 
 **(b) End-of-chat ritual.** Before closing a working chat, request the 5–10 line digest (Decided / Changed / Open) and fold it into `DECISIONS.md`, updating the other docs if a contract, term, reference, or open item changed. Incremental beats archaeology. Full template in `WORKFLOW.md`.
 
@@ -90,6 +91,7 @@ Example cross-reference: "`HAZ-IBTRACS-04` is backed by `[Holland1980]`; its out
 - **Resolve a term or a search keyword** in `GLOSSARY.md`.
 - **Cite something** from `REFERENCES.md` (verified) — never invent a citation; unconfirmed items live in §99.
 - **See what's unresolved** in `OPEN_QUESTIONS.md` (integration questions `OQ-INT-*` come first).
+- **Trace how a number got here** in `HISTORY.md` (the earlier dated updates of a decision, the contract milestones, every resolved question with its closing line).
 - **Keep the canon alive** with `WORKFLOW.md` (the ritual + reproducibility rules).
 - **Set up / navigate the repo** with `../REPO_STRUCTURE.md` and `../ASSET_MAP.md`.
 
@@ -108,5 +110,5 @@ Reconstructed from the carried-over canon and notes of three projects. Dates ins
 ---
 
 ## Related
-[[_INDEX]] · [[DECISIONS]] · [[DATA_CONTRACTS]] · [[GLOSSARY]] · [[REFERENCES]] · [[OPEN_QUESTIONS]] · [[WORKFLOW]] · [[README]] · [[REPO_STRUCTURE]] · [[ASSET_MAP]] · MOCs: [[CCR_MOC]] · [[MKT_MOC]] · [[HAZ_MOC]]
+[[_INDEX]] · [[DECISIONS]] · [[DATA_CONTRACTS]] · [[GLOSSARY]] · [[REFERENCES]] · [[OPEN_QUESTIONS]] · [[WORKFLOW]] · [[HISTORY]] · [[README]] · [[REPO_STRUCTURE]] · [[ASSET_MAP]] · MOCs: [[CCR_MOC]] · [[MKT_MOC]] · [[HAZ_MOC]]
 #arm/int #type/workflow

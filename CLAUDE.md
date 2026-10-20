@@ -29,6 +29,7 @@ The single source of truth lives in `context/`:
 | `context/REFERENCES.md` | Verified bibliography; §99 = to-confirm. |
 | `context/OPEN_QUESTIONS.md` | Open items; integration questions first. |
 | `context/WORKFLOW.md` | Working discipline + the end-of-session ritual. |
+| `context/HISTORY.md` | Dated trails behind the canon: earlier re-base updates by decision, the contract-milestone index, the resolved-question trace. |
 
 **Before working on or deciding anything in an arm, read the relevant
 `context/` file(s).** The canon is authoritative: if anything you recall

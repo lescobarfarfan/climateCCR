@@ -25,10 +25,8 @@ the intensity `λ` and the per-event **impact/jump-mark** that drive the climate
 - Crosswalks: `DC-XWALK-1` state↔storm (`nombre_evento`→`SID`) · **`DC-XWALK-4` the jump channel** · `DC-XWALK-2` CNSF↔CENAPRED penetration.
 
 ## Open questions → [[OPEN_QUESTIONS]]
-- `OQ-HAZ-01` CDMX discretization · `OQ-HAZ-03` `MONEDA`/FX (closable via MKT) · `OQ-HAZ-06` validate covariates (Odile/Otis).
-- `OQ-HAZ-07/08/09` references & source access · `OQ-HAZ-10` timestep convergence.
-- `OQ-HAZ-12` stochastic-model calibration · `OQ-HAZ-13` parametric pricing · `OQ-HAZ-14` remaining CNSF sectors · `OQ-HAZ-16` re-anchor default data roots (`GEN-24`) · `OQ-HAZ-19` post-extension residuals (headline `λ`, 2024 extenso).
-- Estimation core (shared): `OQ-INT-07` jump-mark / impact estimation.
+- `OQ-HAZ-17` the agro magnitude-correction residuals (a documented approximation, ≈ 7 % of `K`). `OQ-HAZ-19` (c, d) the censored non-CT stream after 2016 and the EXTENSO 2024 portal URL — `GEN-31` refresh triggers.
+- Closed: `OQ-HAZ-01`–`16`, `OQ-HAZ-18`, `OQ-HAZ-19` (a, b) — mostly ruled future work by `HAZ-SOURCES-05` (2026-09-14); the trace lives in [[HISTORY]] §3. Shared: `OQ-INT-07` (c) the step-aware mark sampler.
 
 ## Notes (import under `notes/`)
 - Plan: [[PROJECT_PLAN]] — the cross-arm plan, re-baselined 2026-09-14 (`INT-38`; Phase 6 chapter map).

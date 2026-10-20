@@ -11,7 +11,11 @@ Run the end-of-chat ritual from `context/WORKFLOW.md` §2.
    touched. No filler.
 2. Fold it into `context/DECISIONS.md` — one line per decision. **Edit superseded lines in place;
    do not append duplicates** ("promote, don't duplicate"; mark `→ SUPERSEDED by [date]` only where
-   the history is load-bearing).
+   the history is load-bearing). A dated update appends to the decision's line; when the line already
+   carries one, move the earlier update(s) to `context/HISTORY.md` §1 under the decision's ID and keep
+   the latest inline with a `HISTORY#ID` wikilink pointer. A question closed this session leaves
+   `OPEN_QUESTIONS.md` for `HISTORY.md` §3 (its closing line verbatim) once the digest's own
+   "Recently resolved" bullet is in.
 3. Then update the rest only if it changed: a contract → `context/DATA_CONTRACTS.md`; a new term →
    `context/GLOSSARY.md`; a reference used/confirmed → `context/REFERENCES.md` (unconfirmed → §99);
    something opened/closed → `context/OPEN_QUESTIONS.md`.

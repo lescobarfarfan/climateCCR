@@ -23,6 +23,7 @@ The `context/` folder is the **single source of truth for context** — decision
 | `REFERENCES.md` | Verified bibliography; §99 = to-confirm. |
 | `OPEN_QUESTIONS.md` | Open items, integration questions first. |
 | `WORKFLOW.md` | This file. |
+| `HISTORY.md` | The dated trails behind the current state: earlier re-base updates by decision, the contract-milestone index, the resolved-question trace. |
 
 **Code is not consolidated here.** The repository is its own source of truth — connect it to the project so code is read directly. Theory docs live in `notes/theory/`; papers in `literature/`.
 
@@ -31,7 +32,7 @@ The `context/` folder is the **single source of truth for context** — decision
 ## 2. End-of-chat ritual (do this before closing any working chat)
 
 1. Ask Claude for the **closing digest** (template below).
-2. Fold the digest into `DECISIONS.md` (one line per point, with a stable arm-prefixed ID, date, and reference key).
+2. Fold the digest into `DECISIONS.md` (one line per point, with a stable arm-prefixed ID, date, and reference key). When a digest re-bases a number or re-reads a decision, append the dated update to the line; if the line already carried one, move the earlier update(s) to `HISTORY.md` §1 under the decision's ID and keep the latest inline with a `HISTORY#ID` wikilink pointer.
 3. If a **contract** changed (file name, grain, column, units), edit `DATA_CONTRACTS.md`.
 4. If a **term** appeared, add it to `GLOSSARY.md`.
 5. If a **reference** was used or confirmed, add/verify it in `REFERENCES.md` (unconfirmed → §99).
@@ -118,7 +119,7 @@ Every result a thesis figure depends on must be reconstructible from raw inputs 
 
 Every few chats:
 
-> Read `00_README_CONTEXT.md`, `DECISIONS.md`, `DATA_CONTRACTS.md`, `GLOSSARY.md`, `OPEN_QUESTIONS.md`, and `REFERENCES.md` plus recent chats in this project, and emit a deduplicated, reorganized version of each. Flag what you superseded.
+> Read the eight canon files — `00_README_CONTEXT.md`, `DECISIONS.md`, `DATA_CONTRACTS.md`, `GLOSSARY.md`, `OPEN_QUESTIONS.md`, `REFERENCES.md`, `WORKFLOW.md`, `HISTORY.md` — plus the recent read-logs, and emit a deduplicated, reorganized version of each: superseded dated states to `HISTORY.md`, resolved questions to its §3, stale markers stripped. Flag what you superseded, and gate the replacement with `tools/canon_inventory.py` (snapshot before and after: no ID, key, link or number may be lost).
 
 Replace the old docs with the result and update "Last compaction" in `00_README_CONTEXT.md`.
 
@@ -148,5 +149,5 @@ Claude Code is the primary interface (`GEN-15`); claude.ai is the rollback path 
 ---
 
 ## Related
-Reads with: [[00_README_CONTEXT]] · [[DECISIONS]] · [[OPEN_QUESTIONS]] · [[OBSIDIAN_SETUP]] (the vault this workflow maintains). Home: [[_INDEX]]
+Reads with: [[00_README_CONTEXT]] · [[DECISIONS]] · [[OPEN_QUESTIONS]] · [[HISTORY]] · [[OBSIDIAN_SETUP]] (the vault this workflow maintains). Home: [[_INDEX]]
 #arm/int #type/workflow

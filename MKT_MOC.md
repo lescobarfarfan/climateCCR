@@ -25,10 +25,8 @@ in on (`INT-12`).
 - `DC-MKT-CREDIT-1..5` bond-portfolio requirements + sector crosswalk.
 
 ## Open questions → [[OPEN_QUESTIONS]]
-- `OQ-MKT-01` compounding check · `OQ-MKT-02` λ estimation · `OQ-MKT-03` long-end densification.
-- `OQ-MKT-04` NGFS vintage splice (deferred to the LT join) · `OQ-MKT-13` NGFS extensions (trajectory flavor, LT join, equity leg) · `OQ-MKT-06` stripping scope.
-- `OQ-MKT-07` weather-deriv scope · `OQ-MKT-08` R1–R4 bands · `OQ-MKT-09` municipal hazard source.
-- `OQ-MKT-10` `industria`↔GICS/SCIAN · `OQ-MKT-11` credit overlay in scope? · (`OQ-MKT-05` closed 2026-08-02 → `MKT-NGFS-05`; `OQ-MKT-12` closed 2026-08-02 → `MKT-CALIB-08`/`MKT-CURVE-06`.)
+- `OQ-MKT-02` λ, the market price of rate risk — a P-measure appendix hook only. `OQ-MKT-04` / `OQ-MKT-13` (b) — the NGFS long-term vintage join and its splice, on the Phase VI release (`GEN-31`).
+- Closed: `OQ-MKT-01/03/05/06/07/08/09/10/11/12` and `OQ-MKT-13` (a, c, d, e); the trace lives in [[HISTORY]] §3.
 
 ## Notes (under `notes/`)
 - Plan: [[PROJECT_PLAN]] — the cross-arm plan, re-baselined 2026-09-14 (`INT-38`; Phase 6 chapter map).

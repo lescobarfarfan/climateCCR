@@ -25,6 +25,7 @@ is incorporated — applied to Mexico. The integrating mechanism is a **climate-
 - [[REFERENCES]] — verified bibliography (+ §99 to-confirm).
 - [[OPEN_QUESTIONS]] — open items; integration questions first.
 - [[WORKFLOW]] — the end-of-chat ritual + reproducibility/version-control standard.
+- [[HISTORY]] — the dated trails behind the canon's current state: earlier re-base updates by decision, the contract milestones, every resolved question with its closing line.
 
 ## Repository docs
 

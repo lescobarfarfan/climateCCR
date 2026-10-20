@@ -25,9 +25,8 @@ simulation structure into which the [[HAZ_MOC|HAZ]] jump and the [[MKT_MOC|MKT]]
 - `DC-CCR-RISK-1` CCR metrics (EE/PE now; EPE/CVA next) · `DC-CCR-LIT-1` `marker` artifacts.
 
 ## Open questions → [[OPEN_QUESTIONS]]
-- `OQ-CCR-01` API name · `OQ-CCR-02` tidy-schema final form · `OQ-CCR-03` first scenario connector.
-- `OQ-CCR-05` RQ1 design (labelling, CV split, go/no-go) · **`OQ-CCR-07` where signatures fit now**.
-- Resolved 2026-08-20: `OQ-CCR-10` → simple Act/360 + market payer semantics (`CCR-RISK-07`). Resolved 2026-08-12: `OQ-CCR-04` → CVA built (`CCR-RISK-06`); `OQ-CCR-06` → audit done (`CCR-RISK-05`).
+- None open on the CCR arm (2026-10-20): `OQ-CCR-01`–`10` closed between June and September (`CCR-MIG-05/08`, `CCR-ARCH-06`, `MKT-NGFS-04`, `CCR-RISK-03/05/06/07`, `CCR-SIG-05`), the three engine details of 2026-10-08 (`OQ-CCR-11/12/13`) on 2026-10-20 (`CCR-RISK-09`, `CCR-SIM-04`); the trace lives in [[HISTORY]] §3.
+- Shared residuals that touch the engine: `OQ-INT-07` (c) the step-aware mark sampler (low priority); the `OQ-INT-10/11` residuals ruled future work (`INT-38`).
 
 ## Notes (import under `notes/`)
 - Plan: [[PROJECT_PLAN]] — re-baselined 2026-09-14 (`INT-38`): phases closed by decision ID, the Phase 6 chapter-to-results map; [[PHASE_0]] archived under `notes/plan/archive/` (executed by `CCR-MIG-*`).
