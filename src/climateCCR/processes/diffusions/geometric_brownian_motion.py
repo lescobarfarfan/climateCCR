@@ -42,7 +42,9 @@ class GeometricBrownianMotion(RiskFactorEvolution):
         return mean_value
 
     # When a dictionary is presented, the vol is constructed as piece-wise constant
-    # based on the ATM curve for the pre-specified tenors.
+    # based on the ATM curve for the pre-specified tenors. The endpoint tenors are
+    # inclusive: a time equal to the first/last tenor used to fall through every
+    # branch and silently reuse the previous time's variance (OQ-CCR-13).
     def volatility(self, t):
         if isinstance(self.calibration["volatility"], dict):
             equity_vola_tenors = np.array(list(self.calibration["volatility"].keys()))
@@ -50,15 +52,15 @@ class GeometricBrownianMotion(RiskFactorEvolution):
             equity_vola_values = np.array(list(self.calibration["volatility"].values()))
             variance = []
             for tenor in t:
-                if tenor > equity_vola_tenors[-1]:
+                if tenor >= equity_vola_tenors[-1]:
                     variance_tenor = (tenor - equity_vola_tenors[-1]) * equity_vola_values[-1] ** 2
                     sum_variance_previous_tenors = np.sum(
                         np.diff(equity_vola_tenors_extended) * equity_vola_values**2
                     )
-                elif tenor < equity_vola_tenors[0]:
+                elif tenor <= equity_vola_tenors[0]:
                     variance_tenor = tenor * equity_vola_values[0] ** 2
                     sum_variance_previous_tenors = 0
-                elif tenor < equity_vola_tenors[-1] and tenor > equity_vola_tenors[0]:
+                else:  # strictly inside the tenor grid
                     index_tenor = np.where(equity_vola_tenors > tenor)[0][0]
                     variance_tenor = (
                         tenor - equity_vola_tenors[(index_tenor - 1)]
